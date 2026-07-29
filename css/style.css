@@ -1,0 +1,775 @@
+/* نظام تصميم واجهة مفاضلة جامعة صنعاء */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap');
+
+:root {
+    --bg-main: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.75);
+    --bg-card-hover: rgba(30, 41, 59, 0.9);
+    --bg-input: #1e293b;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: rgba(37, 99, 235, 0.15);
+    --secondary: #0d9488;
+    --secondary-hover: #0f766e;
+    --accent: #f59e0b;
+    --accent-light: rgba(245, 158, 11, 0.15);
+    --success: #10b981;
+    --success-light: rgba(16, 185, 129, 0.15);
+    --danger: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.15);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-light: #cbd5e1;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-highlight: rgba(37, 99, 235, 0.4);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    --glass-blur: backdrop-filter: blur(12px);
+}
+
+[data-theme="light"] {
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-input: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-light: #334155;
+    --border: #e2e8f0;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    direction: rtl;
+    text-align: right;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* الشريط العلوي App Bar المحترف */
+.navbar {
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-text h1 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.2;
+}
+
+.brand-text p {
+    font-size: 0.78rem;
+    color: #0d9488;
+    font-weight: 700;
+}
+
+/* شعار ماقتك في الشريط العلوي (MAQATECH Brand Badge) */
+.navbar-maqatech-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 4px 14px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.nav-maqatech-badge {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.95rem;
+    color: #ffffff;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.nav-maqatech-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-maqatech-title {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #e2e8f0;
+    letter-spacing: 1.5px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.1;
+}
+
+.nav-maqatech-sub {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 1.2px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* عناصر التحكم والأزرار اليسارية */
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-run-nav {
+    background: linear-gradient(135deg, #059669, #0d9488) !important;
+    font-size: 0.88rem !important;
+    padding: 8px 18px !important;
+    border-radius: 10px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4) !important;
+    white-space: nowrap;
+}
+
+/* التنسيق الأفقي الأنيق للمستخدم والأزرار */
+.user-badge-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1.1;
+}
+
+.user-role-tag {
+    font-size: 0.68rem;
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+.user-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    padding-right: 8px;
+}
+
+.btn-xs {
+    padding: 5px 10px !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
+    white-space: nowrap;
+}
+
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.user-role-tag {
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* الأزرار العامة */
+.btn {
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), #1d4ed8);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--secondary), #0f766e);
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.btn-outline:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--text-muted);
+}
+
+.btn-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+}
+
+/* شريط التنقل الرئيسي (Tabs Header) */
+.tabs-nav {
+    background: rgba(15, 23, 42, 0.6);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover {
+    color: var(--text-main);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+/* المحتوى الرئيسي */
+.main-container {
+    flex: 1;
+    padding: 24px;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* كروت الإحصائيات (Stat Cards) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+}
+
+.stat-info h3 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--text-main);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.stat-blue { background: var(--primary-light); color: var(--primary); }
+.stat-teal { background: rgba(13, 148, 136, 0.15); color: var(--secondary); }
+.stat-amber { background: var(--accent-light); color: var(--accent); }
+.stat-green { background: var(--success-light); color: var(--success); }
+
+/* البطاقات المعتادة Panel Card */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* الجداول */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    text-align: right;
+}
+
+.data-table th {
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 12px 16px;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-light);
+    vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-card-hover);
+}
+
+/* الشارات (Badges) */
+.badge-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-accepted {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-reserve {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-degree {
+    background: rgba(37, 99, 235, 0.15);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* أشرطة البحث والفلترة */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+/* النافذة المنبثقة Modal */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-backdrop.open {
+    display: flex;
+}
+
+.modal-dialog {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    padding: 24px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+.close-btn:hover { color: var(--danger); }
+
+/* أنماط شاشة التقرير الفخمة للطباعة الرسمية */
+.report-paper {
+    background: #ffffff;
+    color: #0f172a;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    margin-top: 20px;
+}
+
+.report-header {
+    text-align: center;
+    border-bottom: 3px double #1e3a8a;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+.report-header h2 {
+    color: #1e3a8a;
+    font-size: 1.6rem;
+    font-weight: 900;
+}
+
+.report-header h3 {
+    color: #0d9488;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.85rem;
+}
+
+.report-table th {
+    background-color: #1e3a8a !important;
+    color: #ffffff !important;
+    padding: 10px 8px;
+    border: 1px solid #1e3a8a;
+    text-align: center;
+    font-weight: 800;
+}
+
+.report-table td {
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    text-align: center;
+}
+
+.report-table tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+.score-cell {
+    font-weight: 800;
+    color: #1e3a8a;
+    background: #f1f5f9;
+}
+
+.total-score-badge {
+    background: #1e3a8a;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 900;
+}
+
+/* دعم الطباعة */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print {
+        display: none !important;
+    }
+    .main-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    .tab-content {
+        display: none !important;
+    }
+    #tab-report {
+        display: block !important;
+    }
+    .report-paper {
+        box-shadow: none !important;
+        padding: 10px !important;
+        margin: 0 !important;
+    }
+    .signatures-section {
+        margin-top: 12px !important;
+        padding-top: 8px !important;
+        page-break-inside: avoid !important;
+    }
+    .signature-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 6px !important;
+    }
+    .signature-card {
+        padding: 4px 6px !important;
+        border-radius: 4px !important;
+    }
+}
+
+/* شاشة تسجيل الدخول الفخمة MAQATECH */
+.login-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 450px;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(25px);
+    border-radius: 20px;
+    padding: 32px 28px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+}
+
+.maqatech-logo-container {
+    text-align: center;
+}
+
+.maqatech-symbol {
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    line-height: 1;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.maqatech-text {
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #e2e8f0;
+    margin-top: 4px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.maqatech-subtext {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #94a3b8;
+    margin-top: 2px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}

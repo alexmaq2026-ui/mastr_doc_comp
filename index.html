@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- شاشة تسجيل الدخول الرئيسية (Login Screen MAQATECH) -->
+  <div id="login-screen" class="login-fullscreen" style="display: flex;">
+    <div class="login-box">
+      <!-- شعار ماقتك للحلول البرمجية MAQATECH -->
+      <div class="maqatech-logo-container">
+        <div class="maqatech-symbol">MT</div>
+        <div class="maqatech-text">MAQATECH</div>
+        <div class="maqatech-subtext">SOFTWARE SOLUTIONS</div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.15); margin: 18px 0;">
+
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: var(--text-main); font-size: 1.25rem; font-weight: 800; margin-bottom: 4px;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</p>
+      </div>
+
+      <div id="login-error-msg" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 15px; text-align: center;"></div>
+
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label>اسم المستخدم (Username):</label>
+          <input type="text" id="login-username" class="form-control" placeholder="ادخل اسم المستخدم (مثال: admin)" required>
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور (Password):</label>
+          <input type="password" id="login-password" class="form-control" placeholder="ادخل كلمة المرور (مثال: admin123)" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px; background: linear-gradient(135deg, #2563eb, #0d9488);">
+          تسجيل الدخول للنظام
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: var(--text-muted);">
+        تطوير وتنفيذ: ماقتك للحلول البرمجية (MAQATECH Software Solutions) © 2026
+      </div>
+    </div>
+  </div>
+
+  <!-- الشريط العلوي الرئيسي (Navbar) -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-text">
+        <h1>جامعـة صنعـاء - مجلـس الجامعـة</h1>
+        <p>نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</p>
+      </div>
+    </div>
+
+    <!-- شعار ماقتك لحفظ الحقوق في الشريط العلوي (MAQATECH Logo Badge) -->
+    <div class="navbar-maqatech-brand">
+      <div class="nav-maqatech-badge">MT</div>
+      <div class="nav-maqatech-info">
+        <span class="nav-maqatech-title">MAQATECH</span>
+        <span class="nav-maqatech-sub">SOFTWARE SOLUTIONS</span>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <button class="btn btn-secondary btn-run-nav" onclick="openRunCompetitionModal()">تنفيذ وتطبيق المفاضلة</button>
+      <div id="user-badge-container"></div>
+    </div>
+  </header>
+
+  <!-- أزرار التنقل بين الشاشات (Tabs Navigation) -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="tab-dashboard">لوحة القيادة الإحصائية</button>
+    <button class="tab-btn" data-tab="tab-candidates">إدارة المتنافسين والكشوفات</button>
+    <button class="tab-btn" data-tab="tab-scoring">مصفوفة المفاضلة والترتيب</button>
+    <button class="tab-btn" data-tab="tab-report">التقرير التفصيلي المعتمد</button>
+    <button class="tab-btn" id="tab-btn-criteria" data-tab="tab-criteria">تهيئة المعايير والأوزان</button>
+    <button class="tab-btn" id="tab-btn-admin" data-tab="tab-admin">إدارة النظام والصلاحيات</button>
+  </nav>
+
+  <!-- المحتوى الرئيسي للمشروع -->
+  <main class="main-container">
+
+    <!-- 1. شاشة لوحة القيادة -->
+    <section id="tab-dashboard" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-info">
+            <h3>إجمالي المتنافسين المسجلين</h3>
+            <div class="stat-number" id="stat-total-candidates">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-info">
+            <h3>متقدمين درجة الماجستير</h3>
+            <div class="stat-number" id="stat-masters-count">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-info">
+            <h3>متقدمين درجة الدكتوراه</h3>
+            <div class="stat-number" id="stat-phd-count">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-info">
+            <h3>إجمالي منح التنافس المتاحة</h3>
+            <div class="stat-number" id="stat-accepted-total">6</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">المرشحون المقبولون أولياً في المنح الحالية</h2>
+          <button class="btn btn-outline btn-sm" onclick="document.querySelector('[data-tab=tab-report]').click()">معاينة التقرير التفصيلي المعتمد</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الترتيب</th>
+                <th>اسم المتنافس</th>
+                <th>الدرجة العلمية</th>
+                <th>التخصص</th>
+                <th>التقدير</th>
+                <th>مجموع النقاط</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-top-candidates"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. شاشة إدارة المتنافسين -->
+    <section id="tab-candidates" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">سجل المتنافسين على منح الدراسات العليا</h2>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" id="btn-import-excel" onclick="document.getElementById('file-excel-import').click()">استيراد ملف إكسل</button>
+            <input type="file" id="file-excel-import" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(event)">
+            <button class="btn btn-primary" id="btn-add-candidate" onclick="showAddCandidateModal()">إضافة متنافس جديد</button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-box">
+            <input type="text" id="search-candidates" class="form-control" placeholder="ابحث باسم المتنافس أو التخصص...">
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <label style="font-weight: 700; color: var(--text-muted);">تصفية حسب الدرجة:</label>
+            <select id="filter-degree" class="form-control" style="width: 160px;">
+              <option value="">جميع الدرجات</option>
+              <option value="ماجستير">ماجستير</option>
+              <option value="دكتوراه">دكتوراه</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>م</th>
+                <th>اسم الموظف المتنافس</th>
+                <th>الدرجة المطلوبة</th>
+                <th>التخصص</th>
+                <th>تاريخ التعيين</th>
+                <th>تاريخ الميلاد</th>
+                <th>سنة التخرج</th>
+                <th>التقدير</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="candidates-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. شاشة المفاضلة والترتيب -->
+    <section id="tab-scoring" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">مصفوفة التنافس والترتيب التلقائي</h2>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <label style="font-weight: 700;">عرض درجة:</label>
+            <select id="filter-rankings-degree" class="form-control" style="width: 160px;">
+              <option value="ماجستير">منح الماجستير</option>
+              <option value="دكتوراه">منح الدكتوراه</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الترتيب</th>
+                <th>اسم المتنافس</th>
+                <th>التخصص</th>
+                <th>نقاط الأقدمية</th>
+                <th>نقاط العمر</th>
+                <th>نقاط التخصص</th>
+                <th>نقاط التقدير</th>
+                <th>المجموع الكلي</th>
+                <th>النتيجة والاعتماد</th>
+                <th>التفاصيل</th>
+              </tr>
+            </thead>
+            <tbody id="scoring-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. شاشة التقرير والمصفوفة التفصيلية -->
+    <section id="tab-report" class="tab-content">
+      <div class="card no-print">
+        <div class="card-header">
+          <h2 class="card-title">شاشة التقرير التفصيلي المعتمد لمجلس الجامعة</h2>
+          <div style="display: flex; gap: 10px;">
+            <select id="report-degree-filter" class="form-control" style="width: 180px;">
+              <option value="الكل">جميع المتقدمين (ماجستير ودكتوراه)</option>
+              <option value="ماجستير">كشف الماجستير فقط</option>
+              <option value="دكتوراه">كشف الدكتوراه فقط</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportReportToExcel()">تصدير Excel</button>
+            <button class="btn btn-primary" onclick="printDetailedReport()">طباعة التقرير PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ورقة التقرير الجاهزة للطباعة والتوقيع -->
+      <div id="detailed-report-content"></div>
+    </section>
+
+    <!-- 5. شاشة تهيئة المعايير والأوزان -->
+    <section id="tab-criteria" class="tab-content">
+      <div id="criteria-settings-container"></div>
+    </section>
+
+    <!-- 6. شاشة إدارة النظام والصلاحيات -->
+    <section id="tab-admin" class="tab-content">
+      <!-- كارت الربط والرفع السحابي بـ Supabase -->
+      <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(13, 148, 136, 0.4);">
+        <div class="card-header">
+          <h2 class="card-title" style="color: #2dd4bf; display: flex; align-items: center; gap: 8px;">
+            <span>⚡ الربط والمزامنة السحابية مع Supabase</span>
+          </h2>
+          <span class="status-badge status-accepted" id="supabase-status-badge">جاري التحقق من الاتصال...</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+          قم بإدخال بيانات مشروع Supabase الخاص بك لرفع وحفظ بيانات المتنافسين والمفاضلة أونلاين بأمان.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="color: var(--text-main); font-weight: 600;">رابط المشروع (Supabase URL):</label>
+            <input type="text" id="supabase-url-input" class="form-control" placeholder="https://your-project.supabase.co" style="direction: ltr; font-family: monospace;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="color: var(--text-main); font-weight: 600;">مفتاح الوصول (Supabase Anon Key / API Key):</label>
+            <input type="password" id="supabase-key-input" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." style="direction: ltr; font-family: monospace;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn btn-primary" style="background: linear-gradient(135deg, #0d9488, #2563eb);" onclick="saveSupabaseSettingsFromUI()">
+            💾 حفظ وتوصيل Supabase
+          </button>
+          <button class="btn btn-secondary" style="background: linear-gradient(135deg, #059669, #10b981);" onclick="uploadAllDataToSupabase()">
+            🚀 رفع البيانات الحالية أونلاين الآن
+          </button>
+          <button class="btn btn-outline" onclick="syncCandidatesFromSupabase().then(res => { if(res) alert('✅ تم استجلاب ومزامنة البيانات من Supabase بنجاح!'); else alert('⚠️ تعذر المزامنة، تحقق من المفاتيح والقواعد.'); })">
+            🔄 استجلاب البيانات من Supabase
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">شاشة إدارة المستخدمين وتعيين الصلاحيات (المدير الأعلى)</h2>
+          <button class="btn btn-primary" onclick="showAddUserModal()">إضافة مستخدم جديد</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.88rem;">
+          يتيح هذا الباب للمدير الأعلى (Super Admin) إنشاء حسابات جديدة لمدخلي البيانات والمراجعين وتحديد أدوارهم وصلاحياتهم على النظام.
+        </p>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الاسم الكامل</th>
+                <th>اسم المستخدم</th>
+                <th>الدور الصلاحياتي</th>
+                <th>حالة الحساب</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="users-admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- الفوتر الرسمي لحفظ حقوق الشركة (MAQATECH) -->
+    <footer class="app-footer no-print" style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.82rem; border-top: 1px solid var(--border); margin-top: 40px;">
+      نظام المفاضلة والتنافس الإلكتروني - جامعة صنعاء | تطوير وتنفيذ: <strong>ماقتك للحلول البرمجية (MAQATECH SOFTWARE SOLUTIONS)</strong> © 2026
+    </footer>
+
+  </main>
+
+  <!-- النافذة المنبثقة: إضافة/تعديل متنافس -->
+  <div class="modal-backdrop" id="modal-candidate">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-candidate-title">إضافة متنافس جديد</h3>
+        <button class="close-btn" onclick="closeModal('modal-candidate')">&times;</button>
+      </div>
+      <input type="hidden" id="candidate-id-hidden">
+      <div class="form-group">
+        <label>اسم الموظف المتنافس (رباعي):</label>
+        <input type="text" id="cand-name" class="form-control" placeholder="مثال: خالد محمد علي عفيف">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>الدرجة المطلوب التنافس عليها:</label>
+          <select id="cand-degree" class="form-control">
+            <option value="ماجستير">ماجستير</option>
+            <option value="دكتوراه">دكتوراه</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>التخصص الدراسي:</label>
+          <input type="text" id="cand-specialization" class="form-control" placeholder="مثال: شريعة وقانون">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>تاريخ التعيين بالخدمة/الجامعة:</label>
+          <input type="text" id="cand-hiring-univ" class="form-control" placeholder="مثال: 2005م أو 2005/11/28">
+        </div>
+        <div class="form-group">
+          <label>سنة/تاريخ الميلاد (للحساب العمري):</label>
+          <input type="text" id="cand-birth-date" class="form-control" placeholder="مثال: 1980م">
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>سنة التخرج بالمؤهل السابق:</label>
+          <input type="text" id="cand-grad-year" class="form-control" placeholder="مثال: 2010م">
+        </div>
+        <div class="form-group">
+          <label>تقدير المؤهل الدراسي:</label>
+          <select id="cand-grade" class="form-control">
+            <option value="ممتاز">ممتاز</option>
+            <option value="جيد جداً">جيد جداً</option>
+            <option value="جيد">جيد</option>
+            <option value="مقبول">مقبول</option>
+          </select>
+        </div>
+      </div>
+      <!-- الحقول الديناميكية للمعايير المخصصة الجديدة -->
+      <div id="cand-custom-fields" style="margin-top: 12px;"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-candidate')">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveCandidateForm()">حفظ البيانات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- النافذة المنبثقة: إضافة مستخدم جديد (المدير الأعلى) -->
+  <div class="modal-backdrop" id="modal-user">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">إضافة مستخدم وتعيين الصلاحيات</h3>
+        <button class="close-btn" onclick="closeModal('modal-user')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>الاسم الكامل:</label>
+        <input type="text" id="user-fullname" class="form-control" placeholder="مثال: د. محمد علي (عضو اللجنة)">
+      </div>
+      <div class="form-group">
+        <label>اسم المستخدم (Login Username):</label>
+        <input type="text" id="user-username" class="form-control" placeholder="مثال: mohammed">
+      </div>
+      <div class="form-group">
+        <label>تحديد الدور والصلاحيات:</label>
+        <select id="user-role" class="form-control">
+          <option value="super_admin">المدير الأعلى / رئيس اللجنة (صلاحيات كاملة + إدارة المستخدمين)</option>
+          <option value="data_entry">مدخل بيانات (إدخال وتعديل واستيراد دون تهيئة الأوزان)</option>
+          <option value="auditor">مراجع / مطلع (قراءة ومعاينة وطباعة فقط)</option>
+        </select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-user')">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveUserForm()">حفظ المستخدم والصلاحية</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- النافذة المنبثقة: التبديل السريع للمستخدم -->
+  <div class="modal-backdrop" id="modal-login">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">تبديل حساب المستخدم (اختبار الصلاحيات)</h3>
+        <button class="close-btn" onclick="closeModal('modal-login')">&times;</button>
+      </div>
+      <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.88rem;">
+        اختر الحساب الذي تريد التجربة والدخول به لاختبار مستويات الصلاحيات:
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <button class="btn btn-primary" style="justify-content: space-between;" onclick="switchUser('super_admin')">
+          <span>تسجيل الدخول كـ (المدير الأعلى - رئيس اللجنة)</span>
+          <small>صلاحيات كاملة + إدارة مستخدمين</small>
+        </button>
+        <button class="btn btn-secondary" style="justify-content: space-between;" onclick="switchUser('data_entry')">
+          <span>تسجيل الدخول كـ (مدخل بيانات)</span>
+          <small>إدخال واستيراد بيانات فقط</small>
+        </button>
+        <button class="btn btn-outline" style="justify-content: space-between;" onclick="switchUser('auditor')">
+          <span>تسجيل الدخول كـ (مراجع مطلع)</span>
+          <small>معاينة وطباعة تقارير فقط</small>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- النافذة المنبثقة: تنفيذ المفاضلة وبدء دورة جديدة -->
+  <div class="modal-backdrop" id="modal-run-competition">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">تنفيذ وتطبيق المفاضلة الرسمية</h3>
+        <button class="close-btn" onclick="closeModal('modal-run-competition')">&times;</button>
+      </div>
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+        <h4 style="color: var(--success); font-weight: 800; margin-bottom: 6px;">زر التنفيذ والاعتماد النهائي للمفاضلة</h4>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          يقوم هذا الإجراء بتطبيق المعايير والأوزان النشطة، وإعادة حساب درجات كافة المتقدمين، وترتيبهم تنازلياً وتحديد المقبولين والاحتياط وتجهيز التقرير المعتمد لمجلس الجامعة.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label>عنوان الدورة التنافسية:</label>
+        <input type="text" id="run-cycle-title" class="form-control" value="دورة المفاضلة والتنافس لعام 2026م">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <div class="form-group">
+          <label>عدد منح الماجستير المتاحة:</label>
+          <input type="number" id="run-master-grants" class="form-control" value="3">
+        </div>
+        <div class="form-group">
+          <label>عدد منح الدكتوراه المتاحة:</label>
+          <input type="number" id="run-phd-grants" class="form-control" value="3">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; gap: 10px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-run-competition')">إلغاء</button>
+        <button class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #0d9488); font-size: 1rem; padding: 10px 24px;" onclick="executeCompetitionRun()">تنفيذ وتطبيق المفاضلة الآن</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- المحركات والسكربتات -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/initial_data.js"></script>
+  <script src="js/supabase_client.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

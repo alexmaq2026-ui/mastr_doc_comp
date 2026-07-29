@@ -1,0 +1,22 @@
+{
+  "name": "sanaa-university-competition-app",
+  "version": "1.0.0",
+  "description": "تطبيق المفاضلة والتنافس الإلكتروني لكادر جامعة صنعاء (ماجستير ودكتوراه)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "sanaa-university",
+    "competition",
+    "scholarships",
+    "supabase",
+    "render"
+  ],
+  "author": "جامعة صنعاء",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

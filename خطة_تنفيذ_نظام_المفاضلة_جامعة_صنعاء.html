@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>خطة تنفيذ نظام التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+    
+    @page {
+        size: A4;
+        margin: 20mm 15mm 20mm 15mm;
+        @bottom-left {
+            content: "جامعة صنعاء - لجنة المفاضلة والتنافس";
+            font-family: 'Cairo', sans-serif;
+            font-size: 9pt;
+            color: #64748b;
+        }
+        @bottom-right {
+            content: "صفحة " counter(page) " من " counter(pages);
+            font-family: 'Cairo', sans-serif;
+            font-size: 9pt;
+            color: #64748b;
+        }
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        direction: rtl;
+        text-align: right;
+        color: #1e293b;
+        background-color: #ffffff;
+        line-height: 1.7;
+        font-size: 11pt;
+        margin: 0;
+        padding: 0;
+    }
+
+    .header-container {
+        border-bottom: 3px double #1e3a8a;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        text-align: center;
+        flex-grow: 1;
+    }
+
+    .header-title h1 {
+        color: #1e3a8a;
+        font-size: 20pt;
+        margin: 0 0 5px 0;
+        font-weight: 800;
+    }
+
+    .header-title h2 {
+        color: #0d9488;
+        font-size: 13pt;
+        margin: 0 0 5px 0;
+        font-weight: 700;
+    }
+
+    .header-title p {
+        color: #475569;
+        font-size: 10pt;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .badge-bar {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 9pt;
+        font-weight: 700;
+        border: 1px solid #bae6fd;
+    }
+
+    .badge-primary {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+
+    h2.section-header {
+        color: #1e3a8a;
+        background: #f1f5f9;
+        padding: 8px 14px;
+        border-right: 5px solid #1e3a8a;
+        border-radius: 4px;
+        font-size: 13pt;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        font-weight: 800;
+    }
+
+    h3.subsection-header {
+        color: #0f766e;
+        font-size: 11.5pt;
+        margin-top: 18px;
+        margin-bottom: 10px;
+        font-weight: 700;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 4px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        font-size: 10pt;
+    }
+
+    th {
+        background-color: #1e3a8a;
+        color: #ffffff;
+        padding: 10px 12px;
+        text-align: right;
+        font-weight: 700;
+        border: 1px solid #1e3a8a;
+    }
+
+    td {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        vertical-align: top;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+
+    ul, ol {
+        margin: 8px 0;
+        padding-right: 22px;
+    }
+
+    li {
+        margin-bottom: 6px;
+    }
+
+    strong {
+        color: #0f172a;
+    }
+
+    .alert-box {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-right: 5px solid #2563eb;
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+        font-size: 10pt;
+    }
+
+    .footer-sign {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+        page-break-inside: avoid;
+    }
+
+    .sign-box {
+        text-align: center;
+        width: 45%;
+    }
+
+    .sign-box p {
+        margin: 4px 0;
+        font-weight: 700;
+    }
+
+    .sign-space {
+        height: 50px;
+    }
+</style>
+</head>
+<body>
+
+<div class="header-container">
+    <div class="header-title">
+        <h1>جامعـة صفيـاء - مجلـس الجامعـة</h1>
+        <h2>لجنة المفاضلة والتنافس على الدراسات العليا (الكادر الإداري)</h2>
+        <p>خطة العمل الفنية والبرمجية لنظام المفاضلة الإلكتروني الذكي والمرن</p>
+        <div class="badge-bar">
+            <span class="badge badge-primary">إصدار خطة النظام v1.0</span>
+            <span class="badge">الفئة المستهدفة: الكادر الإداري (ذكور وإناث)</span>
+            <span class="badge">النطاق: منح الماجستير والدكتوراه</span>
+        </div>
+    </div>
+</div>
+
+<div class="alert-box">
+    <strong>ملخص النظام:</strong> تطوير تطبيق إلكتروني مستقل ومرن يتيح للجنة المفاضلة بمجلس جامعة صنعاء تطبيق سياسات التنافس واحتساب درجات المتقدمين من الموظفين الإداريين تلقائياً، مع دعم كامل للشرائح الزمنية والعمرية المرنة، واستيراد ملفات الإكسل والورد، وشاشة إدارة نظام محددة الصلاحيات (Super Admin)، وشاشة تقارير تفصيلية فخمة معتمدة.
+</div>
+
+<h2 class="section-header">1. الأدوار والصلاحيات وإدارة المستخدمين (User Management & RBAC)</h2>
+<p>من خلال <strong>"شاشة إدارة النظام والتهيئة"</strong>، يتمكن <strong>المدير الأعلى (Super Admin)</strong> من إضافة المستخدمين الجدد وتحديد وتعديل صلاحياتهم بحسب المستويات التالية:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 5%;">م</th>
+            <th style="width: 25%;">مسمى الدور والتصنيف</th>
+            <th style="width: 70%;">الصلاحيات والمهام التي يحددها ويمنحها المدير الأعلى</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="text-align: center; font-weight: bold;">1</td>
+            <td><strong>المدير الأعلى / رئيس اللجنة<br>(Super Admin)</strong></td>
+            <td>
+                <ul>
+                    <li><strong>إدارة المستخدمين والصلاحيات:</strong> إضافة مستخدمين جدد (اسم المستخدم، كلمة المرور، المسمى الوظيفي) وتعديل حساباتهم وصلاحياتهم.</li>
+                    <li><strong>تهيئة المعايير والأوزان:</strong> ضبط وتعديل أوزان الفئات (الأقدمية، العمر، التخصص، التقدير، والمعايير الجديدة).</li>
+                    <li><strong>إدارة مقاعد المنح:</strong> تحديد وتعديل عدد منح الماجستير والدكتوراه المتاحة في الدورة التنافسية.</li>
+                    <li><strong>الاعتماد والتقارير:</strong> اعتماد مصفوفات المفاضلة وقفل النتائج وتصدير التقارير الرسمية المعتمدة.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; font-weight: bold;">2</td>
+            <td><strong>مدخل البيانات<br>(Data Entry)</strong></td>
+            <td>
+                <ul>
+                    <li>إدخال وتعديل بيانات المتقدمين والتأكد من استكمال كافة الحقول.</li>
+                    <li>استيراد ملفات الكشوفات الجماعية بصيغة (Excel / Word).</li>
+                    <li>معاينة كشوفات المتنافسين وتدقيق المؤهلات والتواريخ.</li>
+                    <li><em>(محظور من دخول شاشة إدارة المستخدمين أو تغيير أوزان المعايير وعدد المنح)</em>.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; font-weight: bold;">3</td>
+            <td><strong>المراجع / المطلع<br>(Auditor / Viewer)</strong></td>
+            <td>
+                <ul>
+                    <li>استعراض مصفوفة النتائج النهائية وسجل تفاصيل درجات المتنافسين.</li>
+                    <li>معاينة وطباعة التقارير المعتمدة دون إمكانية التعديل على البيانات أو الإعدادات.</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h2 class="section-header">2. الهيكلية التقنية والمكونات الرئيسية (System Modules)</h2>
+
+<h3 class="subsection-header">أ. محرك المعايير والأوزان المرن (Dynamic Criteria Engine)</h3>
+<ul>
+    <li><strong>معيار الاحتياج للتخصص:</strong> إمكانية إضافة وتعديل التخصصات (شريعة وقانون، علوم حاسوب، اقتصاد ومحاسبة، إدارة عامة...) وتحديد الوزن المخصص لكل تخصص.</li>
+    <li><strong>معيار الأقدمية (تاريخ التعيين):** إنشاء فئات زمنية مرنة (من 1990 إلى 2030) مع اختيار خطوة الشريحة (كل سنة، كل سنتين، 5 سنوات...) وتحديد وزن كل شريحة حسب سياسة الجامعة.</li>
+    <li><strong>معيار العمر:** إنشاء فئات عمرية (من 25 إلى 56 سنة) وتحديد خطوة الشريحة الزمنية والوزن المخصص لكل فئة عمرية.</li>
+    <li><strong>معيار التقدير العلمي:** تحديد النقاط المخصصة لتقديرات المؤهل (مقبول، جيد، جيد جداً، ممتاز).</li>
+    <li><strong>إضافة معايير جديدة (Custom Criteria Builder):** إمكانية تعريف أي معيار جديد في أي وقت (مثل: تقييم الأداء، الأبحاث، المقابلة) واختيار نوعه وتحديد وزنه تلقائياً.</li>
+</ul>
+
+<h3 class="subsection-header">ب. محرك استيراد ومعالجة البيانات (Data Import Engine)</h3>
+<ul>
+    <li><strong>دعم ملفات Excel و Word:</strong> دعم استيراد الكشوفات الرسمية للجامعة مثل ملف <code>مصفوفة المنح 2026م بالاقدمية.xlsx</code> بشيتات الماجستير والدكتوراه.</li>
+    <li><strong>مطابقة الحقول الذكية (Smart Auto-mapping):** التعرف الآلي على الأعمدة (الاسم، تاريخ التعيين بالخدمة/بالجامعة، التخصص، التقدير، تاريخ الميلاد).</li>
+    <li><strong>احتساب آلي:</strong> حساب العمر ومدة الأقدمية تلقائياً عند استيراد البيانات بدون حاجة لإدخالها يدويًا.</li>
+</ul>
+
+<h3 class="subsection-header">ج. محرك المفاضلة وكسر التعادل (Scoring & Ranking Engine)</h3>
+<ul>
+    <li>احتساب النقاط الكلية لكل متنافس في التو واللحظة (Real-time Calculation).</li>
+    <li>فصل التنافس حسب الدرجة العلمية المطلوبة (ماجستير / دكتوراه).</li>
+    <li>ترتيب المتنافسين تنازلياً وتقسيمهم آلياً إلى **(مقبولين)** حسب عدد المنح المحددة، و**(احتياط)** للمتبقي.</li>
+    <li>تطبيق قواعد كسر التعادل (تاريخ التعيين الأقدم -> العمر الأكبر -> التقدير الأعلى).</li>
+</ul>
+
+<h3 class="subsection-header">د. شاشة التقرير الفخمة والمصفوفة التفصيلية (Luxurious Report Screen)</h3>
+<ul>
+    <li><strong>عرض بصري فخم ومُفصّل:</strong> جدول تفصيلي يوضح كافة بيانات المتنافس مع تفكيك درجاته في كل معيار (نقاط الأقدمية + نقاط العمر + نقاط التخصص + نقاط التقدير + نقاط المعايير المخصصة -> المجموع الكلي).</li>
+    <li><strong>شارة حالة المتنافس:</strong> شارات ملونة مميزة لـ (مقـبـول) و (احتـيـاط).</li>
+    <li><strong>جاهزية التصدير والطباعة:</strong> إمكانية طباعة التقرير مباشرة أو تصديره كـ PDF رسمي معتمد بترويسة جامعة صنعاء ومساحة لتوقيعات الأعضاء ورئيس اللجنة ومجلس الجامعة.</li>
+</ul>
+
+<h2 class="section-header">3. خطة التحقق واختبار الجودة (Verification Plan)</h2>
+<ol>
+    <li><strong>اختبار الاستيراد:</strong> استيراد وتفنيش ملف الإكسل الحالي <code>مصفوفة المنح 2026م بالاقدمية.xlsx</code> والتأكد من صحة قراءة البيانات الموزعة.</li>
+    <li><strong>اختبار مرونة المعايير:</strong> تعديل خطوات الأقدمية والعمر والأوزان والتأكد من تحديث مصفوفة التنافس والدرجات والترتيب فوراً.</li>
+    <li><strong>اختبار الصلاحيات:</strong> التأكد من حماية شاشة إدارة النظام ومنع مدخلي البيانات من تعديل الأوزان أو إضافة المستخدمين.</li>
+    <li><strong>اختبار التقرير الفخم:</strong> تصدير ومعاينة كشف المقبولين والاحتياط والتأكد من دقة المخرجات والطباعة.</li>
+</ol>
+
+<div class="footer-sign">
+    <div class="sign-box">
+        <p>إعداد وتصميم النظام</p>
+        <p style="color: #1e3a8a; font-weight: 800;">فريق التطوير الفني الذكي</p>
+        <div class="sign-space"></div>
+        <p>التاريخ: 2026/07/29م</p>
+    </div>
+    <div class="sign-box">
+        <p>اعتماد رئيس لجنة المفاضلة</p>
+        <p style="color: #1e3a8a; font-weight: 800;">مجلس جامعة صنعاء</p>
+        <div class="sign-space"></div>
+        <p>التوقيع والختم: .......................</p>
+    </div>
+</div>
+
+</body>
+</html>
