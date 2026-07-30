@@ -670,9 +670,33 @@ body {
     border-radius: 6px;
     font-weight: 900;
 }
+/* العلامة المائية الشبحية لمسودة التدقيق والمراجعة */
+.print-watermark {
+    display: none;
+    position: fixed;
+    top: 38%;
+    left: 2%;
+    right: 2%;
+    transform: rotate(-22deg);
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: rgba(220, 38, 38, 0.22);
+    border: 7px dashed rgba(220, 38, 38, 0.30);
+    padding: 16px 25px;
+    border-radius: 16px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 99999;
+    letter-spacing: 2px;
+}
 
 /* دعم الطباعة المتقدم الفخم لملفات PDF والتقارير الرسمية */
 @media print {
+    body.is-draft-print .print-watermark {
+        display: block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
     @page {
         size: A4 landscape;
         margin: 6mm 8mm;

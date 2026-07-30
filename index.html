@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="css/style.css?v=9">
+  <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 
@@ -227,16 +227,21 @@
     <!-- 4. شاشة التقرير والمصفوفة التفصيلية -->
     <section id="tab-report" class="tab-content">
       <div class="card no-print">
-        <div class="card-header">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
           <h2 class="card-title">شاشة التقرير التفصيلي المعتمد لمجلس الجامعة</h2>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <select id="report-degree-filter" class="form-control" style="width: 180px;">
               <option value="الكل">جميع المتقدمين (ماجستير ودكتوراه)</option>
               <option value="ماجستير">كشف الماجستير فقط</option>
               <option value="دكتوراه">كشف الدكتوراه فقط</option>
             </select>
             <button class="btn btn-secondary" onclick="exportReportToExcel()">تصدير Excel</button>
-            <button class="btn btn-primary" onclick="printDetailedReport()">طباعة التقرير PDF</button>
+            <button class="btn btn-warning" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 700;" onclick="printDetailedReportDraft()">
+              🖨️ طباعة مسودة (للتدقيق والمراجعة)
+            </button>
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #047857); font-weight: 700;" onclick="printDetailedReportFinal()">
+              📜 طباعة النسخة النهائية المعتمدة
+            </button>
           </div>
         </div>
       </div>

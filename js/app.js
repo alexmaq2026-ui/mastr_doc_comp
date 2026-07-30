@@ -684,7 +684,10 @@ function renderDetailedReport() {
   }
 
   reportContainer.innerHTML = `
-    <div class="report-paper">
+    <div class="report-paper" style="position: relative;">
+      <!-- العلامة المائية الشبحية لمسودة التدقيق والمراجعة -->
+      <div id="report-print-watermark" class="print-watermark">مسودة للتدقيق والمراجعة</div>
+
       <!-- 1. الهيدر الرسمي للتقرير الشامل مع شعار المالك وتفاصيل الجلسة -->
       <div class="report-header" style="border-bottom: 2.5px double #1e3a8a; padding-bottom: 12px; margin-bottom: 16px; position: relative;">
         <!-- شعار وشارة صاحب الحقوق الملكية MAQATECH أفقياً في أعلى التقرير -->
@@ -1876,8 +1879,29 @@ function executeCompetitionRun() {
   alert(` تم تنفيذ وتطبيق المفاضلة بنجاح بروق وامتياز!\n\n• إجمالي المتقدمين المعالجين: ${totalCandidates} متنافس\n• المرشحون المقبولون ماجستير: ${masterGrants} منح\n• المرشحون المقبولون دكتوراه: ${phdGrants} منح\n\nتم تحديث مصفوفة التنافس والتقرير الفخم الجاهز للطباعة والاعتماد من مجلس الجامعة!`);
 }
 
-function printDetailedReport() {
+function printDetailedReportDraft() {
+  document.body.classList.add('is-draft-print');
+  const watermarkEl = document.getElementById('report-print-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'block';
+
   window.print();
+
+  setTimeout(() => {
+    document.body.classList.remove('is-draft-print');
+    if (watermarkEl) watermarkEl.style.display = 'none';
+  }, 1000);
+}
+
+function printDetailedReportFinal() {
+  document.body.classList.remove('is-draft-print');
+  const watermarkEl = document.getElementById('report-print-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'none';
+
+  window.print();
+}
+
+function printDetailedReport() {
+  printDetailedReportFinal();
 }
 
 // دوال تهيئة وإدارة أعضاء لجنة المفاضلة والتوقيعات
