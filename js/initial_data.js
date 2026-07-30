@@ -46,13 +46,13 @@ const DEFAULT_CRITERIA = {
     endYear: 2030,
     stepYears: 1, // كل سنة أو سنتين أو 5 سنوات
     brackets: [
-      { label: '1990 - 1994م', minYear: 1900, maxYear: 1994, points: 30 },
+      { label: '1990 - 1994م', minYear: 1990, maxYear: 1994, points: 30 },
       { label: '1995 - 2000م', minYear: 1995, maxYear: 2000, points: 25 },
       { label: '2001 - 2005م', minYear: 2001, maxYear: 2005, points: 20 },
       { label: '2006 - 2010م', minYear: 2006, maxYear: 2010, points: 15 },
       { label: '2011 - 2015م', minYear: 2011, maxYear: 2015, points: 10 },
       { label: '2016 - 2020م', minYear: 2016, maxYear: 2020, points: 5 },
-      { label: '2021 - 2030م', minYear: 2021, maxYear: 2050, points: 2 }
+      { label: '2021 - 2030م', minYear: 2021, maxYear: 2030, points: 2 }
     ]
   },
   age: {

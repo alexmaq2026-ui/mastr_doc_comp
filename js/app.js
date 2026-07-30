@@ -32,6 +32,12 @@ function initStore() {
       if (!state.candidates || state.candidates.length < PRESEEDED_CANDIDATES.length) {
         state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
       }
+      if (state.criteria && state.criteria.seniority && state.criteria.seniority.brackets) {
+        state.criteria.seniority.brackets.forEach(b => {
+          if (b.minYear === 1900) b.minYear = 1990;
+          if (b.maxYear === 2050) b.maxYear = 2030;
+        });
+      }
       if (state.users) {
         state.users.forEach(u => {
           if (!u.password) {
