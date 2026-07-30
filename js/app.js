@@ -682,16 +682,42 @@ function renderDetailedReport() {
 
   reportContainer.innerHTML = `
     <div class="report-paper">
-      <!-- 1. الهيدر الرسمي للتقرير الشامل -->
-      <div class="report-header" style="border-bottom: 2.5px double #1e3a8a; padding-bottom: 12px; margin-bottom: 16px;">
-        <h2>جامعـة صنعـاء - مجلـس الجامعـة</h2>
-        <h3>لجنة المفاضلة والتنافس على منح الدراسات العليا (الكادر الإداري)</h3>
-        <p style="font-weight: 800; color: #1e3a8a; font-size: 1.05rem; margin-top: 6px; letter-spacing: 0.3px;">
-          التقرير المحضري والشفافية التنافسية الشاملة لمصفوفة المفاضلة النهائيـة للعام ${currentYear}م
+      <!-- 1. الهيدر الرسمي للتقرير الشامل مع شعار المالك وتفاصيل الجلسة -->
+      <div class="report-header" style="border-bottom: 2.5px double #1e3a8a; padding-bottom: 12px; margin-bottom: 16px; position: relative;">
+        <!-- شعار وشارة صاحب الحقوق الملكية MAQATECH أفقياً في أعلى التقرير -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+          <div style="text-align: right;">
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.25rem;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+            <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 700;">لجنة المفاضلة والتنافس على منح الدراسات العليا (الكادر الإداري)</h3>
+          </div>
+          <!-- شارة صاحب النظام MAQATECH -->
+          <div style="display: flex; align-items: center; gap: 8px; background: #0f172a; color: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #334155;">
+            <div style="background: linear-gradient(135deg, #2563eb, #0d9488); color: #ffffff; font-weight: 900; width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-family: sans-serif;">MT</div>
+            <div style="text-align: left; line-height: 1.1;">
+              <span style="font-weight: 900; font-size: 0.72rem; letter-spacing: 0.5px; display: block;">MAQATECH</span>
+              <span style="font-size: 0.58rem; color: #94a3b8; display: block;">SOFTWARE SOLUTIONS</span>
+            </div>
+          </div>
+        </div>
+
+        <p style="font-weight: 800; color: #1e3a8a; font-size: 1.05rem; margin: 8px 0 6px 0; letter-spacing: 0.2px; text-align: center;">
+          ${state.settings.applicationTitle || 'التقرير المحضري والشفافية التنافسية الشاملة لمصفوفة المفاضلة النهائيـة للعام 2026م'}
         </p>
 
+        <!-- شريط محضر الجلسة: المكان والتاريخ والوقت ورئاسة الجامعة -->
+        <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.76rem; color: #334155;">
+          <div>
+            <strong>📍 مكان عقد وتنفيذ المفاضلة:</strong>
+            <span>${state.settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء'}</span>
+          </div>
+          <div>
+            <strong>🗓️ يوم وتاريخ ووقت الفرز:</strong>
+            <span>${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}</span>
+          </div>
+        </div>
+
         <!-- كروت الإحصائيات السريعة للشفافية -->
-        <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
+        <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
           <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
             <span style="color: #64748b; font-weight: 600; display: block;">إجمالي التنافس العام:</span>
             <strong style="color: #0f172a; font-size: 0.95rem;">${totalCandidates} متنافس</strong>
@@ -747,7 +773,7 @@ function renderDetailedReport() {
         const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
         const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
         const regularMembers = members.filter(m => m !== chairman);
-        const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
+        const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. القاسم محمد عباس';
 
         return `
           <div class="signatures-section" style="margin-top: 20px; border-top: 2px solid #1e3a8a; padding-top: 12px; page-break-inside: avoid;">
@@ -792,14 +818,14 @@ function renderDetailedReport() {
         `;
       })()}
 
-      <!-- 5. شريط تذييل وحفظ حقوق الشركة بالشعار والاسم -->
-      <div style="margin-top: 20px; border-top: 1px solid #cbd5e1; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #475569; page-break-inside: avoid;">
+      <!-- 5. شريط تذييل وحفظ الحقوق الفكرية للشركة المالكة بالشعار والاسم MAQATECH -->
+      <div style="margin-top: 20px; border-top: 1.5px solid #cbd5e1; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #475569; page-break-inside: avoid;">
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span style="background: #1e293b; color: #60a5fa; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-family: sans-serif;">MT</span>
+          <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-family: sans-serif; border: 1px solid #334155;">MT</span>
           <strong style="color: #0f172a; letter-spacing: 0.5px;">MAQATECH SOFTWARE SOLUTIONS</strong>
         </div>
         <div>
-          نظام المفاضلة والتنافس الإلكتروني - جامعة صنعاء | تطوير وتنفيذ: ماقتك للحلول البرمجية © 2026
+          جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك للحلول البرمجية (MAQATECH) © 2026
         </div>
       </div>
     </div>
@@ -816,23 +842,44 @@ function renderCriteriaSettings() {
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title"> تهيئة عدد المنح والمقاعد التنافسية</h3>
+        <h3 class="card-title">⚙️ تهيئة إعدادات النظام وتاريخ ومكان المفاضلة ورئاسة الجامعة</h3>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
         <div class="form-group">
-          <label>عدد منح الماجستير المتاحة (حالياً):</label>
+          <label style="font-weight: 700;">عدد منح الماجستير المتاحة:</label>
           <input type="number" id="input-master-grants" class="form-control" value="${state.settings.masterGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
         </div>
         <div class="form-group">
-          <label>عدد منح الدكتوراه المتاحة (حالياً):</label>
+          <label style="font-weight: 700;">عدد منح الدكتوراه المتاحة:</label>
           <input type="number" id="input-phd-grants" class="form-control" value="${state.settings.phdGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
         </div>
         <div class="form-group">
-          <label>السنة المرجعية لاحتساب المفاضلة:</label>
+          <label style="font-weight: 700;">السنة المرجعية لاحتساب المفاضلة:</label>
           <input type="number" id="input-ref-year" class="form-control" value="${state.settings.referenceYear || 2026}" ${!isSuperAdmin ? 'disabled' : ''}>
         </div>
+        <div class="form-group">
+          <label style="font-weight: 700;">اسم رئيس الجامعة الحالي (الجهة المعتمدة):</label>
+          <input type="text" id="input-rector-name" class="form-control" value="${state.settings.rectorName || 'أ.د. القاسم محمد عباس'}" ${!isSuperAdmin ? 'disabled' : ''}>
+        </div>
       </div>
-      ${isSuperAdmin ? `<button class="btn btn-primary" onclick="saveSettings()"> حفظ الإعدادات الأساسية</button>` : ''}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div class="form-group">
+          <label style="font-weight: 700;">مكان تنفيذ وتطبيق المفاضلة التنافسية:</label>
+          <input type="text" id="input-comp-location" class="form-control" value="${state.settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء'}" ${!isSuperAdmin ? 'disabled' : ''}>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 700;">تاريخ ووقت جلسة المفاضلة والفرز الرسمية:</label>
+          <input type="text" id="input-comp-date" class="form-control" value="${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}" ${!isSuperAdmin ? 'disabled' : ''}>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="font-weight: 700;">عنوان ونوع التطبيق المعتمد للتقرير:</label>
+        <input type="text" id="input-app-title" class="form-control" value="${state.settings.applicationTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)'}" ${!isSuperAdmin ? 'disabled' : ''}>
+      </div>
+
+      ${isSuperAdmin ? `<button class="btn btn-primary" onclick="saveSettings()">💾 حفظ كود وإعدادات المفاضلة والرئاسة</button>` : ''}
     </div>
 
     <div class="card">
@@ -1235,14 +1282,22 @@ function saveSettings() {
   const masterGrants = parseInt(document.getElementById('input-master-grants').value) || 3;
   const phdGrants = parseInt(document.getElementById('input-phd-grants').value) || 3;
   const refYear = parseInt(document.getElementById('input-ref-year').value) || 2026;
+  const rectorName = document.getElementById('input-rector-name') ? document.getElementById('input-rector-name').value.trim() : 'أ.د. القاسم محمد عباس';
+  const compLocation = document.getElementById('input-comp-location') ? document.getElementById('input-comp-location').value.trim() : '';
+  const compDate = document.getElementById('input-comp-date') ? document.getElementById('input-comp-date').value.trim() : '';
+  const appTitle = document.getElementById('input-app-title') ? document.getElementById('input-app-title').value.trim() : '';
 
   state.settings.masterGrantsCount = masterGrants;
   state.settings.phdGrantsCount = phdGrants;
   state.settings.referenceYear = refYear;
+  state.settings.rectorName = rectorName || 'أ.د. القاسم محمد عباس';
+  state.settings.competitionLocation = compLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
+  state.settings.competitionDate = compDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)';
+  state.settings.applicationTitle = appTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)';
 
   saveStore();
   refreshAllViews();
-  alert('تم حفظ إعدادات النظام وعدد المنح بنجاح!');
+  alert('✅ تم حفظ إعدادات المفاضلة والرئاسة ونوع التطبيق بنجاح!');
 }
 
 function updateSpecPoints(index, points) {

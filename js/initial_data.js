@@ -11,7 +11,10 @@ const DEFAULT_SETTINGS = {
   referenceYear: 2026,
   universityName: 'جامعة صنعاء',
   councilName: 'مجلس الجامعة - لجنة المفاضلة والتنافس',
-  rectorName: 'أ.د. محمد أحمد البخيتي',
+  rectorName: 'أ.د. القاسم محمد عباس',
+  competitionLocation: 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء',
+  competitionDate: 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+  applicationTitle: 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)',
   supabaseUrl: 'https://wpnujibmxrxxaqriadez.supabase.co',
   supabaseKey: 'sb_publishable_PudkaqYYnpEc8JrQfNUyCw_BWSzZElC'
 };
