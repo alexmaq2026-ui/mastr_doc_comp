@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -214,6 +214,7 @@
                 <th>نقاط التقدير</th>
                 <th>المجموع الكلي</th>
                 <th>النتيجة والاعتماد</th>
+                <th>ملاحظات المفاضلة</th>
                 <th>التفاصيل</th>
               </tr>
             </thead>
@@ -303,6 +304,7 @@
                 <th>#</th>
                 <th>الاسم الكامل</th>
                 <th>اسم المستخدم</th>
+                <th>كلمة السر (Password)</th>
                 <th>الدور الصلاحياتي</th>
                 <th>حالة الحساب</th>
                 <th>الإجراءات</th>
@@ -384,16 +386,22 @@
   <div class="modal-backdrop" id="modal-user">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">إضافة مستخدم وتعيين الصلاحيات</h3>
+        <h3 class="modal-title" id="modal-user-title">إضافة مستخدم وتعيين الصلاحيات</h3>
         <button class="close-btn" onclick="closeModal('modal-user')">&times;</button>
       </div>
       <div class="form-group">
         <label>الاسم الكامل:</label>
         <input type="text" id="user-fullname" class="form-control" placeholder="مثال: د. محمد علي (عضو اللجنة)">
       </div>
-      <div class="form-group">
-        <label>اسم المستخدم (Login Username):</label>
-        <input type="text" id="user-username" class="form-control" placeholder="مثال: mohammed">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>اسم المستخدم (Login Username):</label>
+          <input type="text" id="user-username" class="form-control" placeholder="مثال: mohammed" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>كلمة المرور (Password):</label>
+          <input type="password" id="user-password" class="form-control" placeholder="أدخل كلمة المرور" autocomplete="new-password">
+        </div>
       </div>
       <div class="form-group">
         <label>تحديد الدور والصلاحيات:</label>
@@ -476,9 +484,9 @@
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="xlsx.full.min.js"></script>
-  <script src="initial_data.js"></script>
-  <script src="supabase_client.js"></script>
-  <script src="app.js"></script>
+  <script src="js/xlsx.full.min.js?v=3"></script>
+  <script src="js/initial_data.js?v=3"></script>
+  <script src="js/supabase_client.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>

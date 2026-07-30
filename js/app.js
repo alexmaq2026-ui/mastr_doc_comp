@@ -9,6 +9,8 @@ let state = {
   candidates: []
 };
 
+let editingUserId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   initStore();
   updateAuthVisibility();
@@ -26,6 +28,14 @@ function initStore() {
       state = JSON.parse(savedState);
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
+      }
+      if (state.users) {
+        state.users.forEach(u => {
+          if (!u.password) {
+            const def = DEFAULT_USERS.find(d => d.username === u.username);
+            u.password = def ? def.password : '123456';
+          }
+        });
       }
     } catch (e) {
       console.error('Error loading saved state:', e);
@@ -285,61 +295,115 @@ function calculateCandidateScore(candidate) {
 
 // حساب الترتيب وكسر التعادل (Ranking & Tie-Breaking Engine)
 function getRankedCandidates(degreeFilter = null) {
-  let list = state.candidates.map(c => {
-    const scores = calculateCandidateScore(c);
-    return {
-      ...c,
-      scores
-    };
-  });
+  const GRADE_ORDER = { 'ممتاز': 4, 'جيد جداً': 3, 'جيد': 2, 'مقبول': 1 };
 
-  if (degreeFilter) {
-    list = list.filter(c => c.degree === degreeFilter);
+  // دوال مساعدة لاستخراج السنوات
+  function getHiringYear(c) {
+    let y = parseInt(c.hiring_univ) || parseInt(c.hiring_service) || 0;
+    if (!y && c.hiring_univ)   { const m = c.hiring_univ.match(/(\d{4})/);   if (m) y = parseInt(m[1]); }
+    if (!y && c.hiring_service){ const m = c.hiring_service.match(/(\d{4})/); if (m) y = parseInt(m[1]); }
+    return y || 9999;
+  }
+  function getBirthYear(c) {
+    let y = parseInt(c.birth_date) || 0;
+    if (!y && c.birth_date) { const m = c.birth_date.match(/(\d{4})/); if (m) y = parseInt(m[1]); }
+    return y || 0;
   }
 
-  // قواعد الفرز وكسر التعادل:
-  // 1. المجموع الكلي للنقاط (تنازلياً)
-  // 2. الأقدمية في التعيين (أصغر سنة تعيين)
-  // 3. العمر الأكبر (أصغر سنة ميلاد)
-  // 4. نقاط التقدير العلمي
-  list.sort((a, b) => {
-    if (b.scores.totalScore !== a.scores.totalScore) {
-      return b.scores.totalScore - a.scores.totalScore;
+  // دالة معالجة درجة واحدة (ماجستير أو دكتوراه)
+  function processDegreeGroup(candidates, limit) {
+    // صفر مرشحين أو كل المرشحين أقل من الحد → لا حاجة للمفاضلة الاستثنائية
+    if (candidates.length === 0) return candidates;
+
+    // الترتيب الأساسي بالمجموع الكلي تنازلياً
+    candidates.sort((a, b) => b.scores.totalScore - a.scores.totalScore);
+
+    // إذا كان عدد المرشحين أقل من أو يساوي الحد → الكل مقبول بلا مشكلة
+    if (candidates.length <= limit) return candidates;
+
+    // درجة المركز الأخير المقبول (نقطة الحسم)
+    const boundaryScore = candidates[limit - 1].scores.totalScore;
+
+    // هل التعادل يتجاوز الحد؟ (يوجد أشخاص بنفس الدرجة فوق وتحت الحد)
+    const acceptedWithBoundaryScore = candidates.slice(0, limit).filter(c => c.scores.totalScore === boundaryScore);
+    const rejectedWithBoundaryScore = candidates.slice(limit).filter(c => c.scores.totalScore === boundaryScore);
+
+    // لا تعادل على الحد → لا مفاضلة استثنائية لأحد
+    if (acceptedWithBoundaryScore.length === 0 || rejectedWithBoundaryScore.length === 0) {
+      return candidates;
     }
-    // كسر التعادل بالأقدمية
-    const yearA = parseInt(a.hiring_univ || a.hiring_service) || 9999;
-    const yearB = parseInt(b.hiring_univ || b.hiring_service) || 9999;
-    if (yearA !== yearB) return yearA - yearB;
 
-    // كسر التعادل بالعمر
-    const birthA = parseInt(a.birth_date) || 9999;
-    const birthB = parseInt(b.birth_date) || 9999;
-    if (birthA !== birthB) return birthA - birthB;
+    // ===== يوجد تعادل عند نقطة الحسم → نطبق المفاضلة الاستثنائية =====
+    const aboveBoundary = candidates.filter(c => c.scores.totalScore > boundaryScore);
+    const atBoundary    = candidates.filter(c => c.scores.totalScore === boundaryScore);
+    const belowBoundary = candidates.filter(c => c.scores.totalScore < boundaryScore);
 
-    return b.scores.gradeScore - a.scores.gradeScore;
-  });
+    // تحديد المعيار الذي يفرق بين المتعادلين
+    function detectCriterion(group) {
+      const hiringYears = new Set(group.map(c => getHiringYear(c)));
+      if (hiringYears.size > 1) return 'أقدمية التعيين';
+      const birthYears  = new Set(group.map(c => getBirthYear(c)));
+      if (birthYears.size > 1)  return 'صغر السن';
+      const grades      = new Set(group.map(c => GRADE_ORDER[c.grade] || 0));
+      if (grades.size > 1)      return 'التقدير الأكاديمي';
+      return 'تعادل تام - يُحال للجنة';
+    }
 
-  // تحديد المقبول والاحتياط بناءً على عدد المنح المتاحة
+    const criterion = detectCriterion(atBoundary);
+
+    // ترتيب المجموعة المتعادلة بالمعايير الاستثنائية
+    atBoundary.sort((a, b) => {
+      const hirA = getHiringYear(a), hirB = getHiringYear(b);
+      if (hirA !== hirB) return hirA - hirB;                     // الأقدم تعييناً أقوى
+      const birthA = getBirthYear(a), birthB = getBirthYear(b);
+      if (birthA !== birthB) return birthB - birthA;             // الأصغر سناً أقوى
+      return (GRADE_ORDER[b.grade] || 0) - (GRADE_ORDER[a.grade] || 0); // الأعلى تقديراً أقوى
+    });
+
+    // وضع علامة المفاضلة الاستثنائية على المتعادلين عند الحد فقط
+    atBoundary.forEach(c => { c.tieBreaker = criterion; });
+
+    return [...aboveBoundary, ...atBoundary, ...belowBoundary];
+  }
+
+  // تحضير القائمة الكاملة مع الدرجات
+  let allCandidates = state.candidates.map(c => ({
+    ...c,
+    scores: calculateCandidateScore(c),
+    tieBreaker: null
+  }));
+
   const masterLimit = state.settings.masterGrantsCount || 3;
-  const phdLimit = state.settings.phdGrantsCount || 3;
+  const phdLimit    = state.settings.phdGrantsCount    || 3;
 
-  let masterRank = 1;
-  let phdRank = 1;
+  // معالجة كل درجة على حدة
+  const mastersProcessed = processDegreeGroup(
+    allCandidates.filter(c => c.degree === 'ماجستير'), masterLimit
+  );
+  const phdsProcessed = processDegreeGroup(
+    allCandidates.filter(c => c.degree === 'دكتوراه'), phdLimit
+  );
 
-  list.forEach(c => {
-    if (c.degree === 'ماجستير') {
-      c.rank = masterRank;
-      c.status = (masterRank <= masterLimit) ? 'مقبول' : 'احتياط';
-      masterRank++;
-    } else {
-      c.rank = phdRank;
-      c.status = (phdRank <= phdLimit) ? 'مقبول' : 'احتياط';
-      phdRank++;
-    }
+  // تعيين الترتيب والحالة
+  let mRank = 1;
+  mastersProcessed.forEach(c => {
+    c.rank   = mRank;
+    c.status = mRank <= masterLimit ? 'مقبول' : 'احتياط';
+    mRank++;
+  });
+  let pRank = 1;
+  phdsProcessed.forEach(c => {
+    c.rank   = pRank;
+    c.status = pRank <= phdLimit ? 'مقبول' : 'احتياط';
+    pRank++;
   });
 
-  return list;
+  // إرجاع القائمة بحسب الفلتر
+  if (degreeFilter === 'ماجستير') return mastersProcessed;
+  if (degreeFilter === 'دكتوراه') return phdsProcessed;
+  return [...mastersProcessed, ...phdsProcessed];
 }
+
 
 // تحديث كافة الشاشات والواجهات
 function refreshAllViews() {
@@ -440,8 +504,26 @@ function renderScoringTable() {
     return;
   }
 
-  tbody.innerHTML = rankedList.map(c => `
-    <tr style="${c.status === 'مقبول' ? 'background: rgba(16, 185, 129, 0.05);' : ''}">
+  tbody.innerHTML = rankedList.map(c => {
+    // تحديد لون الصف
+    let rowStyle = '';
+    if (c.tieBreaker && c.tieBreaker.includes('يُحال للجنة')) {
+      rowStyle = 'background: rgba(239, 68, 68, 0.10); border-right: 4px solid #ef4444;';
+    } else if (c.tieBreaker) {
+      rowStyle = 'background: rgba(245, 158, 11, 0.10); border-right: 4px solid #f59e0b;';
+    } else if (c.status === 'مقبول') {
+      rowStyle = 'background: rgba(16, 185, 129, 0.05);';
+    }
+
+    // بناء خلية الملاحظة
+    const tieBreakerCell = c.tieBreaker
+      ? `<td style="font-size:0.78rem; color: ${c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706'}; font-weight:700;">
+           ⚖️ مفاضلة استثنائية<br><span style="font-size:0.72rem;">معيار: ${c.tieBreaker}</span>
+         </td>`
+      : `<td style="color: var(--text-muted); font-size:0.8rem;">—</td>`;
+
+    return `
+    <tr style="${rowStyle}">
       <td><strong>${c.rank}</strong></td>
       <td><strong>${c.name}</strong></td>
       <td>${c.specialization}</td>
@@ -452,14 +534,15 @@ function renderScoringTable() {
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
         <span class="badge-status ${c.status === 'مقبول' ? 'badge-accepted' : 'badge-reserve'}">
-          ${c.status === 'مقبول' ? ' مرشح مقبول' : ' قائمة الاحتياط'}
+          ${c.status === 'مقبول' ? '✅ مرشح مقبول' : '⏳ قائمة الاحتياط'}
         </span>
       </td>
+      ${tieBreakerCell}
       <td>
-        <button class="btn btn-outline btn-sm" onclick="viewCandidateDetails(${c.id})"> التفاصيل</button>
+        <button class="btn btn-outline btn-sm" onclick="viewCandidateDetails(${c.id})">التفاصيل</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 // 4. شاشة التقرير الفخمة (Luxurious Detailed Report View)
@@ -493,21 +576,34 @@ function renderDetailedReport() {
         <thead>
           <tr>
             <th style="width: 4%;">م</th>
-            <th style="width: 20%;">اسم المتنافس / الموظف</th>
+            <th style="width: 18%;">اسم المتنافس / الموظف</th>
             <th style="width: 7%;">الدرجة</th>
-            <th style="width: 12%;">التخصص</th>
+            <th style="width: 10%;">التخصص</th>
             <th>الأقدمية</th>
             <th>العمر</th>
             <th>التخصص</th>
             <th>التقدير</th>
             ${activeCustom.map(c => `<th>${c.name}</th>`).join('')}
-            <th style="width: 10%;">المجموع</th>
-            <th style="width: 10%;">النتيجة</th>
+            <th style="width: 8%;">المجموع</th>
+            <th style="width: 8%;">النتيجة</th>
+            <th style="width: 14%;">ملاحظات المفاضلة</th>
           </tr>
         </thead>
         <tbody>
-          ${rankedList.map(c => `
-            <tr style="${c.status === 'مقبول' ? 'font-weight: bold; background-color: #f0fdf4;' : ''}">
+          ${rankedList.map(c => {
+            let rowStyle = '';
+            let notesCell = '<td style="color:#94a3b8; font-size:0.75rem; text-align:center;">—</td>';
+            if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+              rowStyle = 'font-weight: bold; background-color: #fff1f2; border-right: 3px solid #ef4444;';
+              notesCell = `<td style="font-size:0.72rem; color:#dc2626; font-weight:700; text-align:right;">⚖️ مفاضلة استثنائية<br>معيار: ${c.tieBreaker}</td>`;
+            } else if (c.tieBreaker) {
+              rowStyle = (c.status === 'مقبول' ? 'font-weight: bold; ' : '') + 'background-color: #fffbeb; border-right: 3px solid #f59e0b;';
+              notesCell = `<td style="font-size:0.72rem; color:#b45309; font-weight:700; text-align:right;">⚖️ مفاضلة استثنائية<br>معيار: ${c.tieBreaker}</td>`;
+            } else if (c.status === 'مقبول') {
+              rowStyle = 'font-weight: bold; background-color: #f0fdf4;';
+            }
+            return `
+            <tr style="${rowStyle}">
               <td>${c.rank}</td>
               <td style="text-align: right;"><strong>${c.name}</strong></td>
               <td>${c.degree}</td>
@@ -523,8 +619,9 @@ function renderDetailedReport() {
                   ${c.status === 'مقبول' ? 'مقبول' : 'احتياط'}
                 </span>
               </td>
-            </tr>
-          `).join('')}
+              ${notesCell}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
 
@@ -736,8 +833,6 @@ function renderCriteriaSettings() {
           <thead>
             <tr>
               <th>الشريحة العمرية</th>
-              <th>الحد الأدنى للسن</th>
-              <th>الحد الأعلى للسن</th>
               <th>النقاط المخصصة</th>
             </tr>
           </thead>
@@ -745,8 +840,6 @@ function renderCriteriaSettings() {
             ${state.criteria.age.brackets.map((b, idx) => `
               <tr>
                 <td><strong>${b.label}</strong></td>
-                <td>${b.minAge} سنة</td>
-                <td>${b.maxAge} سنة</td>
                 <td>
                   <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateAgeBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                 </td>
@@ -979,12 +1072,14 @@ function renderUsersAdminTable() {
       <td>${u.id}</td>
       <td><strong>${u.name}</strong></td>
       <td><code>${u.username}</code></td>
+      <td><code style="color: var(--primary); font-weight: bold;">${u.password || '••••••'}</code></td>
       <td><span class="user-role-tag">${u.title || getRoleTitle(u.role)}</span></td>
       <td>
         <span class="badge-status badge-accepted">نشط</span>
       </td>
       <td>
-        <button class="btn btn-outline btn-sm" onclick="editUser(${u.id})"> تعديل الصلاحية</button>
+        <button class="btn btn-outline btn-sm" onclick="editUser(${u.id})">تعديل</button>
+        ${u.id === 1 ? '' : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">حذف</button>`}
       </td>
     </tr>
   `).join('');
@@ -1275,32 +1370,99 @@ function handleExcelImport(event) {
 
 // إدارة المستخدمين والصلاحيات (المدير الأعلى)
 function showAddUserModal() {
+  editingUserId = null;
+  const titleEl = document.getElementById('modal-user-title');
+  if (titleEl) titleEl.innerText = 'إضافة مستخدم جديد وتعيين الصلاحيات';
+
+  document.getElementById('user-fullname').value = '';
+  document.getElementById('user-username').value = '';
+  document.getElementById('user-password').value = '';
+  document.getElementById('user-role').value = 'data_entry';
   document.getElementById('modal-user').classList.add('open');
 }
 
+function editUser(id) {
+  const user = state.users.find(u => u.id === id);
+  if (!user) return;
+
+  editingUserId = id;
+  const titleEl = document.getElementById('modal-user-title');
+  if (titleEl) titleEl.innerText = 'تعديل بيانات وصلاحيات المستخدم';
+
+  document.getElementById('user-fullname').value = user.name || '';
+  document.getElementById('user-username').value = user.username || '';
+  document.getElementById('user-password').value = user.password || '';
+  document.getElementById('user-role').value = user.role || 'data_entry';
+  document.getElementById('modal-user').classList.add('open');
+}
+
+function deleteUser(id) {
+  if (id === 1) {
+    alert('لا يمكن حذف حساب المدير الرئيسي النظام');
+    return;
+  }
+  const user = state.users.find(u => u.id === id);
+  if (!user) return;
+
+  if (confirm(`هل أنت تأكد من رغبتك في حذف المستخدم (${user.name})؟`)) {
+    state.users = state.users.filter(u => u.id !== id);
+    saveStore();
+    refreshAllViews();
+    alert('تم حذف المستخدم بنجاح');
+  }
+}
+
 function saveUserForm() {
-  const name = document.getElementById('user-fullname').value.trim();
+  const name     = document.getElementById('user-fullname').value.trim();
   const username = document.getElementById('user-username').value.trim();
-  const role = document.getElementById('user-role').value;
+  const password = document.getElementById('user-password').value.trim();
+  const role     = document.getElementById('user-role').value;
 
   if (!name || !username) {
-    alert('يرجى كتابة الاسم واسم المستخدم');
+    alert('يرجى كتابة الاسم الكامل واسم المستخدم');
+    return;
+  }
+  if (!password) {
+    alert('يرجى إدخال كلمة المرور');
+    return;
+  }
+  if (password.length < 4) {
+    alert('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
     return;
   }
 
-  const newId = state.users.length + 1;
-  state.users.push({
-    id: newId,
-    username,
-    name,
-    role,
-    title: getRoleTitle(role)
-  });
+  // التحقق من عدم تكرار اسم المستخدم لحساب آخر
+  const existing = state.users.find(u => u.username === username && u.id !== editingUserId);
+  if (existing) {
+    alert(`اسم المستخدم (${username}) مستخدم مسبقاً، يرجى اختيار اسم آخر`);
+    return;
+  }
+
+  if (editingUserId) {
+    // تعديل مستخدم الحالي
+    const userIndex = state.users.findIndex(u => u.id === editingUserId);
+    if (userIndex !== -1) {
+      state.users[userIndex].name = name;
+      state.users[userIndex].username = username;
+      state.users[userIndex].password = password;
+      state.users[userIndex].role = role;
+      state.users[userIndex].title = getRoleTitle(role);
+      alert(`✅ تم تحديث بيانات وتعديل صلاحيات المستخدم (${name}) بنجاح!`);
+    }
+  } else {
+    // إضافة مستخدم جديد
+    const newId = state.users.length > 0 ? Math.max(...state.users.map(u => u.id)) + 1 : 1;
+    state.users.push({ id: newId, username, password, name, role, title: getRoleTitle(role) });
+    alert(`✅ تم إضافة المستخدم (${name}) بنجاح!`);
+  }
 
   saveStore();
   closeModal('modal-user');
+  document.getElementById('user-fullname').value = '';
+  document.getElementById('user-username').value = '';
+  document.getElementById('user-password').value = '';
+  editingUserId = null;
   refreshAllViews();
-  alert(`تم إضافة المستخدم (${name}) بأسلوب رائع وتحديد صلاحيته!`);
 }
 
 function showLoginModal() {
@@ -1354,9 +1516,9 @@ function autoGenerateSeniorityBrackets() {
 
     let label = (stepYears === 1) ? `${currStart}م` : `${currStart} - ${currEnd}م`;
     
-    // الشريحة الأولى تغطي حتى التواريخ السابقة، والشريحة الأخيرة تغطي اللاحقة
-    let effectiveMin = (i === 0) ? 1900 : currStart;
-    let effectiveMax = (i === stepCount - 1) ? 2050 : currEnd;
+    // الشريحة تمتد من سنة بدايتها إلى سنة نهايتها فقط دون تجاوز
+    let effectiveMin = currStart;
+    let effectiveMax = Math.min(currStart + stepYears - 1, endYear);
 
     brackets.push({
       label: label,
