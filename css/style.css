@@ -671,43 +671,120 @@ body {
     font-weight: 900;
 }
 
-/* دعم الطباعة */
+/* دعم الطباعة المتقدم الفخم لملفات PDF والتقارير الرسمية */
 @media print {
     @page {
-        size: A4 portrait;
-        margin: 10mm;
+        size: A4 landscape;
+        margin: 6mm 8mm;
     }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
     body {
         background: #ffffff !important;
         color: #000000 !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
     }
-    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print {
+
+    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .card-header button {
         display: none !important;
     }
+
     .main-container {
         padding: 0 !important;
+        margin: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
     }
+
     .tab-content {
         display: none !important;
     }
+
     #tab-report {
         display: block !important;
     }
+
     .report-paper {
         box-shadow: none !important;
-        padding: 10px !important;
+        padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
     }
+
+    .report-header {
+        padding-bottom: 8px !important;
+        margin-bottom: 10px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .degree-report-block {
+        margin-bottom: 15px !important;
+        page-break-inside: auto !important;
+    }
+
+    table.report-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 5px !important;
+        font-size: 0.75rem !important;
+    }
+
+    table.report-table thead {
+        display: table-header-group !important;
+    }
+
+    table.report-table tbody {
+        display: table-row-group !important;
+    }
+
+    table.report-table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    table.report-table th {
+        background-color: #1e3a8a !important;
+        color: #ffffff !important;
+        padding: 5px 4px !important;
+        border: 1px solid #1e3a8a !important;
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+    }
+
+    table.report-table td {
+        padding: 4px 5px !important;
+        border: 1px solid #cbd5e1 !important;
+        font-size: 0.73rem !important;
+        line-height: 1.25 !important;
+    }
+
     .signatures-section {
-        margin-top: 12px !important;
+        margin-top: 15px !important;
         padding-top: 8px !important;
         page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
-    .signature-grid {
+
+    .signature-grid-row1 {
+        display: grid !important;
         grid-template-columns: repeat(4, 1fr) !important;
         gap: 6px !important;
     }
+
+    .signature-grid-row2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+    }
+
     .signature-card {
         padding: 4px 6px !important;
         border-radius: 4px !important;
