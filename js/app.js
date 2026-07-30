@@ -38,11 +38,18 @@ function initStore() {
           if (b.maxYear === 2050) b.maxYear = 2030;
         });
       }
-      if (state.users) {
+      if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
+        state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
+      } else {
+        DEFAULT_USERS.forEach(def => {
+          if (!state.users.some(u => u.username === def.username)) {
+            state.users.push({ ...def });
+          }
+        });
         state.users.forEach(u => {
           if (!u.password) {
             const def = DEFAULT_USERS.find(d => d.username === u.username);
-            u.password = def ? def.password : '123456';
+            u.password = def ? def.password : 'admin123';
           }
         });
       }
@@ -98,7 +105,22 @@ function handleLoginSubmit(event) {
     const username = usernameInput ? usernameInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value.trim() : '';
 
-    const foundUser = (state.users || []).find(u => u.username === username && u.password === password);
+    if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
+        state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
+    }
+
+    let foundUser = state.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+
+    // خيار أمان احتياطي للحسابات الافتراضية الرئيسية
+    if (!foundUser) {
+        const defMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === username.toLowerCase() && d.password === password);
+        if (defMatch) {
+            foundUser = defMatch;
+            if (!state.users.some(u => u.username === defMatch.username)) {
+                state.users.push({ ...defMatch });
+            }
+        }
+    }
 
     if (foundUser) {
         state.currentUser = foundUser;
@@ -110,7 +132,7 @@ function handleLoginSubmit(event) {
         refreshAllViews();
     } else {
         if (errorMsg) {
-            errorMsg.innerText = 'خطأ: اسم المستخدم أو كلمة المرور غير صحيحة!';
+            errorMsg.innerText = 'خطأ: اسم المستخدم أو كلمة المرور غير صحيحة! (مثال: admin / admin123)';
             errorMsg.style.display = 'block';
         }
     }
