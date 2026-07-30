@@ -32,6 +32,9 @@ function initStore() {
       if (!state.candidates || state.candidates.length < PRESEEDED_CANDIDATES.length) {
         state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
       }
+      if (state.criteria && (state.criteria.seniority.maxPoints === 30 || state.criteria.age.maxPoints === 25 || state.criteria.specialization.maxPoints === 25)) {
+        state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
+      }
       if (state.criteria && state.criteria.seniority && state.criteria.seniority.brackets) {
         state.criteria.seniority.brackets.forEach(b => {
           if (b.minYear === 1900) b.minYear = 1990;
@@ -1333,14 +1336,14 @@ function deleteSpecialization(index) {
 }
 
 function resetDefaultSpecializations() {
-  if (confirm('هل ترغب في استعادة قائمة التخصصات الأساسية المحددة (شريعة وقانون، علوم حاسوب، اقتصاد ومحاسبة، إدارة عامة، إدارة أعمال، وأخرى)؟')) {
+  if (confirm('هل ترغب في استعادة قائمة التخصصات الأساسية المعتمدة مع نقاط الاحتياج؟')) {
     state.criteria.specialization.items = [
-      { name: 'شريعة وقانون', points: 25 },
-      { name: 'علوم حاسوب', points: 25 },
-      { name: 'اقتصاد ومحاسبة', points: 20 },
-      { name: 'إدارة عامة', points: 20 },
-      { name: 'إدارة أعمال', points: 18 },
-      { name: 'أخرى', points: 10 }
+      { name: 'شريعة وقانون', points: 5 },
+      { name: 'علوم حاسوب', points: 5 },
+      { name: 'اقتصاد ومحاسبة', points: 4 },
+      { name: 'إدارة عامة', points: 4 },
+      { name: 'إدارة أعمال', points: 3 },
+      { name: 'أخرى', points: 2 }
     ];
     saveStore();
     refreshAllViews();
