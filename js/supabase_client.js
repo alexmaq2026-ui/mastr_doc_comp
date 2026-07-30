@@ -56,6 +56,44 @@ async function syncCandidatesFromSupabase() {
     return false;
 }
 
+// دالة تنقية بيانات المتنافس لإرسال الأعمدة القياسية فقط المطابقة لجدول Supabase
+function sanitizeCandidateForSupabase(c) {
+    return {
+        id: c.id,
+        name: c.name,
+        degree: c.degree,
+        specialization: c.specialization,
+        hiring_univ: c.hiring_univ || null,
+        hiring_service: c.hiring_service || null,
+        grad_year: c.grad_year || null,
+        grade: c.grade || null,
+        birth_date: c.birth_date || null
+    };
+}
+
+// حفظ متنافس واحد جديد أو معدل على Supabase
+async function saveCandidateToSupabase(candidate) {
+    if (!supabaseClient && !initSupabase()) return;
+    try {
+        const sanitized = sanitizeCandidateForSupabase(candidate);
+        const { error } = await supabaseClient.from('candidates').upsert([sanitized]);
+        if (error) console.error('خطأ حفظ المتنافس في Supabase:', error);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// حذف متنافس من Supabase
+async function deleteCandidateFromSupabase(candidateId) {
+    if (!supabaseClient && !initSupabase()) return;
+    try {
+        const { error } = await supabaseClient.from('candidates').delete().eq('id', candidateId);
+        if (error) console.error('خطأ حذف المتنافس من Supabase:', error);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 // رفع وشحن جميع البيانات الحالية (المتنافسين، المعايير، المستخدمين، أعضاء اللجنة) إلى Supabase بضغطة واحدة
 async function uploadAllDataToSupabase() {
     if (!supabaseClient && !initSupabase()) {
@@ -64,9 +102,10 @@ async function uploadAllDataToSupabase() {
     }
 
     try {
-        // 1. رفع المتنافسين
+        // 1. تنقية ورفع المتنافسين (تجنب الأعمدة الزائدة مثل source_sheet)
         if (state.candidates && state.candidates.length > 0) {
-            const { error: cErr } = await supabaseClient.from('candidates').upsert(state.candidates);
+            const sanitizedCandidates = state.candidates.map(sanitizeCandidateForSupabase);
+            const { error: cErr } = await supabaseClient.from('candidates').upsert(sanitizedCandidates);
             if (cErr) throw cErr;
         }
 
@@ -97,7 +136,7 @@ async function uploadAllDataToSupabase() {
             ]);
         }
 
-        alert(`✅ تم الرفع والمزامنة الشاملة بنجاح إلى Supabase!\n- تم رفع ${state.candidates ? state.candidates.length : 0} متنافس أونلاين.\n- تم رفع كفة إعدادات المعايير والشرائح والأوزان.\n- تم رفع حسابات المستخدمين والصلاحيات.`);
+        alert(`✅ تم الرفع والمزامنة الشاملة بنجاح إلى Supabase!\n- تم رفع ${state.candidates ? state.candidates.length : 0} متنافس أونلاين.\n- تم رفع كافة إعدادات المعايير والشرائح والأوزان.\n- تم رفع حسابات المستخدمين والصلاحيات.`);
         return true;
     } catch (err) {
         console.error('خطأ أثناء رفع البيانات إلى Supabase:', err);
