@@ -538,7 +538,43 @@ function renderScoringTable() {
   tbody.innerHTML = rankedList.map(c => {
     // تحديد لون الصف
     let rowStyle = '';
-    if (c.tieBreaker && c.tieBreaker.include// 4. شاشة التقرير الشامل الفخم والشفاف (Comprehensive Executive & Transparency Report)
+    if (c.tieBreaker && c.tieBreaker.includes('يُحال للجنة')) {
+      rowStyle = 'background: rgba(239, 68, 68, 0.10); border-right: 4px solid #ef4444;';
+    } else if (c.tieBreaker) {
+      rowStyle = 'background: rgba(245, 158, 11, 0.10); border-right: 4px solid #f59e0b;';
+    } else if (c.status === 'مقبول') {
+      rowStyle = 'background: rgba(16, 185, 129, 0.05);';
+    }
+
+    // بناء خلية الملاحظة
+    const tieBreakerCell = c.tieBreaker
+      ? `<td style="font-size:0.78rem; color: ${c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706'}; font-weight:700;">
+           ⚖️ مفاضلة استثنائية<br><span style="font-size:0.72rem;">معيار: ${c.tieBreaker}</span>
+         </td>`
+      : `<td style="color: var(--text-muted); font-size:0.8rem;">—</td>`;
+
+    return `
+    <tr style="${rowStyle}">
+      <td><strong>${c.rank}</strong></td>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.specialization}</td>
+      <td>${c.scores.seniorityScore}</td>
+      <td>${c.scores.ageScore}</td>
+      <td>${c.scores.specScore}</td>
+      <td>${c.scores.gradeScore}</td>
+      <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
+      <td>
+        <span class="badge-status ${c.status === 'مقبول' ? 'badge-accepted' : 'badge-reserve'}">
+          ${c.status === 'مقبول' ? '✅ مرشح مقبول' : '⏳ قائمة الاحتياط'}
+        </span>
+      </td>
+      ${tieBreakerCell}
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="viewCandidateDetails(${c.id})">التفاصيل</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
 function renderDetailedReport() {
   const reportContainer = document.getElementById('detailed-report-content');
   if (!reportContainer) return;
@@ -1127,11 +1163,11 @@ function renderUsersAdminTable() {
   if (keyInput && state.settings.supabaseKey) keyInput.value = state.settings.supabaseKey;
 
   if (badge) {
-    if (supabaseClient) {
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
       badge.className = 'status-badge status-accepted';
       badge.innerText = '✅ متصل بـ Supabase أونلاين';
     } else if (state.settings.supabaseUrl || state.settings.supabaseKey) {
-      const conn = initSupabase();
+      const conn = (typeof initSupabase !== 'undefined') ? initSupabase() : false;
       if (conn) {
         badge.className = 'status-badge status-accepted';
         badge.innerText = '✅ متصل بـ Supabase أونلاين';
