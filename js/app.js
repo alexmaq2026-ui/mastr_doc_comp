@@ -29,6 +29,9 @@ function initStore() {
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
+      if (!state.candidates || state.candidates.length < PRESEEDED_CANDIDATES.length) {
+        state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
+      }
       if (state.users) {
         state.users.forEach(u => {
           if (!u.password) {

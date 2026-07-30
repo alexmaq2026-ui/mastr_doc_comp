@@ -24,10 +24,13 @@ async function syncCandidatesFromSupabase() {
         const { data, error } = await supabaseClient.from('candidates').select('*');
         if (error) throw error;
         if (data && data.length > 0) {
-            state.candidates = data;
+            const existingIds = new Set(data.map(d => d.id));
+            const missingPreseeded = PRESEEDED_CANDIDATES.filter(p => !existingIds.has(p.id));
+            state.candidates = [...data, ...missingPreseeded].sort((a, b) => a.id - b.id);
             saveStore();
             if (typeof renderCandidatesTable === 'function') renderCandidatesTable();
             if (typeof renderDashboardStats === 'function') renderDashboardStats();
+            if (typeof refreshAllViews === 'function') refreshAllViews();
             return true;
         }
     } catch (err) {
