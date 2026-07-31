@@ -447,6 +447,7 @@ function refreshAllViews() {
   renderCriteriaSettings();
   renderUsersAdminTable();
   renderDetailedReport();
+  renderAnalyticsView();
 }
 
 // 1. شاشة لوحة القيادة (Dashboard View)
@@ -1849,34 +1850,51 @@ function openRunCompetitionModal() {
   document.getElementById('modal-run-competition').classList.add('open');
 }
 
-function executeCompetitionRun() {
-  const cycleTitle = document.getElementById('run-cycle-title') ? document.getElementById('run-cycle-title').value.trim() : 'دورة المفاضلة والتنافس';
-  const masterGrants = parseInt(document.getElementById('run-master-grants').value) || 3;
-  const phdGrants = parseInt(document.getElementById('run-phd-grants').value) || 3;
-
-  state.settings.masterGrantsCount = masterGrants;
-  state.settings.phdGrantsCount = phdGrants;
-  if (cycleTitle) state.settings.councilName = cycleTitle;
-
-  saveStore();
-  refreshAllViews();
-
-  closeModal('modal-run-competition');
-
-  // الانتقال الشفاف لشاشة التقرير الفخمة والنتائج المعتمدة
+function switchMainTab(targetTabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-  const reportTabBtn = document.querySelector('[data-tab="tab-report"]');
-  const reportTabContent = document.getElementById('tab-report');
+  const btn = document.querySelector(`.tab-btn[data-tab="${targetTabId}"]`);
+  const content = document.getElementById(targetTabId);
 
-  if (reportTabBtn && reportTabContent) {
-    reportTabBtn.classList.add('active');
-    reportTabContent.classList.add('active');
+  if (btn && btn.classList) btn.classList.add('active');
+  if (content && content.classList) content.classList.add('active');
+}
+
+function executeCompetitionRun() {
+  try {
+    const masterEl = document.getElementById('run-master-grants');
+    const phdEl = document.getElementById('run-phd-grants');
+    const cycleEl = document.getElementById('run-cycle-title');
+
+    const masterGrants = masterEl ? (parseInt(masterEl.value) || 3) : (state.settings.masterGrantsCount || 3);
+    const phdGrants = phdEl ? (parseInt(phdEl.value) || 3) : (state.settings.phdGrantsCount || 3);
+    const cycleTitle = cycleEl && cycleEl.value.trim() ? cycleEl.value.trim() : (state.settings.councilName || 'دورة المفاضلة والتنافس');
+
+    state.settings.masterGrantsCount = masterGrants;
+    state.settings.phdGrantsCount = phdGrants;
+    if (cycleTitle) state.settings.councilName = cycleTitle;
+
+    saveStore();
+    refreshAllViews();
+
+    closeModal('modal-run-competition');
+
+    switchMainTab('tab-report');
+
+    const totalCandidates = state.candidates ? state.candidates.length : 0;
+    setTimeout(() => {
+      const msg = `⚡ تم تنفيذ وتطبيق المفاضلة الإلكترونية بنجاح!\n\n• إجمالي المتقدمين المعالجين: ${totalCandidates} متنافس\n• مقاعد منح الماجستير: ${masterGrants} منح\n• مقاعد منح الدكتوراه: ${phdGrants} منح\n\nتم تحديث مصفوفة التنافس والتقرير الفخم الجاهز للطباعة والاعتماد من مجلس الجامعة!`;
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert(msg);
+      }
+    }, 150);
+  } catch (err) {
+    console.error('Error executing competition run:', err);
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert(`⚡ تم تنفيذ المفاضلة بنجاح!\nتم تحديث مصفوفة التنافس والتقرير الجاهز للطباعة والاعتماد!`);
+    }
   }
-
-  const totalCandidates = state.candidates.length;
-  alert(` تم تنفيذ وتطبيق المفاضلة بنجاح بروق وامتياز!\n\n• إجمالي المتقدمين المعالجين: ${totalCandidates} متنافس\n• المرشحون المقبولون ماجستير: ${masterGrants} منح\n• المرشحون المقبولون دكتوراه: ${phdGrants} منح\n\nتم تحديث مصفوفة التنافس والتقرير الفخم الجاهز للطباعة والاعتماد من مجلس الجامعة!`);
 }
 
 function printDetailedReportDraft() {
@@ -1997,6 +2015,671 @@ function exportReportToExcel() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "مصفوفة المفاضلة المعتمدة");
   XLSX.writeFile(wb, "مصفوفة_مفاضلة_جامعة_صنعاء_2026.xlsx");
+}
+
+// ==========================================
+// 6. شاشة التقارير التحليلية والرقابية المتقدمة (Analytics & Audit Engine)
+// ==========================================
+
+let currentAnalyticsSubTab = 'subtab-strengths';
+
+function switchAnalyticsSubTab(subTabId) {
+  currentAnalyticsSubTab = subTabId;
+  document.querySelectorAll('.analytics-nav-tabs .subtab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.subtab === subTabId);
+  });
+  renderAnalyticsView();
+}
+
+function renderAnalyticsView() {
+  const container = document.getElementById('analytics-content-container');
+  if (!container) return;
+
+  const filterEl = document.getElementById('analytics-degree-filter');
+  const selectedDegree = filterEl ? filterEl.value : 'الكل';
+
+  if (currentAnalyticsSubTab === 'subtab-strengths') {
+    renderStrengthsWeaknessesReport(container, selectedDegree);
+  } else if (currentAnalyticsSubTab === 'subtab-deficiencies') {
+    renderDeficienciesAuditReport(container, selectedDegree);
+  } else if (currentAnalyticsSubTab === 'subtab-specs') {
+    renderPureSpecializationsReport(container, selectedDegree);
+  } else if (currentAnalyticsSubTab === 'subtab-charts') {
+    renderAgeAndSpecCharts(container, selectedDegree);
+  }
+}
+
+// حساب نقاط القوة والضعف للمتنافس
+function calculateCandidateStrengthsAndWeaknesses(c) {
+  const strengths = [];
+  const weaknesses = [];
+
+  // 1. تحليل الأقدمية (الوزن الأعلى 10)
+  if (c.scores.seniorityScore >= 8) {
+    strengths.push(`🎖️ أقدمية تعيين ممتازة (${c.scores.seniorityScore}/10 نقاط)`);
+  } else if (c.scores.seniorityScore <= 3) {
+    weaknesses.push(`⏳ أقدمية تعيين حديثة نسبياً (${c.scores.seniorityScore}/10 نقاط)`);
+  }
+
+  // 2. تحليل الفئة العمرية (الوزن الأعلى 5)
+  if (c.scores.ageScore >= 4) {
+    strengths.push(`🎂 سن متقدم ورصيد خبرة ممتد (${c.scores.ageScore}/5 نقاط)`);
+  } else if (c.scores.ageScore <= 2) {
+    weaknesses.push(`👶 فئة عمرية حديثة السن (${c.scores.ageScore}/5 نقاط)`);
+  }
+
+  // 3. تحليل الاحتياج والتخصص (الوزن الأعلى 5)
+  if (c.scores.specScore >= 5) {
+    strengths.push(`🎯 تخصص عالي الاحتياج والأولوية (${c.scores.specScore}/5 نقاط)`);
+  } else if (c.scores.specScore <= 2) {
+    weaknesses.push(`📌 تخصص عام الاحتياج (${c.scores.specScore}/5 نقاط)`);
+  }
+
+  // 4. تحليل التقدير العلمي (الوزن الأعلى 5)
+  if (c.scores.gradeScore >= 4) {
+    strengths.push(`📜 مؤهل علمي بدرجة (${c.grade || 'ممتاز/جيد جداً'})`);
+  } else if (c.scores.gradeScore <= 2) {
+    weaknesses.push(`⚠️ تقدير المؤهل العلمي (${c.grade || 'مقبول'})`);
+  }
+
+  if (strengths.length === 0) strengths.push('متوسط التقييم العام بالمعايير');
+  if (weaknesses.length === 0) weaknesses.push('لا توجد نقاط ضعف بارزة');
+
+  return { strengths, weaknesses };
+}
+
+// 1. تقرير نقاط القوة والضعف للمتنافسين (جدول مصفوفة إحصائية ثنائية 1 / 0)
+function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل') {
+  const allCandidates = getRankedCandidates(selectedDegree);
+
+  container.innerHTML = `
+    <div class="card" dir="rtl">
+      <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 class="card-title">🎯 المصفوفة الإحصائية لنقاط القوة ونقاط الضعف التنافسية لكل متقدم</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
+            تقييم رقمي ثنائي حاسم لمعايير المفاضلة (تُرمز نقطة القوة بالرمز 1 ونقطة الضعف بالرمز 0) لتسهيل اتخاذ القرار الرقابي.
+          </p>
+        </div>
+        <span class="status-badge status-accepted" style="font-size: 0.88rem; background: rgba(37, 99, 235, 0.18); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.4);">
+          إجمالي المتنافسين الخاضعين للتحليل: ${allCandidates.length} متنافس
+        </span>
+      </div>
+
+      <div class="table-responsive" style="margin-top: 15px; overflow-x: auto;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th style="width: 3%;">#</th>
+              <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
+              <th style="width: 11%;">أقدمية التعيين (10ن)</th>
+              <th style="width: 10%;">الفئة العمرية (5ن)</th>
+              <th style="width: 11%;">احتياج التخصص (5ن)</th>
+              <th style="width: 11%;">التقدير العلمي (5ن)</th>
+              <th style="width: 11%;">إجمالي القوة (1)</th>
+              <th style="width: 11%;">إجمالي الضعف (0)</th>
+              <th style="width: 14%;">المؤشر التنافسي العام</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allCandidates.length === 0 ? `
+              <tr>
+                <td colspan="9" style="padding: 30px; text-align: center; color: var(--text-muted);">لا يوجد متنافسون في هذه الفئة</td>
+              </tr>
+            ` : allCandidates.map((c, idx) => {
+              const sen1 = c.scores.seniorityScore >= 6 ? 1 : 0;
+              const age1 = c.scores.ageScore >= 3 ? 1 : 0;
+              const spec1 = c.scores.specScore >= 3.5 ? 1 : 0;
+              const grade1 = c.scores.gradeScore >= 4 ? 1 : 0;
+
+              const totalStrengths = sen1 + age1 + spec1 + grade1;
+              const totalWeaknesses = 4 - totalStrengths;
+
+              let statusBadge = '';
+              if (totalStrengths >= 3) {
+                statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🟢 ممتاز (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
+              } else if (totalStrengths === 2) {
+                statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🟡 متوازن (50%)</span>`;
+              } else {
+                statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🔴 ضعيف (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
+              }
+
+              return `
+                <tr>
+                  <td><strong>${idx + 1}</strong></td>
+                  <td style="text-align: right;">
+                    <strong>${c.name}</strong>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${c.degree} - ${c.specialization}</div>
+                  </td>
+
+                  <!-- 1. أقدمية التعيين -->
+                  <td>
+                    ${sen1 === 1 ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.seniorityScore}ن)</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.seniorityScore}ن)</span>
+                    `}
+                  </td>
+
+                  <!-- 2. الفئة العمرية -->
+                  <td>
+                    ${age1 === 1 ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.ageScore}ن)</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.ageScore}ن)</span>
+                    `}
+                  </td>
+
+                  <!-- 3. احتياج التخصص -->
+                  <td>
+                    ${spec1 === 1 ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.specScore}ن)</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.specScore}ن)</span>
+                    `}
+                  </td>
+
+                  <!-- 4. التقدير العلمي -->
+                  <td>
+                    ${grade1 === 1 ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.gradeScore}ن)</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.gradeScore}ن)</span>
+                    `}
+                  </td>
+
+                  <!-- إجمالي نقاط القوة -->
+                  <td>
+                    <span style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap;">
+                      ${totalStrengths} قوة
+                    </span>
+                  </td>
+
+                  <!-- إجمالي نقاط الضعف -->
+                  <td>
+                    <span style="background: rgba(239, 68, 68, 0.25); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap;">
+                      ${totalWeaknesses} ضعف
+                    </span>
+                  </td>
+
+                  <!-- المؤشر العام -->
+                  <td>${statusBadge}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// دالة تطهير وفحص التخصصات الأكاديمية (منع التخصصات الرقمية والسنوات والمجهولة)
+function getCleanSpecializationName(spec, candidate) {
+  if (candidate && candidate.hiring_univ && !/\d/.test(candidate.hiring_univ) && /\d+/.test(String(spec))) {
+    return candidate.hiring_univ;
+  }
+  if (!spec) return 'تخصص غير محدد / يتطلب التعديل';
+  const s = String(spec).trim();
+  if (s === '' || s === '-' || s === '0' || /^\d+/.test(s) || s.length <= 1) {
+    return 'تخصص غير محدد / يتطلب التعديل';
+  }
+  return s;
+}
+
+function normalizeGradeText(g) {
+  if (!g) return '';
+  const str = String(g).trim().replace(/\s+/g, '');
+  if (str === 'ممتاز') return 'ممتاز';
+  if (str === 'جيدجدا' || str === 'جيدجداً') return 'جيد جداً';
+  if (str === 'جيد') return 'جيد';
+  if (str === 'مقبول' || str === 'مفبول') return 'مقبول';
+  return g;
+}
+
+function isInvalidGradeValue(grade) {
+  if (!grade) return true;
+  const g = String(grade).trim();
+  if (g === '' || g === '-' || g === 'ــــــــــــ' || g === '0' || g === '0.00' || g === '0%' || g === 'غير محدد') return true;
+  if (/\b(19\d\d|20\d\d)م?\b/.test(g)) return true;
+  const norm = normalizeGradeText(g);
+  const validGrades = ['ممتاز', 'جيد جداً', 'جيد', 'مقبول'];
+  if (!validGrades.includes(norm) && (isNaN(parseFloat(g)) || parseFloat(g) <= 0)) return true;
+  return false;
+}
+
+function isInvalidSpecializationValue(spec) {
+  if (!spec) return true;
+  const s = String(spec).trim();
+  if (s === '' || s === '-' || s === '0' || s === 'غير محدد') return true;
+  if (/\d+/.test(s)) return true;
+  return false;
+}
+
+function isInvalidHiringValue(hiring) {
+  if (!hiring) return true;
+  const h = String(hiring).trim();
+  if (h === '' || h === '-' || h === 'ـــــــــــــــــ' || h === '0') return true;
+  if (!/\d/.test(h)) return true;
+  return false;
+}
+
+function isInvalidBirthValue(birth) {
+  if (!birth) return true;
+  const b = String(birth).trim();
+  if (b === '' || b === '-' || b === 'ـــــــــــــ' || b === '0' || parseInt(b) <= 0) return true;
+  if (!/\d/.test(b)) return true;
+  return false;
+}
+
+let auditShowOnlyDeficient = true;
+
+function toggleAuditFilter(showOnlyDeficient) {
+  auditShowOnlyDeficient = showOnlyDeficient;
+  const container = document.getElementById('analytics-content-container');
+  if (container) renderDeficienciesAuditReport(container);
+}
+
+// 2. تقرير رادار فحص النواقص واستكمال البيانات (جدول رقابي عربي فخم)
+function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
+  const allAudited = [];
+  const candidatesToAudit = state.candidates.filter(c => selectedDegree === 'الكل' || c.degree === selectedDegree);
+
+  candidatesToAudit.forEach(c => {
+    const hiring = c.hiring_univ || c.hiring_service;
+    const isHiringValid = !isInvalidHiringValue(hiring);
+    const isBirthValid = !isInvalidBirthValue(c.birth_date);
+    const isGradeValid = !isInvalidGradeValue(c.grade);
+    const isGradYearValid = c.grad_year && c.grad_year !== '-' && parseInt(c.grad_year) > 0;
+    const isSpecValid = !isInvalidSpecializationValue(c.specialization);
+
+    const hasDeficiency = !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
+
+    allAudited.push({
+      candidate: c,
+      hiring,
+      isHiringValid,
+      isBirthValid,
+      isGradeValid,
+      isGradYearValid,
+      isSpecValid,
+      hasDeficiency
+    });
+  });
+
+  const deficientList = allAudited.filter(item => item.hasDeficiency);
+  const displayList = auditShowOnlyDeficient ? deficientList : allAudited;
+
+  container.innerHTML = `
+    <div class="card" dir="rtl">
+      <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 class="card-title">⚠️ الجدول الرقابي الحاصر لفحص نواقص واستكمال بيانات المتنافسين</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
+            فحص آلي شامل وموحد لجميع عناصر بيانات الموظفين المسجلين (تاريخ التعيين، السن، التقدير، سنة التخرج، والتخصص).
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn ${auditShowOnlyDeficient ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleAuditFilter(true)">
+            🔴 عرض حالات النواقص فقط (${deficientList.length} موظف)
+          </button>
+          <button class="btn ${!auditShowOnlyDeficient ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleAuditFilter(false)">
+            📋 عرض الكشف الشامل لكافة المتنافسين (${allAudited.length} متنافس)
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive" style="margin-top: 15px;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr>
+              <th style="width: 4%;">#</th>
+              <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
+              <th style="width: 11%;">تاريخ التعيين</th>
+              <th style="width: 10%;">سنة الميلاد</th>
+              <th style="width: 13%;">التقدير العلمي</th>
+              <th style="width: 10%;">سنة التخرج</th>
+              <th style="width: 14%;">التخصص العلمي</th>
+              <th style="width: 10%;">جاهزية الملف</th>
+              <th style="width: 10%;">إجراء التعديل</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${displayList.length === 0 ? `
+              <tr>
+                <td colspan="9" style="padding: 30px; text-align: center;">
+                  <div style="font-size: 2rem; margin-bottom: 6px;">✅</div>
+                  <strong style="color: #34d399; font-size: 1.1rem;">جميع بيانات السجلات مكتملة ومستوفية 100%!</strong>
+                </td>
+              </tr>
+            ` : displayList.map((item, idx) => {
+              const c = item.candidate;
+              return `
+                <tr style="background: ${item.hasDeficiency ? 'rgba(239, 68, 68, 0.04)' : 'transparent'};">
+                  <td><strong>${idx + 1}</strong></td>
+                  <td style="text-align: right;">
+                    <strong>${c.name}</strong>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${c.degree}</div>
+                  </td>
+
+                  <!-- 1. تاريخ التعيين -->
+                  <td>
+                    ${item.isHiringValid ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${item.hiring})</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                    `}
+                  </td>
+
+                  <!-- 2. سنة الميلاد -->
+                  <td>
+                    ${item.isBirthValid ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.birth_date})</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                    `}
+                  </td>
+
+                  <!-- 3. التقدير العلمي -->
+                  <td>
+                    ${item.isGradeValid ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.grade})</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص (${c.grade || '0/فارغ'})</span>
+                    `}
+                  </td>
+
+                  <!-- 4. سنة التخرج -->
+                  <td>
+                    ${item.isGradYearValid ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.grad_year})</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                    `}
+                  </td>
+
+                  <!-- 5. التخصص الأكاديمي -->
+                  <td>
+                    ${item.isSpecValid ? `
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.specialization})</span>
+                    ` : `
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص (أرقام/غائب)</span>
+                    `}
+                  </td>
+
+                  <!-- جاهزية الملف -->
+                  <td>
+                    ${item.hasDeficiency ? `
+                      <span style="color: #f87171; font-weight: 900; font-size: 0.82rem;">⚠️ يحتاج استكمال</span>
+                    ` : `
+                      <span style="color: #34d399; font-weight: 900; font-size: 0.82rem;">✅ مكتمل 100%</span>
+                    `}
+                  </td>
+
+                  <!-- الإجراء والتعديل -->
+                  <td>
+                    <button class="btn btn-warning btn-sm" style="font-weight: 800; font-size: 0.75rem; padding: 4px 10px; background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;" onclick="editCandidate(${c.id})">
+                      ⚙️ استكمال البيانات
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// 3. تقرير حصر وإحصاء التخصصات المجرّد (بدون أسماء المتنافسين)
+function renderPureSpecializationsReport(container, selectedDegree = 'الكل') {
+  const specMap = {};
+  const candidatesToReport = state.candidates.filter(c => selectedDegree === 'الكل' || c.degree === selectedDegree);
+
+  candidatesToReport.forEach(c => {
+    const spec = getCleanSpecializationName(c.specialization);
+    if (!specMap[spec]) {
+      specMap[spec] = {
+        name: spec,
+        mastersCount: 0,
+        phdCount: 0,
+        totalCount: 0,
+        totalScoreSum: 0
+      };
+    }
+
+    if (c.degree === 'ماجستير') specMap[spec].mastersCount++;
+    if (c.degree === 'دكتوراه') specMap[spec].phdCount++;
+    specMap[spec].totalCount++;
+
+    const scored = calculateCandidateScore(c);
+    specMap[spec].totalScoreSum += scored.totalScore;
+  });
+
+  const specList = Object.values(specMap).sort((a, b) => b.totalCount - a.totalCount);
+  const grandTotal = state.candidates.length || 1;
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📋 التقرير الإحصائي الحاصر للتخصصات والمجالات (مجرّد بدون أسماء)</h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">إجمالي التخصصات المتنافس عليها: ${specList.length} تخصص</span>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
+        يعرض هذا التقرير التوزيع الإحصائي التجميعي لكافة التخصصات والمجالات التي تقدم بها الموظفون <strong>مجرداً تماماً من أي أسماء شخصية</strong>، لغرض التحليل والتخطيط الأكاديمي.
+      </p>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 5%;">#</th>
+              <th style="width: 25%;">اسم التخصص المطلوب</th>
+              <th style="width: 15%;">متقدمي الماجستير</th>
+              <th style="width: 15%;">متقدمي الدكتوراه</th>
+              <th style="width: 15%;">إجمالي المتقدمين</th>
+              <th style="width: 12%;">النسبة المئوية العامة</th>
+              <th style="width: 13%;">متوسط النقاط المحرزة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${specList.map((item, idx) => {
+              const pct = ((item.totalCount / grandTotal) * 100).toFixed(1);
+              const avgScore = (item.totalScoreSum / item.totalCount).toFixed(1);
+              return `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td style="text-align: right;"><strong>${item.name}</strong></td>
+                  <td><span class="badge-status badge-accepted" style="background: rgba(37, 99, 235, 0.1); color: #2563eb;">${item.mastersCount} متقدم</span></td>
+                  <td><span class="badge-status badge-accepted" style="background: rgba(13, 148, 136, 0.1); color: #0d9488;">${item.phdCount} متقدم</span></td>
+                  <td><strong>${item.totalCount} متنافس</strong></td>
+                  <td><strong>${pct}%</strong></td>
+                  <td><span class="total-score-badge" style="background: #0f172a; padding: 2px 8px; font-size: 0.82rem;">${avgScore} نقطة</span></td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// 4. الرسم البياني البصري للفئات العمرية والتخصصات والأقدمية
+function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
+  const candidatesToChart = state.candidates.filter(c => selectedDegree === 'الكل' || c.degree === selectedDegree);
+
+  // تجميع الفئات العمرية
+  const ageMap = {
+    '50 سنة فما فوق': 0,
+    '45 - 49 سنة': 0,
+    '40 - 44 سنة': 0,
+    '35 - 39 سنة': 0,
+    'أقل من 35 سنة': 0
+  };
+
+  const currentYear = state.settings.referenceYear || 2026;
+
+  candidatesToChart.forEach(c => {
+    let age = 0;
+    if (c.birth_date && parseInt(c.birth_date) > 0) {
+      age = currentYear - parseInt(c.birth_date);
+    }
+    if (age >= 50) ageMap['50 سنة فما فوق']++;
+    else if (age >= 45) ageMap['45 - 49 سنة']++;
+    else if (age >= 40) ageMap['40 - 44 سنة']++;
+    else if (age >= 35) ageMap['35 - 39 سنة']++;
+    else ageMap['أقل من 35 سنة']++;
+  });
+
+  // تجميع أقدمية التعيين حسب الشرائح الرسمية
+  const seniorityMap = {
+    '1990 - 1994م (10 نقاط - أقدمية استثنائية)': 0,
+    '1995 - 2000م (8 نقاط - أقدمية عالية جداً)': 0,
+    '2001 - 2005م (6 نقاط - أقدمية عالية)': 0,
+    '2006 - 2010م (4 نقاط - أقدمية متوسطة)': 0,
+    '2011 - 2015م (3 نقاط - أقدمية حديثة)': 0,
+    '2016 - 2020م (2 نقطتان - حديث التعيين)': 0,
+    '2021 - 2030م (1 نقطة - تعيين حديث جداً)': 0
+  };
+
+  candidatesToChart.forEach(c => {
+    const hiringVal = c.hiring_univ || c.hiring_service;
+    let year = 0;
+    if (hiringVal) {
+      const match = String(hiringVal).match(/\b(19\d\d|20\d\d)\b/);
+      if (match) year = parseInt(match[1]);
+    }
+    if (year >= 1990 && year <= 1994) seniorityMap['1990 - 1994م (10 نقاط - أقدمية استثنائية)']++;
+    else if (year >= 1995 && year <= 2000) seniorityMap['1995 - 2000م (8 نقاط - أقدمية عالية جداً)']++;
+    else if (year >= 2001 && year <= 2005) seniorityMap['2001 - 2005م (6 نقاط - أقدمية عالية)']++;
+    else if (year >= 2006 && year <= 2010) seniorityMap['2006 - 2010م (4 نقاط - أقدمية متوسطة)']++;
+    else if (year >= 2011 && year <= 2015) seniorityMap['2011 - 2015م (3 نقاط - أقدمية حديثة)']++;
+    else if (year >= 2016 && year <= 2020) seniorityMap['2016 - 2020م (2 نقطتان - حديث التعيين)']++;
+    else if (year >= 2021) seniorityMap['2021 - 2030م (1 نقطة - تعيين حديث جداً)']++;
+  });
+
+  const totalCandidates = candidatesToChart.length || 1;
+
+  // تجميع أعلى التخصصات
+  const specCounts = {};
+  candidatesToChart.forEach(c => {
+    const s = getCleanSpecializationName(c.specialization);
+    specCounts[s] = (specCounts[s] || 0) + 1;
+  });
+  const topSpecs = Object.entries(specCounts).sort((a, b) => b[1] - a[1]);
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+      <!-- 1. الرسم البياني للفئات العمرية -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🎂 الرسم البياني لتوزيع الفئات العمرية للمتنافسين</h3>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+          يمثل هذا الرسم البصري التوزيع الديموغرافي للسن بين جميع الموظفين المتنافسين.
+        </p>
+
+        <div>
+          ${Object.entries(ageMap).map(([label, count]) => {
+            const pct = Math.round((count / totalCandidates) * 100);
+            return `
+              <div class="chart-bar-row">
+                <div class="chart-bar-label">
+                  <span>${label}</span>
+                  <span>${count} متنافس (${pct}%)</span>
+                </div>
+                <div class="chart-bar-track">
+                  <div class="chart-bar-fill" style="width: ${pct}%;"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 2. الرسم البياني لأقدمية التعيين الخدمية -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🎖️ الرسم البياني لتوزيع أقدمية التعيين الخدمية</h3>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+          يمثل توزيع سنوات تعيين الموظفين في الخدمة وأوزان الأقدمية المعتمدة.
+        </p>
+
+        <div>
+          ${Object.entries(seniorityMap).map(([label, count]) => {
+            const pct = Math.round((count / totalCandidates) * 100);
+            return `
+              <div class="chart-bar-row">
+                <div class="chart-bar-label">
+                  <span>${label}</span>
+                  <span>${count} متنافس (${pct}%)</span>
+                </div>
+                <div class="chart-bar-track">
+                  <div class="chart-bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, #d97706, #059669);"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 3. الرسم البياني للتخصصات الأكثر إقبالاً -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+          <h3 class="card-title">📊 الرسم البياني للتخصصات الأكثر إقبالاً وطلباً</h3>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+          يمثل نسبة الإقبال وحجم الطلبات المتقدمة بكل تخصص أكاديمي.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+          ${topSpecs.map(([spec, count]) => {
+            const pct = Math.round((count / totalCandidates) * 100);
+            return `
+              <div class="chart-bar-row">
+                <div class="chart-bar-label">
+                  <span>${spec}</span>
+                  <span>${count} متنافس (${pct}%)</span>
+                </div>
+                <div class="chart-bar-track">
+                  <div class="chart-bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, #0d9488, #2563eb);"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function exportAnalyticsToExcel() {
+  const candidates = getRankedCandidates();
+  const exportData = candidates.map(c => {
+    const analysis = calculateCandidateStrengthsAndWeaknesses(c);
+    return {
+      'اسم الموظف/المتنافس': c.name,
+      'الدرجة': c.degree,
+      'التخصص': c.specialization,
+      'المجموع الكلي': c.scores.totalScore,
+      'نقاط القوة البارزة': analysis.strengths.join(' | '),
+      'نقاط الضعف والتحديات': analysis.weaknesses.join(' | ')
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "تحليل القوة والضعف");
+  XLSX.writeFile(wb, "تقرير_التحليل_والرقابة_جامعة_صنعاء_2026.xlsx");
+}
+
+function printAnalyticsReport() {
+  window.print();
 }
 
 

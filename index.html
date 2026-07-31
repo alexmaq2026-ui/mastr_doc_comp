@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body>
 
@@ -77,6 +77,7 @@
     <button class="tab-btn" data-tab="tab-candidates">إدارة المتنافسين والكشوفات</button>
     <button class="tab-btn" data-tab="tab-scoring">مصفوفة المفاضلة والترتيب</button>
     <button class="tab-btn" data-tab="tab-report">التقرير التفصيلي المعتمد</button>
+    <button class="tab-btn" id="tab-btn-analytics" data-tab="tab-analytics">التقارير التحليلية والرقابية</button>
     <button class="tab-btn" id="tab-btn-criteria" data-tab="tab-criteria">تهيئة المعايير والأوزان</button>
     <button class="tab-btn" id="tab-btn-admin" data-tab="tab-admin">إدارة النظام والصلاحيات</button>
   </nav>
@@ -250,6 +251,46 @@
       <div id="detailed-report-content"></div>
     </section>
 
+    <!-- 4.5. شاشة التقارير التحليلية والرقابية المتقدمة -->
+    <section id="tab-analytics" class="tab-content">
+      <div class="card no-print" style="margin-bottom: 20px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+          <h2 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>📊 التقارير التحليلية والرقابية ورادار الفحص</span>
+          </h2>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <label style="font-weight: 800; font-size: 0.9rem; color: var(--text-main);">تصفية التقرير لـ:</label>
+            <select id="analytics-degree-filter" class="form-control" style="width: 220px; font-weight: 800; background: var(--bg-card); color: var(--text-main); border: 2px solid var(--primary); font-size: 0.92rem;" onchange="renderAnalyticsView()">
+              <option value="الكل">جميع المتقدمين (ماجستير ودكتوراه)</option>
+              <option value="ماجستير">كشف الماجستير فقط</option>
+              <option value="دكتوراه">كشف الدكتوراه فقط</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportAnalyticsToExcel()">تصدير التقارير Excel</button>
+            <button class="btn btn-primary" onclick="printAnalyticsReport()">طباعة التقرير الحالي PDF</button>
+          </div>
+        </div>
+
+        <!-- شريط التبويبات الفرعية للتقارير (Analytics Sub-Tabs) -->
+        <div class="analytics-nav-tabs" style="display: flex; gap: 10px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-top: 15px; flex-wrap: wrap;">
+          <button class="subtab-btn active" data-subtab="subtab-strengths" onclick="switchAnalyticsSubTab('subtab-strengths')">
+            🎯 1. نقاط القوة والضعف للمتنافسين
+          </button>
+          <button class="subtab-btn" data-subtab="subtab-deficiencies" onclick="switchAnalyticsSubTab('subtab-deficiencies')">
+            ⚠️ 2. رادار فحص النواقص واستكمال البيانات
+          </button>
+          <button class="subtab-btn" data-subtab="subtab-specs" onclick="switchAnalyticsSubTab('subtab-specs')">
+            📋 3. حصر التخصصات المجرّد (بدون أسماء)
+          </button>
+          <button class="subtab-btn" data-subtab="subtab-charts" onclick="switchAnalyticsSubTab('subtab-charts')">
+            📈 4. الرسوم البيانية للفئات العمرية والتخصصات
+          </button>
+        </div>
+      </div>
+
+      <!-- محتوى التبويبات الفرعية للتقارير -->
+      <div id="analytics-content-container"></div>
+    </section>
+
     <!-- 5. شاشة تهيئة المعايير والأوزان -->
     <section id="tab-criteria" class="tab-content">
       <div id="criteria-settings-container"></div>
@@ -418,66 +459,40 @@
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
         <button class="btn btn-outline" onclick="closeModal('modal-user')">إلغاء</button>
-        <button class="btn btn-primary" onclick="saveUserForm()">حفظ المستخدم والصلاحية</button>
+        <button class="btn btn-primary" onclick="saveUserForm()">حفظ حساب المستخدم</button>
       </div>
     </div>
   </div>
 
-  <!-- النافذة المنبثقة: التبديل السريع للمستخدم -->
-  <div class="modal-backdrop" id="modal-login">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title">تبديل حساب المستخدم (اختبار الصلاحيات)</h3>
-        <button class="close-btn" onclick="closeModal('modal-login')">&times;</button>
-      </div>
-      <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.88rem;">
-        اختر الحساب الذي تريد التجربة والدخول به لاختبار مستويات الصلاحيات:
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <button class="btn btn-primary" style="justify-content: space-between;" onclick="switchUser('super_admin')">
-          <span>تسجيل الدخول كـ (المدير الأعلى - رئيس اللجنة)</span>
-          <small>صلاحيات كاملة + إدارة مستخدمين</small>
-        </button>
-        <button class="btn btn-secondary" style="justify-content: space-between;" onclick="switchUser('data_entry')">
-          <span>تسجيل الدخول كـ (مدخل بيانات)</span>
-          <small>إدخال واستيراد بيانات فقط</small>
-        </button>
-        <button class="btn btn-outline" style="justify-content: space-between;" onclick="switchUser('auditor')">
-          <span>تسجيل الدخول كـ (مراجع مطلع)</span>
-          <small>معاينة وطباعة تقارير فقط</small>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- النافذة المنبثقة: تنفيذ المفاضلة وبدء دورة جديدة -->
+  <!-- النافذة المنبثقة: تنفيذ وتشغيل المفاضلة -->
   <div class="modal-backdrop" id="modal-run-competition">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 550px;">
       <div class="modal-header">
-        <h3 class="modal-title">تنفيذ وتطبيق المفاضلة الرسمية</h3>
+        <h3 class="modal-title">⚡ تنفيذ وحساب المفاضلة الإلكترونية</h3>
         <button class="close-btn" onclick="closeModal('modal-run-competition')">&times;</button>
       </div>
-      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-        <h4 style="color: var(--success); font-weight: 800; margin-bottom: 6px;">زر التنفيذ والاعتماد النهائي للمفاضلة</h4>
-        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
-          يقوم هذا الإجراء بتطبيق المعايير والأوزان النشطة، وإعادة حساب درجات كافة المتقدمين، وترتيبهم تنازلياً وتحديد المقبولين والاحتياط وتجهيز التقرير المعتمد لمجلس الجامعة.
-        </p>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+        سيقوم محرك النظام الآن بتطبيق معايير المفاضلة (الأقدمية 10، السن 5، التخصص 5، التقدير 5 - إجمالي 25 نقطة)، وحساب الترتيب وتحديد المنح المقبولة تلقائياً وفق مقاعد الماجستير والدكتوراه.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-weight: 700; color: var(--text-main);">مقاعد منح الماجستير:</label>
+          <input type="number" id="run-master-grants" class="form-control" value="3" min="1" max="100">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-weight: 700; color: var(--text-main);">مقاعد منح الدكتوراه:</label>
+          <input type="number" id="run-phd-grants" class="form-control" value="3" min="1" max="100">
+        </div>
       </div>
 
-      <div class="form-group">
-        <label>عنوان الدورة التنافسية:</label>
-        <input type="text" id="run-cycle-title" class="form-control" value="دورة المفاضلة والتنافس لعام 2026م">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="font-weight: 700; color: var(--text-main);">مسمى دورة المفاضلة والتنافس:</label>
+        <input type="text" id="run-cycle-title" class="form-control" value="المفاضلة والتنافس على منح الدراسات العليا" placeholder="مثال: دورة المفاضلة لعام 2026م">
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-        <div class="form-group">
-          <label>عدد منح الماجستير المتاحة:</label>
-          <input type="number" id="run-master-grants" class="form-control" value="3">
-        </div>
-        <div class="form-group">
-          <label>عدد منح الدكتوراه المتاحة:</label>
-          <input type="number" id="run-phd-grants" class="form-control" value="3">
-        </div>
+      <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; color: #60a5fa;">
+        ℹ️ <strong>تنويه:</strong> يمكنك إعادة تشغيل وحساب المفاضلة في أي وقت عند تعديل البيانات أو ضبط معايير وحصص التنافس.
       </div>
 
       <div style="display: flex; justify-content: space-between; gap: 10px;">
@@ -489,9 +504,9 @@
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/xlsx.full.min.js?v=10"></script>
-  <script src="js/initial_data.js?v=10"></script>
-  <script src="js/supabase_client.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/xlsx.full.min.js?v=21"></script>
+  <script src="js/initial_data.js?v=21"></script>
+  <script src="js/supabase_client.js?v=21"></script>
+  <script src="js/app.js?v=21"></script>
 </body>
 </html>
