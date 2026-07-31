@@ -346,10 +346,32 @@ function getRankedCandidates(degreeFilter = null) {
 
   // دالة معالجة درجة واحدة (ماجستير أو دكتوراه)
   function processDegreeGroup(candidates, limit) {
-    // صفر مرشحين أو كل المرشحين أقل من الحد → لا حاجة للمفاضلة الاستثنائية
     if (candidates.length === 0) return candidates;
 
-    // دالة تحديد المعيار الفاصل بين المتعادلين
+    // الترتيب الأساسي بالمجموع الكلي تنازلياً
+    candidates.sort((a, b) => b.scores.totalScore - a.scores.totalScore);
+
+    // إذا كان عدد المرشحين أقل من أو يساوي الحد → الكل مقبول بلا تعادل حاسم
+    if (candidates.length <= limit) return candidates;
+
+    // درجة المركز الأخير المقبول (نقطة الحسم)
+    const boundaryScore = candidates[limit - 1].scores.totalScore;
+
+    // هل يوجد أشخاص متعادلون بنفس الدرجة فوق وتحت حد القبول؟
+    const acceptedWithBoundaryScore = candidates.slice(0, limit).filter(c => c.scores.totalScore === boundaryScore);
+    const rejectedWithBoundaryScore = candidates.slice(limit).filter(c => c.scores.totalScore === boundaryScore);
+
+    // لا تعادل حرج على خط القبول → لا مفاضلة استثنائية لأحد
+    if (acceptedWithBoundaryScore.length === 0 || rejectedWithBoundaryScore.length === 0) {
+      return candidates;
+    }
+
+    // ===== يوجد تعادل حرج عند خط القبول للفوز بالمنحة → نطبق المفاضلة الاستثنائية =====
+    const aboveBoundary = candidates.filter(c => c.scores.totalScore > boundaryScore);
+    const atBoundary    = candidates.filter(c => c.scores.totalScore === boundaryScore);
+    const belowBoundary = candidates.filter(c => c.scores.totalScore < boundaryScore);
+
+    // تحديد المعيار الفاصل بين المتعادلين على خط الفوز
     function detectCriterion(group) {
       const hiringYears = new Set(group.map(c => getHiringYear(c)));
       if (hiringYears.size > 1) return 'أقدمية التعيين';
@@ -360,11 +382,10 @@ function getRankedCandidates(degreeFilter = null) {
       return 'تعادل تام - يُحال للجنة المفاضلة';
     }
 
-    // فرز أولى بالنقاط الإجمالية تنازلياً، وعند التعادل نطبق المعايير الاستثنائية
-    candidates.sort((a, b) => {
-      if (b.scores.totalScore !== a.scores.totalScore) {
-        return b.scores.totalScore - a.scores.totalScore;
-      }
+    const criterion = detectCriterion(atBoundary);
+
+    // ترتيب المجموعة المتعادلة بالمعايير الفرعية الاستثنائية
+    atBoundary.sort((a, b) => {
       const hirA = getHiringYear(a), hirB = getHiringYear(b);
       if (hirA !== hirB) return hirA - hirB;                     // الأقدم تعييناً أولاً
       const birthA = getBirthYear(a), birthB = getBirthYear(b);
@@ -372,24 +393,10 @@ function getRankedCandidates(degreeFilter = null) {
       return (GRADE_ORDER[b.grade] || 0) - (GRADE_ORDER[a.grade] || 0); // الأعلى تقديراً أولاً
     });
 
-    // رصد وتوسيم الحسم الاستثنائي لجميع المجموعات المتعادلة في النقاط
-    const scoreGroups = {};
-    candidates.forEach(c => {
-      scoreGroups[c.scores.totalScore] = scoreGroups[c.scores.totalScore] || [];
-      scoreGroups[c.scores.totalScore].push(c);
-    });
+    // وضع علامة المفاضلة الاستثنائية فقط على المتعادلين عند خط القبول والاحتياط
+    atBoundary.forEach(c => { c.tieBreaker = criterion; });
 
-    Object.keys(scoreGroups).forEach(score => {
-      const group = scoreGroups[score];
-      if (group.length > 1) {
-        const criterion = detectCriterion(group);
-        group.forEach(c => {
-          c.tieBreaker = criterion;
-        });
-      }
-    });
-
-    return candidates;
+    return [...aboveBoundary, ...atBoundary, ...belowBoundary];
   }
 
   // تحضير القائمة الكاملة مع الدرجات
@@ -410,17 +417,17 @@ function getRankedCandidates(degreeFilter = null) {
     allCandidates.filter(c => c.degree === 'دكتوراه'), phdLimit
   );
 
-  // تعيين الترتيب والحالة
+  // تعيين الترتيب والحالة (إغلاق وإلغاء كلمة احتياط)
   let mRank = 1;
   mastersProcessed.forEach(c => {
     c.rank   = mRank;
-    c.status = mRank <= masterLimit ? 'مقبول' : 'احتياط';
+    c.status = mRank <= masterLimit ? 'مقبول' : '';
     mRank++;
   });
   let pRank = 1;
   phdsProcessed.forEach(c => {
     c.rank   = pRank;
-    c.status = pRank <= phdLimit ? 'مقبول' : 'احتياط';
+    c.status = pRank <= phdLimit ? 'مقبول' : '';
     pRank++;
   });
 
@@ -560,9 +567,9 @@ function renderScoringTable() {
       <td>${c.scores.gradeScore}</td>
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
-        <span class="badge-status ${c.status === 'مقبول' ? 'badge-accepted' : 'badge-reserve'}">
-          ${c.status === 'مقبول' ? '✅ مرشح مقبول' : '⏳ قائمة الاحتياط'}
-        </span>
+        ${c.status === 'مقبول' ? `
+          <span class="badge-status badge-accepted">✅ مرشح مقبول</span>
+        ` : ''}
       </td>
       ${tieBreakerCell}
       <td>
@@ -647,15 +654,15 @@ function renderDetailedReport() {
                 notesCell = `<td style="font-size:0.74rem; color:#dc2626; font-weight:800; text-align:right;">⚖️ مفاضلة استثنائية (حالة تعادل)<br><span style="font-size:0.7rem; font-weight:600;">معيار الحسم: ${c.tieBreaker}</span></td>`;
               } else if (c.tieBreaker) {
                 rowStyle = (c.status === 'مقبول' ? 'font-weight: bold; ' : '') + 'background-color: #fffbeb; border-right: 4px solid #f59e0b;';
-                notesCell = `<td style="font-size:0.74rem; color:#b45309; font-weight:800; text-align:right;">⚖️ حسم استثنائي (تعادل بالنقاط: ${c.scores.totalScore}ن)<br><span style="font-size:0.7rem; font-weight:600;">المعيار الفاصل: ${c.tieBreaker}</span></td>`;
+                notesCell = `<td style="font-size:0.74rem; color:#b45309; font-weight:800; text-align:right;">⚖️ مفاضلة استثنائية (تعادل عند خط القبول)<br><span style="font-size:0.7rem; font-weight:600;">المعيار الفاصل: ${c.tieBreaker}</span></td>`;
               } else if (customNote) {
                 rowStyle = (c.status === 'مقبول' ? 'font-weight: bold; background-color: #f0fdf4;' : '');
                 notesCell = `<td style="font-size:0.75rem; color:#d97706; font-weight:800; text-align:right;">📌 ${customNote}</td>`;
-              } else if (c.status === 'مقبول') {
-                rowStyle = 'font-weight: bold; background-color: #f0fdf4;';
-                notesCell = `<td style="font-size:0.75rem; color:#15803d; font-weight:700; text-align:right;">🟢 مرشح مقبول وفق أولوية النقاط الكلية والحصص</td>`;
               } else {
-                notesCell = `<td style="font-size:0.75rem; color:#64748b; text-align:right;">⏳ قائمة الاحتياط بحسب تسلسل النقاط الكلية</td>`;
+                if (c.status === 'مقبول') {
+                  rowStyle = 'font-weight: bold; background-color: #f0fdf4;';
+                }
+                notesCell = `<td style="color:#94a3b8; font-size:0.75rem; text-align:center;">—</td>`;
               }
 
               return `
@@ -671,9 +678,7 @@ function renderDetailedReport() {
                 ${activeCustom.map(custom => `<td class="score-cell">${(c.scores.customScores && c.scores.customScores[custom.id]) || 0}</td>`).join('')}
                 <td><span class="total-score-badge">${c.scores.totalScore}</span></td>
                 <td>
-                  <span class="badge-status ${c.status === 'مقبول' ? 'badge-accepted' : 'badge-reserve'}">
-                    ${c.status === 'مقبول' ? 'مقبول' : 'احتياط'}
-                  </span>
+                  ${c.status === 'مقبول' ? '<span class="badge-status badge-accepted">مقبول</span>' : ''}
                 </td>
                 ${notesCell}
               </tr>`;
