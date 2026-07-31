@@ -348,30 +348,7 @@ function getRankedCandidates(degreeFilter = null) {
   function processDegreeGroup(candidates, limit) {
     if (candidates.length === 0) return candidates;
 
-    // الترتيب الأساسي بالمجموع الكلي تنازلياً
-    candidates.sort((a, b) => b.scores.totalScore - a.scores.totalScore);
-
-    // إذا كان عدد المرشحين أقل من أو يساوي الحد → الكل مقبول بلا تعادل حاسم
-    if (candidates.length <= limit) return candidates;
-
-    // درجة المركز الأخير المقبول (نقطة الحسم)
-    const boundaryScore = candidates[limit - 1].scores.totalScore;
-
-    // هل يوجد أشخاص متعادلون بنفس الدرجة فوق وتحت حد القبول؟
-    const acceptedWithBoundaryScore = candidates.slice(0, limit).filter(c => c.scores.totalScore === boundaryScore);
-    const rejectedWithBoundaryScore = candidates.slice(limit).filter(c => c.scores.totalScore === boundaryScore);
-
-    // لا تعادل حرج على خط القبول → لا مفاضلة استثنائية لأحد
-    if (acceptedWithBoundaryScore.length === 0 || rejectedWithBoundaryScore.length === 0) {
-      return candidates;
-    }
-
-    // ===== يوجد تعادل حرج عند خط القبول للفوز بالمنحة → نطبق المفاضلة الاستثنائية =====
-    const aboveBoundary = candidates.filter(c => c.scores.totalScore > boundaryScore);
-    const atBoundary    = candidates.filter(c => c.scores.totalScore === boundaryScore);
-    const belowBoundary = candidates.filter(c => c.scores.totalScore < boundaryScore);
-
-    // تحديد المعيار الفاصل بين المتعادلين على خط الفوز
+    // 1. فرز جميع المتنافسين بالنقاط الكلية تنازلياً، ثم بالمعايير الفرعية الاستثنائية
     function detectCriterion(group) {
       const hiringYears = new Set(group.map(c => getHiringYear(c)));
       if (hiringYears.size > 1) return 'أقدمية التعيين';
@@ -382,10 +359,10 @@ function getRankedCandidates(degreeFilter = null) {
       return 'تعادل تام - يُحال للجنة المفاضلة';
     }
 
-    const criterion = detectCriterion(atBoundary);
-
-    // ترتيب المجموعة المتعادلة بالمعايير الفرعية الاستثنائية
-    atBoundary.sort((a, b) => {
+    candidates.sort((a, b) => {
+      if (b.scores.totalScore !== a.scores.totalScore) {
+        return b.scores.totalScore - a.scores.totalScore;
+      }
       const hirA = getHiringYear(a), hirB = getHiringYear(b);
       if (hirA !== hirB) return hirA - hirB;                     // الأقدم تعييناً أولاً
       const birthA = getBirthYear(a), birthB = getBirthYear(b);
@@ -393,10 +370,28 @@ function getRankedCandidates(degreeFilter = null) {
       return (GRADE_ORDER[b.grade] || 0) - (GRADE_ORDER[a.grade] || 0); // الأعلى تقديراً أولاً
     });
 
-    // وضع علامة المفاضلة الاستثنائية فقط على المتعادلين عند خط القبول والاحتياط
-    atBoundary.forEach(c => { c.tieBreaker = criterion; });
+    // 2. تجميع المتنافسين بحسب النقاط الكلية
+    const scoreGroups = {};
+    candidates.forEach(c => {
+      scoreGroups[c.scores.totalScore] = scoreGroups[c.scores.totalScore] || [];
+      scoreGroups[c.scores.totalScore].push(c);
+    });
 
-    return [...aboveBoundary, ...atBoundary, ...belowBoundary];
+    // 3. الوسام والملاحظة الاستثنائية تظهر فقط لمن هم داخل نطاق المقبولين بالفوز (أو متنافسين معهم على خط الحد)
+    const boundaryScore = candidates[Math.min(limit - 1, candidates.length - 1)].scores.totalScore;
+
+    candidates.forEach((c, idx) => {
+      const isAcceptedZoneOrBoundary = (idx < limit) || (c.scores.totalScore === boundaryScore);
+      const group = scoreGroups[c.scores.totalScore];
+
+      if (isAcceptedZoneOrBoundary && group && group.length > 1) {
+        c.tieBreaker = detectCriterion(group);
+      } else {
+        c.tieBreaker = null;
+      }
+    });
+
+    return candidates;
   }
 
   // تحضير القائمة الكاملة مع الدرجات
