@@ -739,6 +739,124 @@ function renderScoringTable() {
     </tr>`;
   }).join('');
 }
+
+// عرض بطاقة تقييم وتفاصيل المتنافس الشاملة (Candidate Details View)
+function viewCandidateDetails(candidateId) {
+  let candidate = null;
+  const masterRanked = getRankedCandidates('ماجستير');
+  const phdRanked    = getRankedCandidates('دكتوراه');
+
+  candidate = masterRanked.find(c => c.id === candidateId) || phdRanked.find(c => c.id === candidateId);
+
+  if (!candidate) {
+    const raw = state.candidates.find(c => c.id === candidateId);
+    if (!raw) return;
+    candidate = {
+      ...raw,
+      scores: calculateCandidateScore(raw),
+      rank: '-',
+      status: '',
+      tieBreaker: null
+    };
+  }
+
+  const container = document.getElementById('modal-candidate-details-body');
+  if (!container) return;
+
+  const currentYear = state.settings.referenceYear || 2026;
+  const birthYear = parseInt(candidate.birth_date) || (candidate.birth_date ? (candidate.birth_date.match(/(\d{4})/) || [])[1] : 0);
+  const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
+  const hiringUnivStr = candidate.hiring_univ || candidate.hiring_service || '-';
+
+  const customScores = candidate.scores.customScores || {};
+  const activeCustom  = (state.criteria.customCriteria || []).filter(c => c.enabled);
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+      <div>
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">${candidate.name}</h3>
+        <span style="font-size: 0.82rem; color: #38bdf8; font-weight:700;">درجة (${candidate.degree}) — تخصص (${candidate.specialization})</span>
+      </div>
+      <div style="text-align: left;">
+        <span style="display: block; font-size: 0.72rem; color: #94a3b8;">الترتيب المستحق</span>
+        <strong style="font-size: 1.3rem; color: #38bdf8;">المركز #${candidate.rank}</strong>
+      </div>
+    </div>
+
+    <!-- 1. شبكة البيانات الشخصية والأكاديمية -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.84rem;">
+      <h4 style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+        📌 البيانات الشخصية والأكاديمية
+      </h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: #334155;">
+        <div><strong>تاريخ التعيين بالخدمة/الجامعة:</strong> ${hiringUnivStr}</div>
+        <div><strong>تاريخ الميلاد (العمر):</strong> ${candidate.birth_date || '-'} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</div>
+        <div><strong>التقدير الأكاديمي:</strong> ${candidate.grade || '-'}</div>
+        <div><strong>سنة التخرج:</strong> ${candidate.grad_year || '-'}</div>
+      </div>
+    </div>
+
+    <!-- 2. تفكيك احتساب النقاط التنافسية -->
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.84rem;">
+      <h4 style="margin: 0 0 10px 0; color: #166534; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #86efac; padding-bottom: 4px;">
+        📊 تفكيك احتساب النقاط المعيارية (من 25 نقطة)
+      </h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: #14532d;">
+        <div style="background: #ffffff; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7;">
+          <span style="display: block; font-size: 0.76rem; color: #64748b;">الأقدمية بالخدمة (أعلى 10ن):</span>
+          <strong style="font-size: 1rem; color: #15803d;">${candidate.scores.seniorityScore} نقاط</strong>
+        </div>
+        <div style="background: #ffffff; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7;">
+          <span style="display: block; font-size: 0.76rem; color: #64748b;">الفئة العمرية (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #15803d;">${candidate.scores.ageScore} نقاط</strong>
+        </div>
+        <div style="background: #ffffff; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7;">
+          <span style="display: block; font-size: 0.76rem; color: #64748b;">احتياج التخصص (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #15803d;">${candidate.scores.specScore} نقاط</strong>
+        </div>
+        <div style="background: #ffffff; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7;">
+          <span style="display: block; font-size: 0.76rem; color: #64748b;">تقدير المؤهل (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #15803d;">${candidate.scores.gradeScore} نقاط</strong>
+        </div>
+        ${activeCustom.map(custom => `
+          <div style="background: #ffffff; padding: 8px; border-radius: 6px; border: 1px solid #dcfce7; grid-column: span 2;">
+            <span style="display: block; font-size: 0.76rem; color: #64748b;">${custom.name}:</span>
+            <strong style="font-size: 1rem; color: #15803d;">${(customScores[custom.id]) || 0} نقاط</strong>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="margin-top: 12px; background: #15803d; color: #ffffff; padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 700; font-size: 0.9rem;">إجمالي النقاط الكلية المحسوبة:</span>
+        <strong style="font-size: 1.3rem;">${candidate.scores.totalScore} نقطة</strong>
+      </div>
+    </div>
+
+    <!-- 3. حالة التنافس والمفاضلة الاستثنائية -->
+    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; font-size: 0.84rem; color: #78350f;">
+      <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 0.9rem; font-weight: 800;">
+        ⚖️ حالة التنافس وملاحظات الاستحقاق
+      </h4>
+      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 6px;">
+        <span><strong>النتيجة والاعتماد:</strong></span>
+        ${candidate.status === 'مقبول' 
+          ? '<span class="badge-status badge-accepted" style="font-size:0.85rem;">✅ مرشح مقبول بالفوز بالمنحة</span>' 
+          : '<span style="color:#64748b; font-weight:600;">— خارج خط المنح المتاحة</span>'}
+      </div>
+      ${candidate.tieBreaker ? `
+        <div style="background:#fef3c7; border-right:4px solid #f59e0b; padding:8px 12px; border-radius:4px; margin-top:8px;">
+          <strong style="color:#b45309; display:block;">⚖️ مفاضلة استثنائية (حالة تعادل عند خط القبول)</strong>
+          <span style="font-size:0.8rem; color:#92400e;">تم حسم الترتيب بناءً على معيار: <strong>${candidate.tieBreaker}</strong></span>
+        </div>
+      ` : `
+        <div style="color:#64748b; font-size:0.8rem; margin-top:4px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
+      `}
+    </div>
+  `;
+
+  openModal('modal-candidate-details');
+}
+
 function renderDetailedReport() {
   const reportContainer = document.getElementById('detailed-report-content');
   if (!reportContainer) return;
