@@ -857,15 +857,15 @@ function viewCandidateDetails(candidateId) {
     <div style="margin-top: 20px; border-top: 1.5px dashed #cbd5e1; padding-top: 14px; font-size: 0.82rem; color: #1e3a8a;">
       <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 700;">
         <div>
-          <span>مُعد البطاقة والفرز</span><br><br>
+          <span>توقيع المتقدم (الموظف المتنافس)</span><br><br>
+          <span style="color:#64748b; font-weight:600;">الاسم: ${candidate.name}<br>التوقيع: ............................</span>
+        </div>
+        <div>
+          <span>توقيع المراجع القانوني والرقابي</span><br><br>
           <span style="color:#64748b; font-weight:600;">التوقيع: ............................</span>
         </div>
         <div>
-          <span>المراجع القانوني والرقابي</span><br><br>
-          <span style="color:#64748b; font-weight:600;">التوقيع: ............................</span>
-        </div>
-        <div>
-          <span>رئيس لجنة المفاضلة والتنافس</span><br><br>
+          <span>يعتمد / رئيس لجنة المفاضلة والتنافس</span><br><br>
           <span style="color:#64748b; font-weight:600;">أ.د. القاسم محمد عباس</span>
         </div>
       </div>
