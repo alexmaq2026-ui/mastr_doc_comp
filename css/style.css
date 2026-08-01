@@ -1030,3 +1030,46 @@ body {
     margin-top: 2px;
     font-family: 'Segoe UI', Tahoma, sans-serif;
 }
+
+/* دعم طباعة بطاقة تفاصيل المتنافس بشكل احترافي A4 Portrait */
+@media print {
+    body.is-card-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    body.is-card-print .navbar,
+    body.is-card-print .tabs-nav,
+    body.is-card-print .main-container,
+    body.is-card-print .btn,
+    body.is-card-print .close-btn,
+    body.is-card-print .modal-backdrop:not(#modal-candidate-details) {
+        display: none !important;
+    }
+    body.is-card-print #modal-candidate-details {
+        position: relative !important;
+        display: block !important;
+        background: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    body.is-card-print #modal-candidate-details .modal-dialog {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+    }
+    body.is-card-print #modal-candidate-details .modal-header {
+        border-bottom: 2px dashed #1e3a8a !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 15px !important;
+    }
+    body.is-card-print #modal-candidate-details-body {
+        padding: 0 !important;
+    }
+}

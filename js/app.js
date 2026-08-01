@@ -852,9 +852,36 @@ function viewCandidateDetails(candidateId) {
         <div style="color:#64748b; font-size:0.8rem; margin-top:4px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
       `}
     </div>
+
+    <!-- 4. تذييل الاعتماد والتواقيع المعتمدة عند الطباعة -->
+    <div style="margin-top: 20px; border-top: 1.5px dashed #cbd5e1; padding-top: 14px; font-size: 0.82rem; color: #1e3a8a;">
+      <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 700;">
+        <div>
+          <span>مُعد البطاقة والفرز</span><br><br>
+          <span style="color:#64748b; font-weight:600;">التوقيع: ............................</span>
+        </div>
+        <div>
+          <span>المراجع القانوني والرقابي</span><br><br>
+          <span style="color:#64748b; font-weight:600;">التوقيع: ............................</span>
+        </div>
+        <div>
+          <span>رئيس لجنة المفاضلة والتنافس</span><br><br>
+          <span style="color:#64748b; font-weight:600;">أ.د. القاسم محمد عباس</span>
+        </div>
+      </div>
+    </div>
   `;
 
   openModal('modal-candidate-details');
+}
+
+// دالة طباعة بطاقة تفاصيل المتنافس الاحترافية A4
+function printCandidateDetailsCard() {
+  document.body.classList.add('is-card-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-card-print');
+  }, 1000);
 }
 
 function renderDetailedReport() {
