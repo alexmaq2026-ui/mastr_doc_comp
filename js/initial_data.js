@@ -1,8 +1,6 @@
 // البيانات الأولية الافتراضية لنظام مفاضلة جامعة صنعاء
 const DEFAULT_USERS = [
-  { id: 1, username: 'admin', password: 'admin123', name: 'د. رئيس لجنة المفاضلة', role: 'super_admin', title: 'المدير الأعلى / رئيس اللجنة' },
-  { id: 2, username: 'entry', password: 'entry123', name: 'أحمد الإداري', role: 'data_entry', title: 'مُدخل بيانات' },
-  { id: 3, username: 'viewer', password: 'viewer123', name: 'د. المراجع القانوني', role: 'auditor', title: 'مراجع مطلع' }
+  { id: 1, username: 'admin', password: 'admin123', name: 'د. رئيس لجنة المفاضلة', role: 'super_admin', title: 'المدير الأعلى / رئيس اللجنة' }
 ];
 
 const DEFAULT_SETTINGS = {

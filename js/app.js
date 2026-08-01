@@ -43,18 +43,6 @@ function initStore() {
       }
       if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
         state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
-      } else {
-        DEFAULT_USERS.forEach(def => {
-          if (!state.users.some(u => u.username === def.username)) {
-            state.users.push({ ...def });
-          }
-        });
-        state.users.forEach(u => {
-          if (!u.password) {
-            const def = DEFAULT_USERS.find(d => d.username === u.username);
-            u.password = def ? def.password : 'admin123';
-          }
-        });
       }
     } catch (e) {
       console.error('Error loading saved state:', e);
@@ -1419,9 +1407,9 @@ function renderUsersAdminTable() {
   const tbody = document.getElementById('users-admin-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = state.users.map(u => `
+  tbody.innerHTML = state.users.map((u, idx) => `
     <tr>
-      <td>${u.id}</td>
+      <td>${idx + 1}</td>
       <td><strong>${u.name}</strong></td>
       <td><code>${u.username}</code></td>
       <td><code style="color: var(--primary); font-weight: bold;">${u.password || '••••••'}</code></td>
