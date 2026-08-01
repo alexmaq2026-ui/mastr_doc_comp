@@ -593,8 +593,11 @@ function renderDetailedReport() {
   const totalPhdCount = allPhdCandidates.length;
   const totalCandidates = totalMasterCount + totalPhdCount;
 
-  const masterTiedCount = allMasterCandidates.filter(c => c.tieBreaker).length;
-  const phdTiedCount = allPhdCandidates.filter(c => c.tieBreaker).length;
+  // عدّ مجموعات التعادل الفريدة (كل تعادل يُعدّ مرة واحدة، لا بعدد الأفراد)
+  const masterTiedGroups = new Set(allMasterCandidates.filter(c => c.tieBreaker).map(c => c.scores.totalScore));
+  const phdTiedGroups    = new Set(allPhdCandidates.filter(c => c.tieBreaker).map(c => c.scores.totalScore));
+  const masterTiedCount = masterTiedGroups.size;
+  const phdTiedCount    = phdTiedGroups.size;
 
   const showMaster = (degreeFilter === 'الكل' || degreeFilter === 'ماجستير');
   const showPhd = (degreeFilter === 'الكل' || degreeFilter === 'دكتوراه');
