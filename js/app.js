@@ -228,6 +228,12 @@ function renderTabsByRole() {
   const importExcelBtn  = document.getElementById('btn-import-excel');
   if (addCandidateBtn) addCandidateBtn.style.display = canEditCandidates ? 'inline-flex' : 'none';
   if (importExcelBtn)  importExcelBtn.style.display  = canEditCandidates ? 'inline-flex' : 'none';
+
+  // زر تنفيذ المفاضلة في الشريط العلوي: يظهر للمدير الأعلى فقط
+  const runNavBtn = document.getElementById('btn-run-nav') || document.querySelector('.btn-run-nav');
+  if (runNavBtn) {
+    runNavBtn.style.display = (currentRole === 'super_admin') ? 'inline-flex' : 'none';
+  }
 }
 
 // ====================================================
@@ -624,15 +630,19 @@ function renderCandidatesTable() {
       ? `<span title="${pendingAnns.length} ملاحظة مراجعة معلقة" style="display:inline-flex;align-items:center;gap:3px;background:#ef4444;color:#fff;padding:2px 7px;border-radius:20px;font-size:0.7rem;font-weight:800;cursor:pointer;" onclick="toggleAnnotationsPanel(${c.id})">🔴 ${pendingAnns.length} ملاحظة</span>`
       : '';
 
-    // زر التضليل (للمراجع المطلع)
-    const annotateBtn = isAuditor
-      ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:0.75rem;" onclick="openAnnotationModal(${c.id})">🔴 تضليل</button>`
+    // 1. زر تعديل (للمدير الأعلى ومدخل البيانات)
+    const editBtn = (isAdmin || isDataEntry)
+      ? `<button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>`
       : '';
 
-    // أزرار تعديل وحذف (للمدير الأعلى ومدخل البيانات)
-    const editDeleteBtns = canEdit
-      ? `<button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>
-         <button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})"> حذف</button>`
+    // 2. زر حذف (لمدخل البيانات فقط)
+    const deleteBtn = isDataEntry
+      ? `<button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})"> حذف</button>`
+      : '';
+
+    // 3. زر تضليل (للمراجع المطلع فقط)
+    const annotateBtn = isAuditor
+      ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:0.75rem;" onclick="openAnnotationModal(${c.id})">🔴 تضليل</button>`
       : '';
 
     // لوحة التعليقات المفصلة (مخفية افتراضياً)
@@ -672,7 +682,8 @@ function renderCandidatesTable() {
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
       <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-        ${editDeleteBtns}
+        ${editBtn}
+        ${deleteBtn}
         ${annotateBtn}
         ${cAnnotations.length > 0 ? `<button class="btn btn-outline btn-sm" style="font-size:0.72rem;" onclick="toggleAnnotationsPanel(${c.id})">💬 ${cAnnotations.length}</button>` : ''}
       </td>
