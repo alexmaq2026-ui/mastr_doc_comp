@@ -192,35 +192,140 @@ function getRoleTitle(role) {
 
 function renderTabsByRole() {
   const currentRole = state.currentUser ? state.currentUser.role : 'auditor';
-  
-  // إخفاء أو إظهار شاشة إدارة النظام حسب الصلاحية (للمدير الأعلى فقط)
-  const adminTab = document.getElementById('tab-btn-admin');
-  if (adminTab) {
-    if (currentRole === 'super_admin') {
-      adminTab.style.display = 'flex';
-    } else {
-      adminTab.style.display = 'none';
+
+  // تعريف التبويبات لكل دور
+  const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
+                   'tab-btn-report','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
+
+  // الخريطة: ما يُظهر لكل دور
+  const visibilityMap = {
+    super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
+                  'tab-btn-report','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
+    data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
+    auditor:     ['tab-btn-candidates','tab-btn-analytics']
+  };
+
+  const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
+
+  allTabs.forEach(tabId => {
+    const el = document.getElementById(tabId);
+    if (el) el.style.display = allowed.includes(tabId) ? 'flex' : 'none';
+  });
+
+  // إذا كان التبويب الحالي النشط غير مسموح به، انتقل للأول المسموح
+  const activeBtn = document.querySelector('.tab-btn.active');
+  if (activeBtn) {
+    const activeBtnId = activeBtn.id;
+    if (!allowed.includes(activeBtnId)) {
+      const firstAllowed = document.getElementById(allowed[0]);
+      if (firstAllowed) firstAllowed.click();
     }
   }
 
-  // إخفاء أو إظهار شاشة تهيئة المعايير (للمدير الأعلى فقط)
-  const criteriaTab = document.getElementById('tab-btn-criteria');
-  if (criteriaTab) {
-    if (currentRole === 'super_admin') {
-      criteriaTab.style.display = 'flex';
-    } else {
-      criteriaTab.style.display = 'none';
-    }
-  }
-
-  // زر إضافة متنافس واستيراد ملفات الإكسل يقتصر على مدخل البيانات والمدير الأعلى
-  const addCandidateBtn = document.getElementById('btn-add-candidate');
-  const importExcelBtn = document.getElementById('btn-import-excel');
+  // أزرار الإضافة والاستيراد: للمدير الأعلى ومدخل البيانات فقط
   const canEditCandidates = (currentRole === 'super_admin' || currentRole === 'data_entry');
-  
+  const addCandidateBtn = document.getElementById('btn-add-candidate');
+  const importExcelBtn  = document.getElementById('btn-import-excel');
   if (addCandidateBtn) addCandidateBtn.style.display = canEditCandidates ? 'inline-flex' : 'none';
-  if (importExcelBtn) importExcelBtn.style.display = canEditCandidates ? 'inline-flex' : 'none';
+  if (importExcelBtn)  importExcelBtn.style.display  = canEditCandidates ? 'inline-flex' : 'none';
 }
+
+// ====================================================
+// نظام التعليقات والمراجعة (Annotation System)
+// ====================================================
+
+// تهيئة مصفوفة التعليقات في الحالة
+function initAnnotations() {
+  if (!state.annotations) state.annotations = [];
+}
+
+// فتح مودال إضافة تعليق (للمراجع المطلع)
+function openAnnotationModal(candidateId) {
+  initAnnotations();
+  const candidate = state.candidates.find(c => c.id === candidateId);
+  if (!candidate) return;
+  document.getElementById('annotation-candidate-id').value = candidateId;
+  document.getElementById('annotation-candidate-name').textContent = candidate.name;
+  document.getElementById('annotation-text').value = '';
+  document.getElementById('annotation-field').value = 'name';
+  document.getElementById('modal-annotation').style.display = 'flex';
+}
+
+function closeAnnotationModal() {
+  document.getElementById('modal-annotation').style.display = 'none';
+}
+
+// حفظ التعليق
+function saveAnnotation() {
+  initAnnotations();
+  const candidateId = parseInt(document.getElementById('annotation-candidate-id').value);
+  const field       = document.getElementById('annotation-field').value;
+  const text        = document.getElementById('annotation-text').value.trim();
+  const reviewer    = state.currentUser ? state.currentUser.name : 'مراجع';
+
+  if (!text) {
+    alert('يرجى كتابة وصف الملاحظة قبل الحفظ.');
+    return;
+  }
+
+  const annotation = {
+    id:          Date.now(),
+    candidateId,
+    field,
+    text,
+    reviewer,
+    reviewerRole: state.currentUser ? state.currentUser.role : 'auditor',
+    createdAt:   new Date().toLocaleString('ar-YE'),
+    resolved:    false
+  };
+
+  state.annotations.push(annotation);
+  saveStore();
+  closeAnnotationModal();
+  renderCandidatesTable();
+  showToast('✅ تم حفظ الملاحظة بنجاح وستظهر لمدخل البيانات', 'success');
+}
+
+// تأكيد تصحيح ملاحظة (لمدخل البيانات)
+function resolveAnnotation(annotationId) {
+  initAnnotations();
+  const ann = state.annotations.find(a => a.id === annotationId);
+  if (ann) {
+    ann.resolved = true;
+    ann.resolvedAt = new Date().toLocaleString('ar-YE');
+    ann.resolvedBy = state.currentUser ? state.currentUser.name : 'مدخل';
+    saveStore();
+    renderCandidatesTable();
+    showToast('✅ تم تأكيد تصحيح الملاحظة', 'success');
+  }
+}
+
+// حذف ملاحظة (للمدير الأعلى فقط)
+function deleteAnnotation(annotationId) {
+  initAnnotations();
+  state.annotations = state.annotations.filter(a => a.id !== annotationId);
+  saveStore();
+  renderCandidatesTable();
+  showToast('🗑️ تم حذف الملاحظة', 'info');
+}
+
+// toast إشعار مؤقت
+function showToast(message, type = 'info') {
+  const colors = { success: '#16a34a', info: '#2563eb', error: '#dc2626' };
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed; top:24px; right:24px; z-index:99999;
+    background:${colors[type] || colors.info}; color:#fff;
+    padding:12px 22px; border-radius:10px; font-size:0.9rem;
+    font-family:inherit; font-weight:700; box-shadow:0 4px 16px rgba(0,0,0,0.18);
+    animation: slideInRight 0.3s ease; direction:rtl;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+
 
 // محرك احتساب النقاط والمفاضلة (Scoring Engine)
 function calculateCandidateScore(candidate) {
@@ -493,31 +598,93 @@ function renderCandidatesTable() {
   if (degreeFilter) list = list.filter(c => c.degree === degreeFilter);
   if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || c.specialization.toLowerCase().includes(search));
 
-  const canEdit = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'data_entry');
+  const canEdit    = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'data_entry');
+  const isAuditor  = state.currentUser && state.currentUser.role === 'auditor';
+  const isDataEntry= state.currentUser && state.currentUser.role === 'data_entry';
+  const isAdmin    = state.currentUser && state.currentUser.role === 'super_admin';
+
+  initAnnotations();
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات مطابقة للبحث</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات مطابقة للبحث</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = list.map((c, idx) => `
-    <tr>
+  tbody.innerHTML = list.map((c, idx) => {
+    // جلب التعليقات الخاصة بهذا المتنافس
+    const cAnnotations = state.annotations.filter(a => a.candidateId === c.id);
+    const pendingAnns  = cAnnotations.filter(a => !a.resolved);
+    const hasWarning   = pendingAnns.length > 0;
+
+    // لون الصف إذا فيه تعليقات معلقة
+    const rowBg = hasWarning ? 'background-color:#fff1f2; border-right: 4px solid #ef4444;' : '';
+
+    // شارة التنبيه
+    const warningBadge = hasWarning
+      ? `<span title="${pendingAnns.length} ملاحظة مراجعة معلقة" style="display:inline-flex;align-items:center;gap:3px;background:#ef4444;color:#fff;padding:2px 7px;border-radius:20px;font-size:0.7rem;font-weight:800;cursor:pointer;" onclick="toggleAnnotationsPanel(${c.id})">🔴 ${pendingAnns.length} ملاحظة</span>`
+      : '';
+
+    // زر التضليل (للمراجع المطلع)
+    const annotateBtn = isAuditor
+      ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:0.75rem;" onclick="openAnnotationModal(${c.id})">🔴 تضليل</button>`
+      : '';
+
+    // أزرار تعديل وحذف (للمدير الأعلى ومدخل البيانات)
+    const editDeleteBtns = canEdit
+      ? `<button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>
+         <button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})"> حذف</button>`
+      : '';
+
+    // لوحة التعليقات المفصلة (مخفية افتراضياً)
+    const annotationsPanel = cAnnotations.length > 0 ? `
+      <tr id="ann-panel-${c.id}" style="display:none;">
+        <td colspan="10" style="background:#fff8f0; padding:10px 20px; border-top:1px dashed #f59e0b;">
+          <div style="font-weight:800; color:#b45309; margin-bottom:8px;">📋 ملاحظات المراجع على هذا السجل:</div>
+          ${cAnnotations.map(ann => `
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;padding:8px 12px;background:${ann.resolved?'#f0fdf4':'#fff1f2'};border-radius:8px;border-right:3px solid ${ann.resolved?'#16a34a':'#ef4444'};">
+              <div style="flex:1;">
+                <div style="font-size:0.78rem;font-weight:700;color:${ann.resolved?'#16a34a':'#dc2626'};">
+                  ${ann.resolved ? '✅ تم التصحيح' : '🔴 معلقة'} — الحقل: <strong>${ann.field}</strong>
+                </div>
+                <div style="font-size:0.82rem;color:#0f172a;margin-top:4px;">${ann.text}</div>
+                <div style="font-size:0.7rem;color:#64748b;margin-top:4px;">
+                  📝 بقلم: ${ann.reviewer} — ${ann.createdAt}
+                  ${ann.resolved ? ` | ✅ صُحِّح بواسطة: ${ann.resolvedBy} — ${ann.resolvedAt}` : ''}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                ${(isDataEntry || isAdmin) && !ann.resolved ? `<button class="btn btn-sm" style="background:#16a34a;color:#fff;font-size:0.7rem;white-space:nowrap;" onclick="resolveAnnotation(${ann.id})">✅ تصحيح</button>` : ''}
+                ${isAdmin ? `<button class="btn btn-sm btn-danger" style="font-size:0.7rem;white-space:nowrap;" onclick="deleteAnnotation(${ann.id})">🗑️ حذف</button>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </td>
+      </tr>` : '';
+
+    return `
+    <tr style="${rowBg}">
       <td>${idx + 1}</td>
-      <td><strong>${c.name}</strong></td>
+      <td><strong>${c.name}</strong> ${warningBadge}</td>
       <td><span class="badge-degree">${c.degree}</span></td>
       <td>${c.specialization}</td>
       <td>${c.hiring_univ || c.hiring_service || '-'}</td>
       <td>${c.birth_date || '-'}</td>
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
-      <td>
-        ${canEdit ? `
-          <button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})"> حذف</button>
-        ` : `<span style="color: var(--text-muted); font-size: 0.8rem;">للقراءة فقط</span>`}
+      <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+        ${editDeleteBtns}
+        ${annotateBtn}
+        ${cAnnotations.length > 0 ? `<button class="btn btn-outline btn-sm" style="font-size:0.72rem;" onclick="toggleAnnotationsPanel(${c.id})">💬 ${cAnnotations.length}</button>` : ''}
       </td>
     </tr>
-  `).join('');
+    ${annotationsPanel}`;
+  }).join('');
+}
+
+function toggleAnnotationsPanel(candidateId) {
+  const panel = document.getElementById('ann-panel-' + candidateId);
+  if (panel) panel.style.display = (panel.style.display === 'none' ? 'table-row' : 'none');
+
 }
 
 // 3. شاشة نتائج المفاضلة (Competition Rankings View)

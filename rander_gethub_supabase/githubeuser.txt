@@ -1,0 +1,12 @@
+Sign up for GitHub
+Email
+alexmaq2026@gmail.com
+Username*
+alexmaq2026-ui
+alexmaq2026-ui is available.
+-------------------------------------
+الوصول الى gethub
+https://github.com/alexmaq2026-ui/mastr_doc_comp.git
+------------------------------------
+عنوان التطبيق عبر منصة githube
+https://alexmaq2026-ui.github.io/mastr_doc_comp/
