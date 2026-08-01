@@ -1947,8 +1947,14 @@ function switchUser(role) {
   }
 }
 
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+
 function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
 }
 
 // مولد شرائح الأقدمية التفاعلي التلقائي
