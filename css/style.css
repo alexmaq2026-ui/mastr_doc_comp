@@ -1036,19 +1036,25 @@ body {
     body.is-card-print {
         background: #ffffff !important;
         color: #000000 !important;
+        padding-top: 10px !important;
+    }
+    body.is-card-print @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
     }
     body.is-card-print .navbar,
     body.is-card-print .tabs-nav,
     body.is-card-print .main-container,
     body.is-card-print .btn,
     body.is-card-print .close-btn,
+    body.is-card-print .modal-header,
     body.is-card-print .modal-backdrop:not(#modal-candidate-details) {
         display: none !important;
     }
     body.is-card-print #modal-candidate-details {
         position: relative !important;
         display: block !important;
-        background: none !important;
+        background: #ffffff !important;
         padding: 0 !important;
         margin: 0 !important;
         width: 100% !important;
@@ -1063,11 +1069,6 @@ body {
         box-shadow: none !important;
         border: none !important;
         background: #ffffff !important;
-    }
-    body.is-card-print #modal-candidate-details .modal-header {
-        border-bottom: 2px dashed #1e3a8a !important;
-        padding-bottom: 10px !important;
-        margin-bottom: 15px !important;
     }
     body.is-card-print #modal-candidate-details-body {
         padding: 0 !important;
