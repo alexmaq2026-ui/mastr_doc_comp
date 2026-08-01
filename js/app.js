@@ -771,11 +771,16 @@ function viewCandidateDetails(candidateId) {
   const customScores = candidate.scores.customScores || {};
   const activeCustom  = (state.criteria.customCriteria || []).filter(c => c.enabled);
 
+  // جلب اسم رئيس اللجنة ديناميكياً من شاشة تهيئة المعايير والأعضاء
+  const committeeList = state.committeeMembers || [];
+  const chairmanObj   = committeeList.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committeeList[0];
+  const chairmanName  = chairmanObj ? chairmanObj.name : 'أ.د. ابراهيم المطاع';
+
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #ffffff; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
       <div>
         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800;">${candidate.name}</h3>
-        <span style="font-size: 0.82rem; color: #38bdf8; font-weight:700;">درجة (${candidate.degree}) — تخصص (${candidate.specialization})</span>
+        <span style="font-size: 0.82rem; color: #38bdf8; font-weight:700;">التخصص: (${candidate.specialization})</span>
       </div>
       <div style="text-align: left;">
         <span style="display: block; font-size: 0.72rem; color: #94a3b8;">الترتيب المستحق</span>
@@ -783,12 +788,16 @@ function viewCandidateDetails(candidateId) {
       </div>
     </div>
 
-    <!-- 1. شبكة البيانات الشخصية والأكاديمية -->
+    <!-- 1. شبكة البيانات الشخصية والأكاديمية مع نوع المنحة البارز -->
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.84rem;">
       <h4 style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
-        📌 البيانات الشخصية والأكاديمية
+        📌 البيانات الشخصية ونوع المنحة المتقدم لها
       </h4>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: #334155;">
+        <div style="grid-column: span 2; background: #eff6ff; padding: 6px 10px; border-radius: 6px; border: 1px solid #bfdbfe;">
+          <strong>🎓 نوع المنحة المطلوبة:</strong>
+          <span class="badge-degree" style="font-size: 0.85rem; font-weight: 800; margin-right: 6px;">منحة (${candidate.degree})</span>
+        </div>
         <div><strong>تاريخ التعيين بالخدمة/الجامعة:</strong> ${hiringUnivStr}</div>
         <div><strong>تاريخ الميلاد (العمر):</strong> ${candidate.birth_date || '-'} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</div>
         <div><strong>التقدير الأكاديمي:</strong> ${candidate.grade || '-'}</div>
@@ -840,7 +849,7 @@ function viewCandidateDetails(candidateId) {
       <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 6px;">
         <span><strong>النتيجة والاعتماد:</strong></span>
         ${candidate.status === 'مقبول' 
-          ? '<span class="badge-status badge-accepted" style="font-size:0.85rem;">✅ مرشح مقبول بالفوز بالمنحة</span>' 
+          ? `<span class="badge-status badge-accepted" style="font-size:0.85rem;">✅ مرشح مقبول بالفوز بـ (منحة ${candidate.degree})</span>` 
           : '<span style="color:#64748b; font-weight:600;">— خارج خط المنح المتاحة</span>'}
       </div>
       ${candidate.tieBreaker ? `
@@ -857,16 +866,16 @@ function viewCandidateDetails(candidateId) {
     <div style="margin-top: 20px; border-top: 1.5px dashed #cbd5e1; padding-top: 14px; font-size: 0.82rem; color: #1e3a8a;">
       <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 700;">
         <div>
-          <span>توقيع المتقدم (الموظف المتنافس)</span><br><br>
+          <span>توقيع المتقدم</span><br><br>
           <span style="color:#64748b; font-weight:600;">الاسم: ${candidate.name}<br>التوقيع: ............................</span>
         </div>
         <div>
-          <span>توقيع المراجع القانوني والرقابي</span><br><br>
+          <span>المراجع</span><br><br>
           <span style="color:#64748b; font-weight:600;">التوقيع: ............................</span>
         </div>
         <div>
-          <span>يعتمد / رئيس لجنة المفاضلة والتنافس</span><br><br>
-          <span style="color:#64748b; font-weight:600;">أ.د. القاسم محمد عباس</span>
+          <span>يعتمد / رئيس لجنة المفاضلة</span><br><br>
+          <span style="color:#64748b; font-weight:600;">${chairmanName}</span>
         </div>
       </div>
     </div>
