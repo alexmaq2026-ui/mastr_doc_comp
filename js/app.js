@@ -2844,7 +2844,7 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
               <th style="width: 12%;">التقدير العلمي</th>
               <th style="width: 11%;">سنة التخرج</th>
               <th style="width: 14%;">التخصص العلمي</th>
-              <th style="width: 14%;">جاهزية الملف</th>
+              <th style="width: 14%;" class="col-readiness no-print">جاهزية الملف</th>
               <th style="width: 10%;" class="col-action no-print">إجراء التعديل</th>
             </tr>
           </thead>
@@ -2911,7 +2911,7 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
                   </td>
 
                   <!-- جاهزية الملف -->
-                  <td>
+                  <td class="col-readiness no-print">
                     ${item.hasDeficiency ? `
                       <span style="color: #ef4444; font-weight: 900; font-size: 0.82rem;">يحتاج استكمال</span>
                     ` : `
