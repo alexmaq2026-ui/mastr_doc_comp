@@ -3025,28 +3025,38 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
         </div>
       </div>
 
-      <!-- الرسم البياني الثالث: التخصصات العلمية الأكثر إقبالاً وطلباً (Clean Responsive Grid) -->
-      <div class="card" style="grid-column: 1 / -1; background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(20, 184, 166, 0.35); box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
-        <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
-          <h3 class="card-title" style="color: #2dd4bf; font-size: 1.1rem; font-weight: 900;">📊 التوزيع الإحصائي للتخصصات الأكاديمية المطلوبة بالمنح</h3>
+      <!-- الرسم البياني الثالث: التخصصات العلمية الأكثر إقبالاً وطلباً (Compact 2-Column List) -->
+      <div class="card" style="grid-column: 1 / -1; background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(20, 184, 166, 0.35); box-shadow: 0 10px 25px rgba(0,0,0,0.4); padding: 14px 18px;">
+        <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 class="card-title" style="color: #2dd4bf; font-size: 1.05rem; font-weight: 900; margin: 0;">📊 حصر التخصصات الأكاديمية ونسبة الإقبال</h3>
+            <span style="color: #94a3b8; font-size: 0.78rem;">قائمة تجميعية مدمجة للتخصصات المتنافس عليها بحجم مقتضب ومؤشر بصري دقيق</span>
+          </div>
+          <span style="background: rgba(20, 184, 166, 0.2); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.4); padding: 3px 12px; border-radius: 12px; font-weight: 900; font-size: 0.8rem;">
+            إجمالي التخصصات: ${topSpecs.length} تخصص
+          </span>
         </div>
-        <p style="color: #94a3b8; font-size: 0.84rem; margin-bottom: 18px; line-height: 1.5;">
-          يمثل حجم طلبات المتقدمين في كل تخصص أكاديمي بنسب مئوية دقيقة ومستقلة تجنباً لأي تداخل بكتل البيانات.
-        </p>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-          ${topSpecs.map(([spec, count]) => {
+        <!-- شبكة قائمة ثنائية الأعمدة فائقة الاختصار -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px 20px;">
+          ${topSpecs.map(([spec, count], idx) => {
             const pct = Math.round((count / totalCandidates) * 100);
             return `
-              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(20, 184, 166, 0.25); border-radius: 10px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
-                  <strong style="font-size: 0.9rem; color: #ffffff; font-weight: 900;">${spec}</strong>
-                  <span style="background: rgba(20, 184, 166, 0.2); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.4); padding: 2px 10px; border-radius: 12px; font-weight: 900; font-size: 0.78rem;">
-                    ${count} متنافس (${pct}%)
-                  </span>
+              <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.5); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); gap: 10px;">
+                <!-- اسم التخصص ورقم الترتيب -->
+                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                  <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; width: 20px; text-align: center;">#${idx + 1}</span>
+                  <span style="font-size: 0.84rem; font-weight: 800; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${spec}">${spec}</span>
                 </div>
-                <div style="width: 100%; height: 10px; background: rgba(30, 41, 59, 0.9); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
-                  <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #0d9488, #2563eb); border-radius: 6px; box-shadow: 0 0 10px rgba(13, 148, 136, 0.6); transition: width 0.8s ease;"></div>
+
+                <!-- مؤشر النسبة وشريط التقدم الرفيع المختصر -->
+                <div style="display: flex; align-items: center; gap: 10px; width: 140px; flex-shrink: 0;">
+                  <div style="flex: 1; height: 6px; background: rgba(30, 41, 59, 0.9); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #0d9488, #2563eb); border-radius: 4px;"></div>
+                  </div>
+                  <span style="font-size: 0.76rem; font-weight: 900; color: #2dd4bf; width: 50px; text-align: left; white-space: nowrap;">
+                    ${count} (${pct}%)
+                  </span>
                 </div>
               </div>
             `;
