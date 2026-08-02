@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="css/style.css?v=41">
+  <link rel="stylesheet" href="css/style.css?v=42">
 </head>
 <body>
 
@@ -241,6 +241,9 @@
           </div>
         </div>
 
+        <!-- البانر التحذيري عند التنفيذ بنواقص -->
+        <div id="scoring-warning-banner"></div>
+
         <div class="table-responsive">
           <table class="data-table">
             <thead>
@@ -267,6 +270,9 @@
     <!-- 4. شاشة التقرير والمصفوفة التفصيلية -->
     <section id="tab-report" class="tab-content">
       <div class="card no-print">
+        <!-- البانر التحذيري عند التنفيذ بنواقص -->
+        <div id="report-warning-banner"></div>
+
         <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
           <h2 class="card-title">شاشة التقرير التفصيلي المعتمد لمجلس الجامعة</h2>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
@@ -541,6 +547,69 @@
     </div>
   </div>
 
+  <!-- نافذة التنبيه الرقابية: تحذير وجود نواقص في الملفات عند تنفيذ المفاضلة -->
+  <div class="modal-backdrop" id="modal-run-deficiencies-warning" style="z-index: 10005;">
+    <div class="modal-dialog" style="max-width: 520px; border: 1.5px solid #d97706; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+        <h3 class="modal-title" style="color: #f59e0b; font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px;">
+          <span>⚠️</span> تحذير رقابي: اكتشاف نواقص في سجلات المتنافسين
+        </h3>
+        <button class="close-btn" onclick="closeModal('modal-run-deficiencies-warning')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 0; color: #f8fafc;">
+        <div style="background: rgba(217, 119, 6, 0.15); border-right: 4px solid #f59e0b; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;">
+          <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 4px;">📌 تم حصر ملفات غير مستوفاة للبيانات الأساسية!</strong>
+          <span style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;" id="deficiencies-warning-text">
+            يوجد موظفون ينقصهم تاريخ التعيين بالخدمة، تاريخ الميلاد، أو التقدير الأكاديمي.
+          </span>
+        </div>
+        <p style="font-size: 0.86rem; color: #94a3b8; margin: 0; line-height: 1.5;">
+          يرجى اختيار الإجراء الرقابي المناسب للتعامل مع هذا التنبيه:
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; flex-wrap: wrap;">
+        <button class="btn btn-warning" onclick="goToDeficienciesReport()" style="background: linear-gradient(135deg, #d97706, #b45309); font-weight: 800; font-size: 0.85rem;">
+          🔍 (1) عرض تقرير النواقص
+        </button>
+        <button class="btn btn-secondary" onclick="forceExecuteCompetitionRun()" style="background: linear-gradient(135deg, #475569, #334155); font-weight: 800; font-size: 0.85rem; color: #ffffff;">
+          ⚡ (2) تنفيذ على أي حال
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- الشاشة البانورامية التفاعلية للمحاكاة وتدحرج العداد التنافسي (Panoramic Calculation Radar Overlay) -->
+  <div id="panoramic-simulation-overlay" class="login-fullscreen" style="display: none; z-index: 999999; background: radial-gradient(circle at center, rgba(15, 23, 42, 0.97) 0%, rgba(2, 6, 23, 0.99) 100%); flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(30px);">
+    <div style="text-align: center; max-width: 500px; width: 90%;">
+      
+      <!-- شعار إضاءة الرادار النباض -->
+      <div style="position: relative; display: inline-block; margin-bottom: 24px;">
+        <div style="width: 90px; height: 90px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); border: 2px solid #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; box-shadow: 0 0 35px rgba(59, 130, 246, 0.6); animation: pulseRadar 1.5s infinite ease-in-out;">
+          📊
+        </div>
+      </div>
+
+      <h2 style="color: #ffffff; font-size: 1.35rem; font-weight: 900; margin: 0 0 6px 0;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+      <p style="color: #60a5fa; font-size: 0.92rem; font-weight: 800; margin: 0 0 25px 0;">جاري محاكاة ومعالجة مصفوفة المفاضلة والتنافس الإلكترونية</p>
+
+      <!-- العداد البانورامي التفاعلي صعوداً -->
+      <div style="background: rgba(30, 41, 59, 0.8); border: 1.5px solid rgba(59, 130, 246, 0.4); border-radius: 16px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); margin-bottom: 20px;">
+        <span style="color: #94a3b8; font-size: 0.82rem; font-weight: 800; display: block; margin-bottom: 6px;">إجمالي المتنافسين الخاضعين للمعالجة الحية:</span>
+        <div id="panoramic-counter-number" style="font-size: 3.5rem; font-weight: 900; color: #38bdf8; text-shadow: 0 0 25px rgba(56, 189, 248, 0.8); font-family: 'Courier New', monospace; line-height: 1;">0</div>
+        <span style="color: #e2e8f0; font-size: 0.88rem; font-weight: 800; display: block; margin-top: 4px;">متنافس خاضع للتحليل</span>
+      </div>
+
+      <!-- شريط المحاكاة والتحديثات الآلية -->
+      <div style="background: rgba(15, 23, 42, 0.8); border-radius: 10px; height: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;">
+        <div id="panoramic-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #0d9488, #10b981); border-radius: 10px; transition: width 0.3s ease;"></div>
+      </div>
+
+      <div id="panoramic-status-text" style="color: #f59e0b; font-size: 0.88rem; font-weight: 800; min-height: 24px;">
+        🔍 جاري مطابقة بيانات الخدمة وحصر أقدمية التعيين...
+      </div>
+    </div>
+  </div>
+
   <!-- النافذة المنبثقة: بطاقة تقييم وتفاصيل المتنافس الشاملة -->
   <div class="modal-backdrop" id="modal-candidate-details">
     <div class="modal-dialog" style="max-width: 650px;">
@@ -560,9 +629,9 @@
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/xlsx.full.min.js?v=41"></script>
-  <script src="js/initial_data.js?v=41"></script>
-  <script src="js/supabase_client.js?v=41"></script>
-  <script src="js/app.js?v=41"></script>
+  <script src="js/xlsx.full.min.js?v=42"></script>
+  <script src="js/initial_data.js?v=42"></script>
+  <script src="js/supabase_client.js?v=42"></script>
+  <script src="js/app.js?v=42"></script>
 </body>
 </html>

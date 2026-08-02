@@ -692,6 +692,28 @@ function renderScoringTable() {
   const tbody = document.getElementById('scoring-tbody');
   if (!tbody) return;
 
+  const bannerContainer = document.getElementById('scoring-warning-banner');
+  if (bannerContainer) {
+    if (state.hasRunDeficient) {
+      bannerContainer.innerHTML = `
+        <div style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.25), rgba(15, 23, 42, 0.85)); border: 1.5px solid #d97706; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.25);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">⚠️</span>
+            <div>
+              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين!</strong>
+              <span style="font-size: 0.8rem; color: #cbd5e1;">يتطلب مراجعة واستكمال السجلات المعلقة لضمان استيفاء المعايير التنافسية.</span>
+            </div>
+          </div>
+          <button class="btn btn-warning btn-sm" onclick="goToDeficienciesReport()" style="background: linear-gradient(135deg, #d97706, #b45309); font-weight: 800; font-size: 0.82rem; color: #ffffff; padding: 6px 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            📋 تقرير النواقص
+          </button>
+        </div>
+      `;
+    } else {
+      bannerContainer.innerHTML = '';
+    }
+  }
+
   const degreeFilter = document.getElementById('filter-rankings-degree') ? document.getElementById('filter-rankings-degree').value : 'ماجستير';
   const rankedList = getRankedCandidates(degreeFilter);
 
@@ -910,6 +932,28 @@ function printCandidateDetailsCard() {
 function renderDetailedReport() {
   const reportContainer = document.getElementById('detailed-report-content');
   if (!reportContainer) return;
+
+  const bannerContainer = document.getElementById('report-warning-banner');
+  if (bannerContainer) {
+    if (state.hasRunDeficient) {
+      bannerContainer.innerHTML = `
+        <div style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.25), rgba(15, 23, 42, 0.85)); border: 1.5px solid #d97706; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.25);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">⚠️</span>
+            <div>
+              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين!</strong>
+              <span style="font-size: 0.8rem; color: #cbd5e1;">يتطلب مراجعة واستكمال السجلات المعلقة لضمان استيفاء المعايير التنافسية.</span>
+            </div>
+          </div>
+          <button class="btn btn-warning btn-sm" onclick="goToDeficienciesReport()" style="background: linear-gradient(135deg, #d97706, #b45309); font-weight: 800; font-size: 0.82rem; color: #ffffff; padding: 6px 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            📋 تقرير النواقص
+          </button>
+        </div>
+      `;
+    } else {
+      bannerContainer.innerHTML = '';
+    }
+  }
 
   const degreeFilter = document.getElementById('report-degree-filter') ? document.getElementById('report-degree-filter').value : 'الكل';
   
@@ -2204,8 +2248,43 @@ function switchMainTab(targetTabId) {
   if (content && content.classList) content.classList.add('active');
 }
 
-function executeCompetitionRun() {
+// دالة حصر استخراج المتنافسين الذين لديهم نواقص في البيانات
+function getCandidatesWithDeficiencies() {
+  return (state.candidates || []).filter(c => {
+    const hiring = c.hiring_univ || c.hiring_service;
+    const isHiringValid = !isInvalidHiringValue(hiring);
+    const isBirthValid = !isInvalidBirthValue(c.birth_date);
+    const isGradeValid = !isInvalidGradeValue(c.grade);
+    const isGradYearValid = c.grad_year && c.grad_year !== '-' && parseInt(c.grad_year) > 0;
+    const isSpecValid = !isInvalidSpecializationValue(c.specialization);
+    return !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
+  });
+}
+
+function executeCompetitionRun(isForced = false) {
   try {
+    const deficientList = getCandidatesWithDeficiencies();
+    
+    // إذا وجدت نواقص ولم يضغط المستخدم على "تنفيذ على أي حال"
+    if (deficientList.length > 0 && !isForced) {
+      closeModal('modal-run-competition');
+      const warningTextEl = document.getElementById('deficiencies-warning-text');
+      if (warningTextEl) {
+        warningTextEl.innerHTML = `يوجد عدد <strong>(${deficientList.length}) متنافسين</strong> بياناتهم غير مستوفاة وتحتوي على نواقص حاسمة في (تاريخ التعيين، السن، التقدير، أو التخصص).`;
+      }
+      openModal('modal-run-deficiencies-warning');
+      return;
+    }
+
+    if (isForced) {
+      state.hasRunDeficient = true;
+      closeModal('modal-run-deficiencies-warning');
+    } else {
+      state.hasRunDeficient = false;
+    }
+
+    closeModal('modal-run-competition');
+
     const masterEl = document.getElementById('run-master-grants');
     const phdEl = document.getElementById('run-phd-grants');
     const cycleEl = document.getElementById('run-cycle-title');
@@ -2219,25 +2298,81 @@ function executeCompetitionRun() {
     if (cycleTitle) state.settings.councilName = cycleTitle;
 
     saveStore();
-    refreshAllViews();
 
-    closeModal('modal-run-competition');
-
-    switchMainTab('tab-report');
-
-    const totalCandidates = state.candidates ? state.candidates.length : 0;
-    setTimeout(() => {
-      const msg = `⚡ تم تنفيذ وتطبيق المفاضلة الإلكترونية بنجاح!\n\n• إجمالي المتقدمين المعالجين: ${totalCandidates} متنافس\n• مقاعد منح الماجستير: ${masterGrants} منح\n• مقاعد منح الدكتوراه: ${phdGrants} منح\n\nتم تحديث مصفوفة التنافس والتقرير الفخم الجاهز للطباعة والاعتماد من مجلس الجامعة!`;
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert(msg);
-      }
-    }, 150);
+    // إطلاق شاشة المحاكاة البانورامية والعداد التفاعلي بدلاً من الرسالة التقليدية
+    runPanoramicSimulation();
   } catch (err) {
     console.error('Error executing competition run:', err);
-    if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`⚡ تم تنفيذ المفاضلة بنجاح!\nتم تحديث مصفوفة التنافس والتقرير الجاهز للطباعة والاعتماد!`);
-    }
   }
+}
+
+function forceExecuteCompetitionRun() {
+  executeCompetitionRun(true);
+}
+
+function goToDeficienciesReport() {
+  closeModal('modal-run-deficiencies-warning');
+  switchMainTab('tab-analytics');
+  if (typeof switchAnalyticsSubTab === 'function') {
+    switchAnalyticsSubTab('subtab-deficiencies');
+  } else {
+    currentAnalyticsSubTab = 'subtab-deficiencies';
+    renderAnalyticsView();
+  }
+}
+
+// دالة تشغيل العرض الدرامي البانورامي والعداد التفاعلي صعوداً
+function runPanoramicSimulation() {
+  const overlay = document.getElementById('panoramic-simulation-overlay');
+  const counterEl = document.getElementById('panoramic-counter-number');
+  const progressBar = document.getElementById('panoramic-progress-bar');
+  const statusText = document.getElementById('panoramic-status-text');
+
+  if (!overlay || !counterEl) {
+    refreshAllViews();
+    switchMainTab('tab-scoring');
+    return;
+  }
+
+  overlay.style.display = 'flex';
+  const total = state.candidates ? state.candidates.length : 0;
+
+  let currentCount = 0;
+  let progress = 0;
+  counterEl.textContent = '0';
+  if (progressBar) progressBar.style.width = '0%';
+
+  const duration = 1800; // 1.8 ثانية من العرض الدرامي الباهر
+  const steps = 30;
+  const intervalTime = duration / steps;
+  const countIncrement = Math.ceil(total / steps) || 1;
+
+  const timer = setInterval(() => {
+    currentCount += countIncrement;
+    if (currentCount >= total) currentCount = total;
+    progress += (100 / steps);
+    if (progress >= 100) progress = 100;
+
+    counterEl.textContent = String(currentCount);
+    if (progressBar) progressBar.style.width = `${progress}%`;
+
+    if (progress < 40) {
+      if (statusText) statusText.innerHTML = '🔍 جاري مطابقة بيانات الخدمة وحصر أقدمية التعيين...';
+    } else if (progress < 80) {
+      if (statusText) statusText.innerHTML = '📊 احتساب النقاط المعيارية وحسم التعادلات عند خط القبول...';
+    } else {
+      if (statusText) statusText.innerHTML = '🎉 اكتملت المفاضلة الإلكترونية بنجاح!';
+    }
+
+    if (progress >= 100 && currentCount >= total) {
+      clearInterval(timer);
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        refreshAllViews();
+        switchMainTab('tab-scoring');
+      }, 400);
+    }
+  }, intervalTime);
 }
 
 function printDetailedReportDraft() {
