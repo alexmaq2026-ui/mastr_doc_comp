@@ -2043,12 +2043,18 @@ function switchUser(role) {
 
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add('open');
+  if (el) {
+    el.classList.add('open');
+    el.style.display = 'flex';
+  }
 }
 
 function closeModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
+  if (el) {
+    el.classList.remove('open');
+    el.style.display = 'none';
+  }
 }
 
 // مولد شرائح الأقدمية التفاعلي التلقائي
@@ -2228,13 +2234,25 @@ function saveAllCriteriaAndSettings() {
 
 // نافذة ودالة تنفيذ المفاضلة وبدء الدورة التنافسية الرسمية
 function openRunCompetitionModal() {
+  const deficientList = getCandidatesWithDeficiencies();
+  
+  // فحص حاسم فوري عند الضغط على زر "تنفيذ وتطبيق المفاضلة" من الشريط العلوي
+  if (deficientList.length > 0 && !state.hasRunDeficient) {
+    const warningTextEl = document.getElementById('deficiencies-warning-text');
+    if (warningTextEl) {
+      warningTextEl.innerHTML = `تم الفحص الآلي المباشر وتبين وجود عدد <strong>(${deficientList.length}) متنافسين</strong> بياناتهم غير مستوفاة وتحتوي على نواقص حاسمة في (تاريخ التعيين، السن، التقدير، أو التخصص).`;
+    }
+    openModal('modal-run-deficiencies-warning');
+    return;
+  }
+
   if (document.getElementById('run-master-grants')) {
     document.getElementById('run-master-grants').value = state.settings.masterGrantsCount || 3;
   }
   if (document.getElementById('run-phd-grants')) {
     document.getElementById('run-phd-grants').value = state.settings.phdGrantsCount || 3;
   }
-  document.getElementById('modal-run-competition').classList.add('open');
+  openModal('modal-run-competition');
 }
 
 function switchMainTab(targetTabId) {
@@ -2255,7 +2273,7 @@ function getCandidatesWithDeficiencies() {
     const isHiringValid = !isInvalidHiringValue(hiring);
     const isBirthValid = !isInvalidBirthValue(c.birth_date);
     const isGradeValid = !isInvalidGradeValue(c.grade);
-    const isGradYearValid = c.grad_year && c.grad_year !== '-' && parseInt(c.grad_year) > 0;
+    const isGradYearValid = c.grad_year && c.grad_year !== '-' && c.grad_year !== 'ـــــــــــــ' && parseInt(c.grad_year) > 0;
     const isSpecValid = !isInvalidSpecializationValue(c.specialization);
     return !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
   });
@@ -2266,7 +2284,7 @@ function executeCompetitionRun(isForced = false) {
     const deficientList = getCandidatesWithDeficiencies();
     
     // إذا وجدت نواقص ولم يضغط المستخدم على "تنفيذ على أي حال"
-    if (deficientList.length > 0 && !isForced) {
+    if (deficientList.length > 0 && !isForced && !state.hasRunDeficient) {
       closeModal('modal-run-competition');
       const warningTextEl = document.getElementById('deficiencies-warning-text');
       if (warningTextEl) {
@@ -2278,11 +2296,9 @@ function executeCompetitionRun(isForced = false) {
 
     if (isForced) {
       state.hasRunDeficient = true;
-      closeModal('modal-run-deficiencies-warning');
-    } else {
-      state.hasRunDeficient = false;
     }
 
+    closeModal('modal-run-deficiencies-warning');
     closeModal('modal-run-competition');
 
     const masterEl = document.getElementById('run-master-grants');
