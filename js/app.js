@@ -376,10 +376,11 @@ function calculateCandidateScore(candidate) {
 
   // 3. احتساب التخصص
   if (state.criteria.specialization && state.criteria.specialization.enabled) {
-    const specName = candidate.specialization ? candidate.specialization.trim() : '';
+    const specNameNorm = normalizeArabicString(candidate.specialization);
     let found = false;
     for (let item of state.criteria.specialization.items) {
-      if (specName.includes(item.name) || item.name.includes(specName)) {
+      const itemNorm = normalizeArabicString(item.name);
+      if (specNameNorm && itemNorm && (specNameNorm.includes(itemNorm) || itemNorm.includes(specNameNorm))) {
         specScore = item.points;
         found = true;
         break;
@@ -2556,17 +2557,27 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
   `;
 }
 
-// دالة تطهير وفحص التخصصات الأكاديمية (منع التخصصات الرقمية والسنوات والمجهولة)
+// دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
+function normalizeArabicString(str) {
+  if (!str) return '';
+  return String(str)
+    .trim()
+    .replace(/[أإآٱ]/g, 'ا') // توحيد الهمزات على الألف لمنع تكرار التخصصات مثل إدارة وإداره
+    .replace(/ى/g, 'ي')     // توحيد الألف المقصورة والياء
+    .replace(/\s+/g, ' ');   // إزالة المسافات المتعددة
+}
+
+// دالة تطهير وفحص التخصصات الأكاديمية (منع التخصصات الرقمية والسنوات والمجهولة وتوحيد الهمزات)
 function getCleanSpecializationName(spec, candidate) {
   if (candidate && candidate.hiring_univ && !/\d/.test(candidate.hiring_univ) && /\d+/.test(String(spec))) {
-    return candidate.hiring_univ;
+    return normalizeArabicString(candidate.hiring_univ);
   }
   if (!spec) return 'تخصص غير محدد / يتطلب التعديل';
   const s = String(spec).trim();
   if (s === '' || s === '-' || s === '0' || /^\d+/.test(s) || s.length <= 1) {
     return 'تخصص غير محدد / يتطلب التعديل';
   }
-  return s;
+  return normalizeArabicString(s);
 }
 
 function normalizeGradeText(g) {
