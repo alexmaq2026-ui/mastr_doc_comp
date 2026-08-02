@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTabsByRole();
   setupEventListeners();
   refreshAllViews();
+  if (typeof syncCandidatesFromSupabase === 'function') {
+    syncCandidatesFromSupabase();
+  }
 });
 
 // تهيئة المخزن المحلي (LocalStorage Engine)
