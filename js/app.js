@@ -778,37 +778,37 @@ function viewCandidateDetails(candidateId) {
 
   container.innerHTML = `
     <!-- ترويسة البطاقة الرسمية للطباعة -->
-    <div style="border-bottom: 2px double #1e3a8a; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
-        <h2 style="margin: 0; color: #0f172a; font-size: 1.15rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-        <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.92rem; font-weight: 800;">لجنة المفاضلة والتنافس - بطاقة تقييم وتنافسية شاملة</h3>
+        <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+        <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تقييم وتنافسية شاملة</h3>
       </div>
       <div style="text-align: left;">
-        <span style="font-size: 0.75rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
-        <strong style="font-size: 1.25rem; color: #1e3a8a; background: #eff6ff; padding: 2px 10px; border-radius: 6px; border: 1px solid #bfdbfe;">المركز #${candidate.rank}</strong>
+        <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
+        <strong style="font-size: 1.15rem; color: #1e3a8a; background: #eff6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">المركز #${candidate.rank}</strong>
       </div>
     </div>
 
     <!-- كارت اسم المتنافس والتخصص -->
-    <div style="background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="card-print-section" style="background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
       <div>
-        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #0f172a;">${candidate.name}</h3>
-        <span style="font-size: 0.85rem; color: #1e3a8a; font-weight: 700;">التخصص: (${candidate.specialization})</span>
+        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 900; color: #0f172a;">${candidate.name}</h3>
+        <span style="font-size: 0.8rem; color: #1e3a8a; font-weight: 700;">التخصص: (${candidate.specialization})</span>
       </div>
       <div>
-        <span style="background: #1e3a8a; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 800;">🎓 منحة (${candidate.degree})</span>
+        <span style="background: #1e3a8a; color: #ffffff; padding: 3px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 800;">🎓 منحة (${candidate.degree})</span>
       </div>
     </div>
 
     <!-- 1. شبكة البيانات الشخصية والأكاديمية مع نوع المنحة البارز -->
-    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem;">
-      <h4 style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
+      <h4 style="margin: 0 0 6px 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
         📌 البيانات الشخصية ونوع المنحة المتقدم لها
       </h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: #0f172a; font-weight: 600;">
-        <div style="grid-column: span 2; background: #eff6ff; padding: 6px 10px; border-radius: 6px; border: 1px solid #bfdbfe; color: #1e3a8a;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #0f172a; font-weight: 600;">
+        <div style="grid-column: span 2; background: #eff6ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e3a8a;">
           <strong>🎓 نوع المنحة المطلوبة:</strong>
-          <span class="badge-degree" style="font-size: 0.85rem; font-weight: 800; margin-right: 6px;">منحة (${candidate.degree})</span>
+          <span class="badge-degree" style="font-size: 0.8rem; font-weight: 800; margin-right: 6px;">منحة (${candidate.degree})</span>
         </div>
         <div><strong>تاريخ التعيين بالخدمة/الجامعة:</strong> <span style="color:#1e3a8a;">${hiringUnivStr}</span></div>
         <div><strong>تاريخ الميلاد (العمر):</strong> <span style="color:#1e3a8a;">${candidate.birth_date || '-'} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</span></div>
@@ -818,68 +818,68 @@ function viewCandidateDetails(candidateId) {
     </div>
 
     <!-- 2. تفكيك احتساب النقاط التنافسية -->
-    <div style="background: #ffffff; border: 1.5px solid #059669; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem;">
-      <h4 style="margin: 0 0 10px 0; color: #047857; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #a7f3d0; padding-bottom: 4px;">
+    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #059669; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
+      <h4 style="margin: 0 0 6px 0; color: #047857; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px;">
         📊 تفكيك احتساب النقاط المعيارية (من 25 نقطة)
       </h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: #064e3b;">
-        <div style="background: #f0fdf4; padding: 8px 12px; border-radius: 6px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.8rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى 10ن):</span>
-          <strong style="font-size: 1.05rem; color: #047857;">${candidate.scores.seniorityScore} نقاط</strong>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #064e3b;">
+        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى 10ن):</span>
+          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.seniorityScore} نقاط</strong>
         </div>
-        <div style="background: #f0fdf4; padding: 8px 12px; border-radius: 6px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.8rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى 5ن):</span>
-          <strong style="font-size: 1.05rem; color: #047857;">${candidate.scores.ageScore} نقاط</strong>
+        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.ageScore} نقاط</strong>
         </div>
-        <div style="background: #f0fdf4; padding: 8px 12px; border-radius: 6px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.8rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى 5ن):</span>
-          <strong style="font-size: 1.05rem; color: #047857;">${candidate.scores.specScore} نقاط</strong>
+        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.specScore} نقاط</strong>
         </div>
-        <div style="background: #f0fdf4; padding: 8px 12px; border-radius: 6px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.8rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
-          <strong style="font-size: 1.05rem; color: #047857;">${candidate.scores.gradeScore} نقاط</strong>
+        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
+          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.gradeScore} نقاط</strong>
         </div>
         ${activeCustom.map(custom => `
-          <div style="background: #f0fdf4; padding: 8px 12px; border-radius: 6px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.8rem; color: #334155; font-weight:700;">${custom.name}:</span>
-            <strong style="font-size: 1.05rem; color: #047857;">${(customScores[custom.id]) || 0} نقاط</strong>
+          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}:</span>
+            <strong style="font-size: 1rem; color: #047857;">${(customScores[custom.id]) || 0} نقاط</strong>
           </div>
         `).join('')}
       </div>
 
-      <div style="margin-top: 12px; background: #047857; color: #ffffff; padding: 8px 14px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 800; font-size: 0.95rem;">إجمالي النقاط الكلية المحسوبة:</span>
-        <strong style="font-size: 1.35rem;">${candidate.scores.totalScore} نقطة</strong>
+      <div style="margin-top: 8px; background: #047857; color: #ffffff; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 800; font-size: 0.9rem;">إجمالي النقاط الكلية المحسوبة:</span>
+        <strong style="font-size: 1.25rem;">${candidate.scores.totalScore} نقطة</strong>
       </div>
     </div>
 
     <!-- 3. حالة التنافس والمفاضلة الاستثنائية -->
-    <div style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 8px; padding: 12px 14px; font-size: 0.84rem; color: #78350f;">
-      <h4 style="margin: 0 0 8px 0; color: #b45309; font-size: 0.9rem; font-weight: 800; border-bottom: 1px solid #fde68a; padding-bottom: 4px;">
+    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #78350f;">
+      <h4 style="margin: 0 0 6px 0; color: #b45309; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #fde68a; padding-bottom: 3px;">
         ⚖️ حالة التنافس وملاحظات الاستحقاق
       </h4>
-      <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 6px;">
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px;">
         <span><strong>النتيجة والاعتماد:</strong></span>
         ${candidate.status === 'مقبول' 
-          ? `<span class="badge-status badge-accepted" style="font-size:0.85rem; font-weight:800; padding: 4px 10px;">✅ مرشح مقبول بالفوز بـ (منحة ${candidate.degree})</span>` 
+          ? `<span class="badge-status badge-accepted" style="font-size:0.8rem; font-weight:800; padding: 3px 8px;">✅ مرشح مقبول بالفوز بـ (منحة ${candidate.degree})</span>` 
           : '<span style="color:#64748b; font-weight:700;">— خارج خط المنح المتاحة</span>'}
       </div>
       ${candidate.tieBreaker ? `
-        <div style="background:#fffbeb; border-right:4px solid #d97706; padding:8px 12px; border-radius:4px; margin-top:8px;">
+        <div style="background:#fffbeb; border-right:4px solid #d97706; padding:6px 10px; border-radius:4px; margin-top:6px;">
           <strong style="color:#b45309; display:block;">⚖️ مفاضلة استثنائية (حالة تعادل عند خط القبول)</strong>
-          <span style="font-size:0.8rem; color:#92400e;">تم حسم الترتيب بناءً على معيار: <strong>${candidate.tieBreaker}</strong></span>
+          <span style="font-size:0.78rem; color:#92400e;">تم حسم الترتيب بناءً على معيار: <strong>${candidate.tieBreaker}</strong></span>
         </div>
       ` : `
-        <div style="color:#64748b; font-size:0.8rem; margin-top:4px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
+        <div style="color:#64748b; font-size:0.78rem; margin-top:2px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
       `}
     </div>
 
     <!-- 4. تذييل الاعتماد والتواقيع المعتمدة عند الطباعة -->
-    <div style="margin-top: 24px; border-top: 1.5px dashed #1e3a8a; padding-top: 16px; font-size: 0.84rem; color: #0f172a;">
+    <div class="card-print-signatures" style="margin-top: 14px; border-top: 1.5px dashed #1e3a8a; padding-top: 10px; font-size: 0.8rem; color: #0f172a;">
       <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 800;">
         <div>
           <span>توقيع المتقدم</span><br><br>
-          <span style="color:#475569; font-weight:700; display:block; margin-top:4px;">الاسم: ${candidate.name}</span>
+          <span style="color:#475569; font-weight:700; display:block; margin-top:2px;">الاسم: ${candidate.name}</span>
           <span style="color:#94a3b8; font-weight:600;">التوقيع: ............................</span>
         </div>
         <div>
@@ -888,7 +888,7 @@ function viewCandidateDetails(candidateId) {
         </div>
         <div>
           <span>يعتمد / رئيس لجنة المفاضلة</span><br><br>
-          <span style="color:#1e3a8a; font-weight:800; display:block; margin-top:4px;">${chairmanName}</span>
+          <span style="color:#1e3a8a; font-weight:800; display:block; margin-top:2px;">${chairmanName}</span>
         </div>
       </div>
     </div>
