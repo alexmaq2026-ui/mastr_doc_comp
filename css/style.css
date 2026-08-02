@@ -824,8 +824,12 @@ body {
         line-height: 1.2 !important;
     }
 
-    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .card-header button {
+    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .col-action, .card-header button {
         display: none !important;
+    }
+
+    .card-title, h1, h2, h3, h4, p {
+        color: #0f172a !important;
     }
 
     .main-container {

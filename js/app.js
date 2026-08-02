@@ -2794,14 +2794,13 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
     const isHiringValid = !isInvalidHiringValue(hiring);
     const isBirthValid = !isInvalidBirthValue(c.birth_date);
     const isGradeValid = !isInvalidGradeValue(c.grade);
-    const isGradYearValid = c.grad_year && c.grad_year !== '-' && parseInt(c.grad_year) > 0;
+    const isGradYearValid = c.grad_year && c.grad_year !== '-' && c.grad_year !== 'ـــــــــــــ' && parseInt(c.grad_year) > 0;
     const isSpecValid = !isInvalidSpecializationValue(c.specialization);
 
     const hasDeficiency = !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
 
     allAudited.push({
       candidate: c,
-      hiring,
       isHiringValid,
       isBirthValid,
       isGradeValid,
@@ -2818,18 +2817,18 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
     <div class="card" dir="rtl">
       <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
         <div>
-          <h3 class="card-title">⚠️ الجدول الرقابي الحاصر لفحص نواقص واستكمال بيانات المتنافسين</h3>
+          <h3 class="card-title" style="color: var(--text-main); font-weight: 800;">الجدول الرقابي الحاصر لفحص نواقص واستكمال بيانات المتنافسين</h3>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
             فحص آلي شامل وموحد لجميع عناصر بيانات الموظفين المسجلين (تاريخ التعيين، السن، التقدير، سنة التخرج، والتخصص).
           </p>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="no-print">
           <button class="btn ${auditShowOnlyDeficient ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleAuditFilter(true)">
-            🔴 عرض حالات النواقص فقط (${deficientList.length} موظف)
+            عرض حالات النواقص فقط (${deficientList.length} موظف)
           </button>
           <button class="btn ${!auditShowOnlyDeficient ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleAuditFilter(false)">
-            📋 عرض الكشف الشامل لكافة المتنافسين (${allAudited.length} متنافس)
+            عرض الكشف الشامل لكافة المتنافسين (${allAudited.length} متنافس)
           </button>
         </div>
       </div>
@@ -2839,22 +2838,21 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
           <thead>
             <tr>
               <th style="width: 4%;">#</th>
-              <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
-              <th style="width: 11%;">تاريخ التعيين</th>
-              <th style="width: 10%;">سنة الميلاد</th>
-              <th style="width: 13%;">التقدير العلمي</th>
-              <th style="width: 10%;">سنة التخرج</th>
+              <th style="width: 22%; text-align: right;">اسم المتنافس / الموظف</th>
+              <th style="width: 12%;">تاريخ التعيين</th>
+              <th style="width: 11%;">سنة الميلاد</th>
+              <th style="width: 12%;">التقدير العلمي</th>
+              <th style="width: 11%;">سنة التخرج</th>
               <th style="width: 14%;">التخصص العلمي</th>
-              <th style="width: 10%;">جاهزية الملف</th>
-              <th style="width: 10%;">إجراء التعديل</th>
+              <th style="width: 14%;">جاهزية الملف</th>
+              <th style="width: 10%;" class="col-action no-print">إجراء التعديل</th>
             </tr>
           </thead>
           <tbody>
             ${displayList.length === 0 ? `
               <tr>
                 <td colspan="9" style="padding: 30px; text-align: center;">
-                  <div style="font-size: 2rem; margin-bottom: 6px;">✅</div>
-                  <strong style="color: #34d399; font-size: 1.1rem;">جميع بيانات السجلات مكتملة ومستوفية 100%!</strong>
+                  <strong style="color: #10b981; font-size: 1.1rem;">جميع بيانات السجلات مكتملة ومستوفية 100%!</strong>
                 </td>
               </tr>
             ` : displayList.map((item, idx) => {
@@ -2870,61 +2868,61 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
                   <!-- 1. تاريخ التعيين -->
                   <td>
                     ${item.isHiringValid ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${item.hiring})</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; border: 1px solid #10b981; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">متوفر</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.18); color: #ef4444; font-weight: 800; border: 1px solid #ef4444; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">غير متوفر</span>
                     `}
                   </td>
 
                   <!-- 2. سنة الميلاد -->
                   <td>
                     ${item.isBirthValid ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.birth_date})</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; border: 1px solid #10b981; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">متوفر</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.18); color: #ef4444; font-weight: 800; border: 1px solid #ef4444; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">غير متوفر</span>
                     `}
                   </td>
 
                   <!-- 3. التقدير العلمي -->
                   <td>
                     ${item.isGradeValid ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.grade})</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; border: 1px solid #10b981; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">متوفر</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص (${c.grade || '0/فارغ'})</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.18); color: #ef4444; font-weight: 800; border: 1px solid #ef4444; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">غير متوفر</span>
                     `}
                   </td>
 
                   <!-- 4. سنة التخرج -->
                   <td>
                     ${item.isGradYearValid ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.grad_year})</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; border: 1px solid #10b981; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">متوفر</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.18); color: #ef4444; font-weight: 800; border: 1px solid #ef4444; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">غير متوفر</span>
                     `}
                   </td>
 
                   <!-- 5. التخصص الأكاديمي -->
                   <td>
                     ${item.isSpecValid ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.18); color: #34d399; font-weight: 800; border: 1px solid #10b981; padding: 4px 8px; font-size: 0.76rem;">🟢 متوفر (${c.specialization})</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; border: 1px solid #10b981; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">متوفر</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 800; border: 1px solid #ef4444; padding: 4px 8px; font-size: 0.76rem;">🔴 ناقص (أرقام/غائب)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.18); color: #ef4444; font-weight: 800; border: 1px solid #ef4444; padding: 4px 10px; font-size: 0.78rem; border-radius: 6px;">غير متوفر</span>
                     `}
                   </td>
 
                   <!-- جاهزية الملف -->
                   <td>
                     ${item.hasDeficiency ? `
-                      <span style="color: #f87171; font-weight: 900; font-size: 0.82rem;">⚠️ يحتاج استكمال</span>
+                      <span style="color: #ef4444; font-weight: 900; font-size: 0.82rem;">يحتاج استكمال</span>
                     ` : `
-                      <span style="color: #34d399; font-weight: 900; font-size: 0.82rem;">✅ مكتمل 100%</span>
+                      <span style="color: #10b981; font-weight: 900; font-size: 0.82rem;">مكتمل 100%</span>
                     `}
                   </td>
 
                   <!-- الإجراء والتعديل -->
-                  <td>
+                  <td class="col-action no-print">
                     <button class="btn btn-warning btn-sm" style="font-weight: 800; font-size: 0.75rem; padding: 4px 10px; background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;" onclick="editCandidate(${c.id})">
-                      ⚙️ استكمال البيانات
+                      تعديل البيانات
                     </button>
                   </td>
                 </tr>
