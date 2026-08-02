@@ -781,7 +781,7 @@ function viewCandidateDetails(candidateId) {
     <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
         <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-        <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تقييم وتنافسية شاملة</h3>
+        <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تأكيد البيانات وإقرارها</h3>
       </div>
       <div style="text-align: left;">
         <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
