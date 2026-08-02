@@ -175,6 +175,7 @@ function getRoleTitle(role) {
   if (role === 'super_admin') return 'المدير الأعلى / رئيس اللجنة';
   if (role === 'data_entry') return 'مُدخل بيانات';
   if (role === 'auditor') return 'مراجع مطلع';
+  if (role === 'committee_member') return 'عضو لجنة المفاضلة (اطلاع فقط)';
   return role;
 }
 
@@ -190,7 +191,9 @@ function renderTabsByRole() {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
                   'tab-btn-report','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
     data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
-    auditor:     ['tab-btn-candidates','tab-btn-analytics']
+    auditor:     ['tab-btn-candidates','tab-btn-analytics'],
+    committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
+                       'tab-btn-report','tab-btn-analytics']
   };
 
   const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
@@ -221,6 +224,41 @@ function renderTabsByRole() {
   const runNavBtn = document.getElementById('btn-run-nav') || document.querySelector('.btn-run-nav');
   if (runNavBtn) {
     runNavBtn.style.display = (currentRole === 'super_admin') ? 'inline-flex' : 'none';
+  }
+
+  // تفعيل القيود الصارمة لعضو لجنة المفاضلة (اطلاع فقط بدون طباعة أو تعديل)
+  if (currentRole === 'committee_member') {
+    setTimeout(() => {
+      document.querySelectorAll('button').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        const text = btn.innerText || '';
+        if (
+          onclickAttr.includes('print') ||
+          onclickAttr.includes('export') ||
+          onclickAttr.includes('edit') ||
+          onclickAttr.includes('delete') ||
+          onclickAttr.includes('save') ||
+          onclickAttr.includes('autoGenerate') ||
+          text.includes('طباعة') ||
+          text.includes('تصدير') ||
+          text.includes('تعديل') ||
+          text.includes('إضافة') ||
+          text.includes('تنفيذ')
+        ) {
+          if (
+            !onclickAttr.includes('handleLogout') &&
+            !onclickAttr.includes('showLoginModal') &&
+            !onclickAttr.includes('closeModal') &&
+            !onclickAttr.includes('toggle') &&
+            !onclickAttr.includes('switch')
+          ) {
+            btn.style.display = 'none';
+          }
+        }
+      });
+
+      document.querySelectorAll('.col-action').forEach(el => el.style.display = 'none');
+    }, 50);
   }
 }
 
@@ -542,6 +580,7 @@ function refreshAllViews() {
   renderUsersAdminTable();
   renderDetailedReport();
   renderAnalyticsView();
+  renderTabsByRole();
 }
 
 // 1. شاشة لوحة القيادة (Dashboard View)
