@@ -2850,11 +2850,12 @@ function renderPureSpecializationsReport(container, selectedDegree = 'الكل')
   `;
 }
 
-// 4. الرسم البياني البصري للفئات العمرية والتخصصات والأقدمية
+// 4. الرسم البياني البصري للفئات العمرية والتخصصات والأقدمية (Executive Analytics Dashboard)
 function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
   const candidatesToChart = state.candidates.filter(c => selectedDegree === 'الكل' || c.degree === selectedDegree);
+  const totalCandidates = candidatesToChart.length || 1;
 
-  // تجميع الفئات العمرية
+  // 1. تجميع الفئات العمرية
   const ageMap = {
     '50 سنة فما فوق': 0,
     '45 - 49 سنة': 0,
@@ -2877,7 +2878,10 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
     else ageMap['أقل من 35 سنة']++;
   });
 
-  // تجميع أقدمية التعيين حسب الشرائح الرسمية
+  const sortedAges = Object.entries(ageMap).sort((a, b) => b[1] - a[1]);
+  const topAgeCategory = sortedAges[0] ? `${sortedAges[0][0]} (${sortedAges[0][1]} موظف)` : 'غير محدد';
+
+  // 2. تجميع أقدمية التعيين حسب الشرائح الرسمية
   const seniorityMap = {
     '1990 - 1994م (10 نقاط - أقدمية استثنائية)': 0,
     '1995 - 2000م (8 نقاط - أقدمية عالية جداً)': 0,
@@ -2887,6 +2891,8 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
     '2016 - 2020م (2 نقطتان - حديث التعيين)': 0,
     '2021 - 2030م (1 نقطة - تعيين حديث جداً)': 0
   };
+
+  let totalSeniorityScoreSum = 0;
 
   candidatesToChart.forEach(c => {
     const hiringVal = c.hiring_univ || c.hiring_service;
@@ -2902,40 +2908,87 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
     else if (year >= 2011 && year <= 2015) seniorityMap['2011 - 2015م (3 نقاط - أقدمية حديثة)']++;
     else if (year >= 2016 && year <= 2020) seniorityMap['2016 - 2020م (2 نقطتان - حديث التعيين)']++;
     else if (year >= 2021) seniorityMap['2021 - 2030م (1 نقطة - تعيين حديث جداً)']++;
+
+    const scoreObj = calculateCandidateScore(c);
+    totalSeniorityScoreSum += scoreObj.seniorityScore || 0;
   });
 
-  const totalCandidates = candidatesToChart.length || 1;
+  const avgSeniorityScore = (totalSeniorityScoreSum / totalCandidates).toFixed(1);
 
-  // تجميع أعلى التخصصات
+  // 3. تجميع أعلى التخصصات
   const specCounts = {};
   candidatesToChart.forEach(c => {
     const s = getCleanSpecializationName(c.specialization);
     specCounts[s] = (specCounts[s] || 0) + 1;
   });
   const topSpecs = Object.entries(specCounts).sort((a, b) => b[1] - a[1]);
+  const topSpecName = topSpecs[0] ? `${topSpecs[0][0]} (${topSpecs[0][1]} موظف)` : 'لا يوجد';
 
   container.innerHTML = `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
-      <!-- 1. الرسم البياني للفئات العمرية -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">🎂 الرسم البياني لتوزيع الفئات العمرية للمتنافسين</h3>
+    <!-- 1. شريط مؤشرات القيادة الإحصائية البارزة (Executive KPI Cards) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 22px;">
+      <!-- KPI 1: إجمالي المتنافسين المحللين -->
+      <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.45), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(59, 130, 246, 0.4); border-radius: 12px; padding: 14px 16px; backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <div>
+          <span style="font-size: 0.78rem; color: #93c5fd; font-weight: 800; display: block; margin-bottom: 4px;">👥 المتنافسون الخاضعون للتحليل</span>
+          <strong style="font-size: 1.6rem; color: #ffffff; font-weight: 900; line-height: 1.2;">${candidatesToChart.length} <span style="font-size:0.85rem; color:#93c5fd; font-weight:700;">متنافس</span></strong>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-          يمثل هذا الرسم البصري التوزيع الديموغرافي للسن بين جميع الموظفين المتنافسين.
+        <div style="font-size: 1.8rem; background: rgba(59, 130, 246, 0.2); width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(59, 130, 246, 0.4);">📊</div>
+      </div>
+
+      <!-- KPI 2: متوسط نقاط الأقدمية الخدمية -->
+      <div style="background: linear-gradient(135deg, rgba(5, 150, 105, 0.45), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 14px 16px; backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <div>
+          <span style="font-size: 0.78rem; color: #6ee7b7; font-weight: 800; display: block; margin-bottom: 4px;">🎖️ متوسط نقاط الأقدمية</span>
+          <strong style="font-size: 1.6rem; color: #ffffff; font-weight: 900; line-height: 1.2;">${avgSeniorityScore} <span style="font-size:0.85rem; color:#6ee7b7; font-weight:700;">من 10ن</span></strong>
+        </div>
+        <div style="font-size: 1.8rem; background: rgba(16, 185, 129, 0.2); width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(16, 185, 129, 0.4);">⏳</div>
+      </div>
+
+      <!-- KPI 3: الفئة العمرية الأكثر كثافة -->
+      <div style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.45), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 14px 16px; backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <div>
+          <span style="font-size: 0.78rem; color: #fde047; font-weight: 800; display: block; margin-bottom: 4px;">🎂 الفئة العمرية الأكثر كثافة</span>
+          <strong style="font-size: 1.1rem; color: #ffffff; font-weight: 900; line-height: 1.3;">${topAgeCategory}</strong>
+        </div>
+        <div style="font-size: 1.8rem; background: rgba(245, 158, 11, 0.2); width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(245, 158, 11, 0.4);">📈</div>
+      </div>
+
+      <!-- KPI 4: التخصص الأعلى تنافساً -->
+      <div style="background: linear-gradient(135deg, rgba(13, 148, 136, 0.45), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(20, 184, 166, 0.4); border-radius: 12px; padding: 14px 16px; backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <div>
+          <span style="font-size: 0.78rem; color: #5eead4; font-weight: 800; display: block; margin-bottom: 4px;">🎯 التخصص الأكثر إقبالاً</span>
+          <strong style="font-size: 1.05rem; color: #ffffff; font-weight: 900; line-height: 1.3;">${topSpecName}</strong>
+        </div>
+        <div style="font-size: 1.8rem; background: rgba(20, 184, 166, 0.2); width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(20, 184, 166, 0.4);">🎓</div>
+      </div>
+    </div>
+
+    <!-- 2. شبكة المخططات البيانية الرئيسية -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+      
+      <!-- الرسم البياني الأول: الفئات العمرية -->
+      <div class="card" style="background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(59, 130, 246, 0.3); box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+        <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
+          <h3 class="card-title" style="color: #60a5fa; font-size: 1.05rem; font-weight: 900;">🎂 التوزيع الديموغرافي للفئات العمرية</h3>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5;">
+          يمثل هذا الرسم النسبة والتوزيع الديموغرافي للسن بين جميع الموظفين المتنافسين الخاضعين للتحليل.
         </p>
 
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
           ${Object.entries(ageMap).map(([label, count]) => {
             const pct = Math.round((count / totalCandidates) * 100);
             return `
-              <div class="chart-bar-row">
-                <div class="chart-bar-label">
-                  <span>${label}</span>
-                  <span>${count} متنافس (${pct}%)</span>
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-weight: 800; font-size: 0.88rem; color: #f1f5f9;">${label}</span>
+                  <span style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); padding: 2px 10px; border-radius: 12px; font-weight: 900; font-size: 0.78rem;">
+                    ${count} متنافس (${pct}%)
+                  </span>
                 </div>
-                <div class="chart-bar-track">
-                  <div class="chart-bar-fill" style="width: ${pct}%;"></div>
+                <div style="width: 100%; height: 12px; background: rgba(30, 41, 59, 0.9); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+                  <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 6px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.6); transition: width 0.8s ease;"></div>
                 </div>
               </div>
             `;
@@ -2943,26 +2996,28 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
         </div>
       </div>
 
-      <!-- 2. الرسم البياني لأقدمية التعيين الخدمية -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">🎖️ الرسم البياني لتوزيع أقدمية التعيين الخدمية</h3>
+      <!-- الرسم البياني الثاني: أقدمية التعيين الخدمية -->
+      <div class="card" style="background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+        <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
+          <h3 class="card-title" style="color: #34d399; font-size: 1.05rem; font-weight: 900;">🎖️ توزيع أقدمية التعيين الخدمية وأوزانها</h3>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-          يمثل توزيع سنوات تعيين الموظفين في الخدمة وأوزان الأقدمية المعتمدة.
+        <p style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5;">
+          يمثل توزيع سنوات تعيين الموظفين في الخدمة بالجامعة/الدولة والأوزان المعيارية المعتمدة لها.
         </p>
 
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
           ${Object.entries(seniorityMap).map(([label, count]) => {
             const pct = Math.round((count / totalCandidates) * 100);
             return `
-              <div class="chart-bar-row">
-                <div class="chart-bar-label">
-                  <span>${label}</span>
-                  <span>${count} متنافس (${pct}%)</span>
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #f1f5f9;">${label}</span>
+                  <span style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 10px; border-radius: 12px; font-weight: 900; font-size: 0.78rem;">
+                    ${count} متنافس (${pct}%)
+                  </span>
                 </div>
-                <div class="chart-bar-track">
-                  <div class="chart-bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, #d97706, #059669);"></div>
+                <div style="width: 100%; height: 12px; background: rgba(30, 41, 59, 0.9); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+                  <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #d97706, #10b981); border-radius: 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.6); transition: width 0.8s ease;"></div>
                 </div>
               </div>
             `;
@@ -2970,32 +3025,35 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
         </div>
       </div>
 
-      <!-- 3. الرسم البياني للتخصصات الأكثر إقبالاً -->
-      <div class="card" style="grid-column: 1 / -1;">
-        <div class="card-header">
-          <h3 class="card-title">📊 الرسم البياني للتخصصات الأكثر إقبالاً وطلباً</h3>
+      <!-- الرسم البياني الثالث: التخصصات العلمية الأكثر إقبالاً وطلباً (Clean Responsive Grid) -->
+      <div class="card" style="grid-column: 1 / -1; background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(20, 184, 166, 0.35); box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+        <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 14px;">
+          <h3 class="card-title" style="color: #2dd4bf; font-size: 1.1rem; font-weight: 900;">📊 التوزيع الإحصائي للتخصصات الأكاديمية المطلوبة بالمنح</h3>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-          يمثل نسبة الإقبال وحجم الطلبات المتقدمة بكل تخصص أكاديمي.
+        <p style="color: #94a3b8; font-size: 0.84rem; margin-bottom: 18px; line-height: 1.5;">
+          يمثل حجم طلبات المتقدمين في كل تخصص أكاديمي بنسب مئوية دقيقة ومستقلة تجنباً لأي تداخل بكتل البيانات.
         </p>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
           ${topSpecs.map(([spec, count]) => {
             const pct = Math.round((count / totalCandidates) * 100);
             return `
-              <div class="chart-bar-row">
-                <div class="chart-bar-label">
-                  <span>${spec}</span>
-                  <span>${count} متنافس (${pct}%)</span>
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(20, 184, 166, 0.25); border-radius: 10px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                  <strong style="font-size: 0.9rem; color: #ffffff; font-weight: 900;">${spec}</strong>
+                  <span style="background: rgba(20, 184, 166, 0.2); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.4); padding: 2px 10px; border-radius: 12px; font-weight: 900; font-size: 0.78rem;">
+                    ${count} متنافس (${pct}%)
+                  </span>
                 </div>
-                <div class="chart-bar-track">
-                  <div class="chart-bar-fill" style="width: ${pct}%; background: linear-gradient(90deg, #0d9488, #2563eb);"></div>
+                <div style="width: 100%; height: 10px; background: rgba(30, 41, 59, 0.9); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+                  <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #0d9488, #2563eb); border-radius: 6px; box-shadow: 0 0 10px rgba(13, 148, 136, 0.6); transition: width 0.8s ease;"></div>
                 </div>
               </div>
             `;
           }).join('')}
         </div>
       </div>
+
     </div>
   `;
 }
