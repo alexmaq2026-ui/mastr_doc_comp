@@ -193,7 +193,7 @@ function renderTabsByRole() {
     data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
     auditor:     ['tab-btn-candidates','tab-btn-analytics'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                       'tab-btn-report','tab-btn-analytics']
+                       'tab-btn-report','tab-btn-analytics','tab-btn-criteria']
   };
 
   const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
@@ -229,6 +229,14 @@ function renderTabsByRole() {
   // تفعيل القيود الصارمة لعضو لجنة المفاضلة (اطلاع فقط بدون طباعة أو تعديل)
   if (currentRole === 'committee_member') {
     setTimeout(() => {
+      // تعطيل وقفل كافة مدخلات شاشة تهيئة المعايير تماماً
+      const criteriaContainer = document.getElementById('tab-criteria');
+      if (criteriaContainer) {
+        criteriaContainer.querySelectorAll('input, select, textarea').forEach(inp => {
+          inp.disabled = true;
+        });
+      }
+
       document.querySelectorAll('button').forEach(btn => {
         const onclickAttr = btn.getAttribute('onclick') || '';
         const text = btn.innerText || '';
@@ -239,11 +247,13 @@ function renderTabsByRole() {
           onclickAttr.includes('delete') ||
           onclickAttr.includes('save') ||
           onclickAttr.includes('autoGenerate') ||
+          onclickAttr.includes('saveCriteria') ||
           text.includes('طباعة') ||
           text.includes('تصدير') ||
           text.includes('تعديل') ||
           text.includes('إضافة') ||
-          text.includes('تنفيذ')
+          text.includes('تنفيذ') ||
+          text.includes('حفظ')
         ) {
           if (
             !onclickAttr.includes('handleLogout') &&
