@@ -828,6 +828,10 @@ body {
         display: none !important;
     }
 
+    .print-official-header {
+        display: block !important;
+    }
+
     .card-title, h1, h2, h3, h4, p {
         color: #0f172a !important;
     }

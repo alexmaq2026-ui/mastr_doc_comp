@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="css/style.css?v=48">
+  <link rel="stylesheet" href="css/style.css?v=49">
 </head>
 <body>
 
@@ -183,9 +183,17 @@
     <!-- 2. شاشة إدارة المتنافسين -->
     <section id="tab-candidates" class="tab-content">
       <div class="card">
+        <!-- ترويسة خاصة بالطباعة للطباعة PDF -->
+        <div class="print-official-header" style="display: none; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 15px;">
+          <div style="font-size: 1.1rem; font-weight: 900; color: #0f172a;">الجمهورية اليمنية - جامعة صنعاء</div>
+          <div style="font-size: 1rem; font-weight: 800; color: #1e3a8a; margin-top: 4px;">الأمانة العامة - لجنة المفاضلة والتنافس على منح الدراسات العليا للوظائف الإدارية</div>
+          <div style="font-size: 1.25rem; font-weight: 900; color: #0f172a; margin-top: 10px;">سجل بيانات الموظفين المتنافسين المسجلين على منح الدراسات العليا (ماجستير ودكتوراه)</div>
+        </div>
+
         <div class="card-header">
           <h2 class="card-title">سجل المتنافسين على منح الدراسات العليا</h2>
           <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" id="btn-print-candidates" onclick="printCandidatesRegisterPDF()" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; font-weight: 700; border: none;">🖨️ طباعة سجل المتنافسين (PDF)</button>
             <button class="btn btn-secondary" id="btn-import-excel" onclick="document.getElementById('file-excel-import').click()">استيراد ملف إكسل</button>
             <input type="file" id="file-excel-import" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(event)">
             <button class="btn btn-primary" id="btn-add-candidate" onclick="showAddCandidateModal()">إضافة متنافس جديد</button>
@@ -218,7 +226,7 @@
                 <th>تاريخ الميلاد</th>
                 <th>سنة التخرج</th>
                 <th>التقدير</th>
-                <th>الإجراءات</th>
+                <th class="col-action no-print">الإجراءات</th>
               </tr>
             </thead>
             <tbody id="candidates-tbody"></tbody>
@@ -630,9 +638,9 @@
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/xlsx.full.min.js?v=48"></script>
-  <script src="js/initial_data.js?v=48"></script>
-  <script src="js/supabase_client.js?v=48"></script>
-  <script src="js/app.js?v=48"></script>
+  <script src="js/xlsx.full.min.js?v=49"></script>
+  <script src="js/initial_data.js?v=49"></script>
+  <script src="js/supabase_client.js?v=49"></script>
+  <script src="js/app.js?v=49"></script>
 </body>
 </html>

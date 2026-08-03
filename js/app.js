@@ -712,17 +712,20 @@ function renderCandidatesTable() {
         </td>
       </tr>` : '';
 
+    const rawHiring = (c.hiring_univ || c.hiring_service || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+    const rawBirth  = (c.birth_date || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+
     return `
     <tr style="${rowBg}">
       <td>${idx + 1}</td>
       <td><strong>${c.name}</strong> ${warningBadge}</td>
       <td><span class="badge-degree">${c.degree}</span></td>
       <td>${c.specialization}</td>
-      <td>${c.hiring_univ || c.hiring_service || '-'}</td>
-      <td>${c.birth_date || '-'}</td>
+      <td>${rawHiring || '-'}</td>
+      <td>${rawBirth || '-'}</td>
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
-      <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+      <td class="col-action no-print" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
         ${editBtn}
         ${deleteBtn}
         ${annotateBtn}
@@ -731,6 +734,10 @@ function renderCandidatesTable() {
     </tr>
     ${annotationsPanel}`;
   }).join('');
+}
+
+function printCandidatesRegisterPDF() {
+  window.print();
 }
 
 function toggleAnnotationsPanel(candidateId) {
