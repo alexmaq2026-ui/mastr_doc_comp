@@ -25,6 +25,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // تهيئة المخزن المحلي (LocalStorage Engine)
 function initStore() {
+  // ── تنظيف candidates القديمة: إذا كان الـ state المحفوظ يحتوي بيانات قديمة، نُفرّغها ──
+  try {
+    const existingRaw = localStorage.getItem('sanaa_univ_competition_state');
+    if (existingRaw) {
+      const existingState = JSON.parse(existingRaw);
+      if (existingState && Array.isArray(existingState.candidates) && existingState.candidates.length > 0) {
+        existingState.candidates = [];
+        localStorage.setItem('sanaa_univ_competition_state', JSON.stringify(existingState));
+      }
+    }
+  } catch(e) { /* تجاهل أي خطأ في التنظيف */ }
+
   const savedState = localStorage.getItem('sanaa_univ_competition_state');
   if (savedState) {
     try {
@@ -32,8 +44,8 @@ function initStore() {
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
-      if (!state.candidates || state.candidates.length < PRESEEDED_CANDIDATES.length) {
-        state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
+      if (!state.candidates) {
+        state.candidates = [];
       }
       if (state.criteria && (state.criteria.seniority.maxPoints === 30 || state.criteria.age.maxPoints === 25 || state.criteria.specialization.maxPoints === 25)) {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
@@ -60,7 +72,7 @@ function loadDefaults() {
   state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
   state.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
-  state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
+  state.candidates = []; // تبدأ القائمة فارغة - البيانات تأتي من Supabase أو من رفع Excel
   state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
   state.currentUser = null; // البدء بشاشة تسجيل الدخول
   saveStore();
@@ -676,9 +688,9 @@ function renderCandidatesTable() {
       ? `<button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>`
       : '';
 
-    // 2. زر حذف (لمدخل البيانات فقط)
-    const deleteBtn = isDataEntry
-      ? `<button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})"> حذف</button>`
+    // 2. زر حذف (للمدير الأعلى ومدخل البيانات)
+    const deleteBtn = (isAdmin || isDataEntry)
+      ? `<button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})" style="margin-right:4px;"> 🗑️ حذف</button>`
       : '';
 
     // 3. زر تضليل (للمراجع المطلع فقط)
