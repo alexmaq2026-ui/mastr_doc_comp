@@ -2872,6 +2872,30 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
   const deficientList = allAudited.filter(item => item.hasDeficiency);
   const displayList = auditShowOnlyDeficient ? deficientList : allAudited;
 
+  // الإحصائيات العددية والنسبية المئوية
+  const totalCandidates = allAudited.length;
+  const totalDeficientCandidates = deficientList.length;
+  const totalCompleteCandidates = totalCandidates - totalDeficientCandidates;
+
+  const candidateCompletePercent = totalCandidates > 0 ? ((totalCompleteCandidates / totalCandidates) * 100).toFixed(1) : '0';
+  const candidateDeficientPercent = totalCandidates > 0 ? ((totalDeficientCandidates / totalCandidates) * 100).toFixed(1) : '0';
+
+  // حساب إجمالي عناصر البيانات المفحوصة (5 عناصر لكل متنافس)
+  let totalDataFields = totalCandidates * 5;
+  let totalAvailableFields = 0;
+  let totalMissingFields = 0;
+
+  allAudited.forEach(item => {
+    if (item.isHiringValid) totalAvailableFields++; else totalMissingFields++;
+    if (item.isBirthValid) totalAvailableFields++; else totalMissingFields++;
+    if (item.isGradeValid) totalAvailableFields++; else totalMissingFields++;
+    if (item.isGradYearValid) totalAvailableFields++; else totalMissingFields++;
+    if (item.isSpecValid) totalAvailableFields++; else totalMissingFields++;
+  });
+
+  const availableFieldsPercent = totalDataFields > 0 ? ((totalAvailableFields / totalDataFields) * 100).toFixed(1) : '0';
+  const missingFieldsPercent = totalDataFields > 0 ? ((totalMissingFields / totalDataFields) * 100).toFixed(1) : '0';
+
   container.innerHTML = `
     <div class="card" dir="rtl">
       <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
@@ -2889,6 +2913,67 @@ function renderDeficienciesAuditReport(container, selectedDegree = 'الكل') {
           <button class="btn ${!auditShowOnlyDeficient ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="toggleAuditFilter(false)">
             عرض الكشف الشامل لكافة المتنافسين (${allAudited.length} متنافس)
           </button>
+        </div>
+      </div>
+
+      <!-- لوحة الإحصائيات العددية والنسبية المئوية المتقدمة -->
+      <div style="margin: 15px 20px 20px 20px; padding: 18px 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.7)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div style="font-weight: 800; font-size: 1rem; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">📊</span>
+            <span>المؤشرات الإحصائية لمستوى الجاهزية والنواقص</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #94a3b8; font-weight: 700;">
+            إجمالي عناصر البيانات المفحوصة: <strong style="color: #60a5fa;">${totalDataFields} عنصر</strong> (${totalCandidates} متنافس × 5 حقول)
+          </div>
+        </div>
+
+        <!-- أشرطة ومربعات المؤشرات الإحصائية 4 كروت -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+
+          <!-- كارت 1: النسبة العامة للجاهزية -->
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px 16px;">
+            <div style="font-size: 0.78rem; color: #a7f3d0; font-weight: 700; margin-bottom: 4px;">معدل الجاهزية العامة للبيانات</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: #10b981; line-height: 1.1;">
+              ${availableFieldsPercent}%
+            </div>
+            <!-- شريط التقدم -->
+            <div style="width: 100%; background: rgba(255, 255, 255, 0.1); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden;">
+              <div style="width: ${availableFieldsPercent}%; background: linear-gradient(90deg, #10b981, #34d399); height: 100%;"></div>
+            </div>
+          </div>
+
+          <!-- كارت 2: إجمالي العناصر المتوفرة -->
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 12px 16px;">
+            <div style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">العناصر المتوفرة والمكتملة</div>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 1.5rem; font-weight: 900; color: #34d399;">${totalAvailableFields}</span>
+              <span style="font-size: 0.82rem; color: #a7f3d0; font-weight: 700;">من أصل ${totalDataFields} (${availableFieldsPercent}%)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">عناصر بيانات مستوفية الشروط 100%</div>
+          </div>
+
+          <!-- كارت 3: إجمالي العناصر غير المتوفرة (النواقص) -->
+          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 12px 16px;">
+            <div style="font-size: 0.78rem; color: #fca5a5; font-weight: 700; margin-bottom: 4px;">العناصر غير المتوفرة (نواقص)</div>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 1.5rem; font-weight: 900; color: #ef4444;">${totalMissingFields}</span>
+              <span style="font-size: 0.82rem; color: #fca5a5; font-weight: 700;">من أصل ${totalDataFields} (${missingFieldsPercent}%)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">تتطلب استكمال وتحديث البيانات</div>
+          </div>
+
+          <!-- كارت 4: حالة ملفات الموظفين المتنافسين -->
+          <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 12px 16px;">
+            <div style="font-size: 0.78rem; color: #93c5fd; font-weight: 700; margin-bottom: 4px;">حالة كشوفات المتنافسين</div>
+            <div style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; margin-top: 2px;">
+              <span style="color: #10b981;">${totalCompleteCandidates} مكتمل 100%</span> (${candidateCompletePercent}%)
+            </div>
+            <div style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; margin-top: 2px;">
+              <span style="color: #ef4444;">${totalDeficientCandidates} يحتاج استكمال</span> (${candidateDeficientPercent}%)
+            </div>
+          </div>
+
         </div>
       </div>
 
