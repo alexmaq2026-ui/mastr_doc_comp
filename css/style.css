@@ -824,7 +824,7 @@ body {
         line-height: 1.2 !important;
     }
 
-    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .col-action, .col-readiness, .card-header button {
+    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .col-action, .col-readiness, .card-header button, #tab-candidates .card-header {
         display: none !important;
     }
 
