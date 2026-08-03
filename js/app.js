@@ -1942,10 +1942,19 @@ function saveCandidateForm() {
 }
 
 function deleteCandidate(id) {
-  if (confirm('هل أنت تأكد من رغبتك في حذف هذا المتنافس؟')) {
+  if (confirm('هل أنت متأكد من رغبتك في حذف هذا المتنافس؟ لا يمكن التراجع عن هذا الإجراء.')) {
+    // 1. حذف من الذاكرة المحلية
     state.candidates = state.candidates.filter(c => c.id !== id);
     saveStore();
     refreshAllViews();
+    // 2. حذف من قاعدة بيانات Supabase (الحذف الدائم)
+    if (typeof deleteCandidateFromSupabase === 'function') {
+      deleteCandidateFromSupabase(id).then(() => {
+        console.log(`✅ تم حذف المتنافس (${id}) من Supabase بنجاح.`);
+      }).catch(err => {
+        console.error('خطأ في حذف المتنافس من Supabase:', err);
+      });
+    }
   }
 }
 
