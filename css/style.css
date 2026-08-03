@@ -1303,3 +1303,48 @@ body {
         padding-top: 6px !important;
     }
 }
+
+/* ====================================================
+   CSS طباعة المحضر الرسمي لجلسة المفاضلة (A4 portrait)
+   ==================================================== */
+@media print {
+    body.is-minutes-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-minutes-print header.navbar,
+    body.is-minutes-print nav.tabs-nav,
+    body.is-minutes-print .no-print,
+    body.is-minutes-print .btn,
+    body.is-minutes-print .modal-overlay {
+        display: none !important;
+    }
+    body.is-minutes-print main.main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+    body.is-minutes-print .tab-content {
+        display: none !important;
+    }
+    body.is-minutes-print #tab-minutes {
+        display: block !important;
+    }
+    body.is-minutes-print #minutes-content {
+        display: block !important;
+    }
+    body.is-minutes-print #minutes-printable-area {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 10mm 14mm !important;
+    }
+    @page {
+        size: A4 portrait;
+        margin: 8mm 10mm;
+    }
+}

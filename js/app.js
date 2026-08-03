@@ -199,12 +199,12 @@ function renderTabsByRole() {
 
   // تعريف التبويبات لكل دور
   const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
+                   'tab-btn-report','tab-btn-minutes','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
 
   // الخريطة: ما يُظهر لكل دور
   const visibilityMap = {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
+                  'tab-btn-report','tab-btn-minutes','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
     data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
     auditor:     ['tab-btn-candidates','tab-btn-analytics'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
@@ -605,6 +605,7 @@ function refreshAllViews() {
   renderUsersAdminTable();
   renderDetailedReport();
   renderAnalyticsView();
+  renderMinutes();
   renderTabsByRole();
 }
 
@@ -3418,3 +3419,249 @@ function printAnalyticsReport() {
 }
 
 
+// ====================================================
+// شاشة المحضر الرسمي لنتائج المفاضلة (رئيس اللجنة فقط)
+// Official Minutes of the Scholarship Competition Session
+// ====================================================
+
+function renderMinutes() {
+  const container = document.getElementById('minutes-content');
+  if (!container) return;
+
+  // -- استخراج البيانات من state --
+  const settings      = state.settings || {};
+  const refYear       = parseInt(settings.referenceYear) || 2026;
+  const academicYear  = `${refYear - 1}/${refYear}م`;
+  const location      = settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
+  const dateStr       = settings.competitionDate || 'الخميس، 30 يوليو 2026م';
+  const masterLimit   = parseInt(settings.masterGrantsCount) || 3;
+  const phdLimit      = parseInt(settings.phdGrantsCount)    || 3;
+  const rectorName    = settings.rectorName || 'أ.د. القاسم محمد عباس';
+  const univName      = settings.universityName || 'جامعة صنعاء';
+
+  // -- المترشحون والفائزون --
+  const allMaster   = getRankedCandidates('ماجستير');
+  const allPhd      = getRankedCandidates('دكتوراه');
+  const masterCount = allMaster.length;
+  const phdCount    = allPhd.length;
+  const totalCount  = masterCount + phdCount;
+
+  const masterWinners = allMaster.slice(0, masterLimit);
+  const phdWinners    = allPhd.slice(0, phdLimit);
+
+  // -- أعضاء اللجنة --
+  const members  = (state.committeeMembers && state.committeeMembers.length > 0)
+                   ? state.committeeMembers
+                   : DEFAULT_COMMITTEE_MEMBERS;
+  const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
+  // الأعضاء العاديون بترتيب عكسي (يبدأ بآخر عضو = هاني مغلس)
+  const regularMembers = members.filter(m => m !== chairman).reverse();
+
+  // -- بناء صفوف أسماء الفائزين --
+  function buildWinnersRows(winners, degreeLabel) {
+    if (winners.length === 0) {
+      return `<tr><td colspan="4" style="text-align:center; color:#64748b; font-style:italic; padding: 10px;">لا يوجد متقدمون لّ${degreeLabel} أو لم يتم تنفيذ المفاضلة بعد.</td></tr>`;
+    }
+    return winners.map((c, idx) => `
+      <tr style="background: ${idx % 2 === 0 ? '#fefefe' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
+        <td style="text-align: center; font-weight: 900; font-size: 1rem; color: #1e3a8a; width: 50px; padding: 8px;">${idx + 1}</td>
+        <td style="font-weight: 800; color: #0f172a; padding: 8px 12px;">${c.name}</td>
+        <td style="color: #334155; font-weight: 600; padding: 8px 12px;">${c.specialization || 'غير محدد'}</td>
+        <td style="text-align: center; font-weight: 800; color: #059669; padding: 8px;"><strong>${c.scores.totalScore} نقطة</strong></td>
+      </tr>
+    `).join('');
+  }
+
+  // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
+  const regularMemberCards = regularMembers.map(m => `
+    <div style="border: 1px solid #fcd34d; padding: 8px; border-radius: 6px; background: #fffbeb; text-align: center; min-width: 140px;">
+      <p style="font-weight: 800; color: #92400e; font-size: 0.76rem; margin: 0 0 2px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #1a1a00; font-size: 0.82rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #78350f; font-size: 0.67rem; margin: 0 0 8px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 4px;"></div>
+      <p style="font-size: 0.6rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div id="minutes-printable-area" style="
+      background: #fffdf5;
+      color: #1a1a00;
+      font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+      direction: rtl;
+      max-width: 800px;
+      margin: 0 auto 30px auto;
+      padding: 30px 36px;
+      border: 2px solid #d97706;
+      border-radius: 10px;
+      box-shadow: 0 4px 30px rgba(217,119,6,0.18);
+    ">
+
+      <!-- ====== رأس الوثيقة ====== -->
+      <div style="text-align: center; border-bottom: 3px double #d97706; padding-bottom: 14px; margin-bottom: 16px;">
+        <!-- شعار MAQATECH صغير -->
+        <div style="display: flex; justify-content: flex-start; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; background: #78350f; color: #fef3c7; padding: 3px 8px; border-radius: 5px; font-size: 0.65rem;">
+            <span style="background: linear-gradient(135deg,#f59e0b,#84cc16); font-weight:900; padding: 2px 5px; border-radius:3px; color:#1a1a00;">MT</span>
+            <span style="font-weight:700; letter-spacing:0.5px;">MAQATECH</span>
+          </div>
+        </div>
+
+        <h1 style="margin: 0 0 4px 0; color: #78350f; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.3px;">
+          ${univName}
+        </h1>
+        <h2 style="margin: 0 0 6px 0; color: #92400e; font-size: 1.0rem; font-weight: 800;">
+          لجنة المفاضلة للمتقدمين لمنح الدراسات العليا
+        </h2>
+        <h3 style="margin: 0; color: #b45309; font-size: 0.88rem; font-weight: 700;">
+          الكادر الإداري
+        </h3>
+      </div>
+
+      <!-- ====== عنوان المحضر ====== -->
+      <div style="text-align: center; background: linear-gradient(135deg, #d97706, #f59e0b, #84cc16); color: #1a1a00; padding: 12px 20px; border-radius: 8px; margin-bottom: 18px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 1.12rem; font-weight: 900; letter-spacing: 0.4px;">
+          محضر جلسة المفاضلة على منح الدراسات العليا للكادر الإداري
+        </h2>
+        <p style="margin: 0; font-size: 0.92rem; font-weight: 700; color: #451a03;">
+          العام الجامعي ${academicYear}
+        </p>
+      </div>
+
+      <!-- ====== بيانات الجلسة ====== -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; font-size: 0.85rem;">
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 7px; padding: 10px 14px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 4px;">📍 مكان عقد الجلسة:</strong>
+          <span style="color: #78350f; font-weight: 600;">${location}</span>
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 7px; padding: 10px 14px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 4px;">🗓️ تاريخ ووقت الجلسة:</strong>
+          <span style="color: #78350f; font-weight: 600;">${dateStr}</span>
+        </div>
+      </div>
+
+      <!-- ====== عدد المتقدمين ====== -->
+      <div style="background: #fefce8; border: 1.5px solid #fcd34d; border-radius: 8px; padding: 12px 18px; margin-bottom: 18px;">
+        <h4 style="margin: 0 0 10px 0; color: #92400e; font-size: 0.9rem; font-weight: 900;">📊 بيان بعدد المتقدمين للحصول على المنح الدراسية:</h4>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 160px; text-align: center; background: #fff; border: 1px solid #86efac; border-radius: 7px; padding: 10px;">
+            <div style="font-size: 2rem; font-weight: 900; color: #166534;">${masterCount}</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #14532d;">عدد المتقدمين لمنح الماجستير</div>
+          </div>
+          <div style="flex: 1; min-width: 160px; text-align: center; background: #fff; border: 1px solid #fde68a; border-radius: 7px; padding: 10px;">
+            <div style="font-size: 2rem; font-weight: 900; color: #b45309;">${phdCount}</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #92400e;">عدد المتقدمين لمنح الدكتوراه</div>
+          </div>
+          <div style="flex: 1; min-width: 160px; text-align: center; background: linear-gradient(135deg,#d97706,#f59e0b); border-radius: 7px; padding: 10px;">
+            <div style="font-size: 2rem; font-weight: 900; color: #1a1a00;">${totalCount}</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #451a03;">إجمالي المتقدمين</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== نص المحضر الديباجي ====== -->
+      <div style="background: #fffbeb; border-right: 4px solid #f59e0b; padding: 10px 16px; margin-bottom: 18px; font-size: 0.85rem; line-height: 1.8; color: #78350f;">
+        <p style="margin: 0;">
+          <strong>بسم الله الرحمن الرحيم</strong>
+        </p>
+        <p style="margin: 6px 0 0 0;">
+          في يوم ${dateStr}\u060c وفي مقر ${location}\u060c اجتمعت لجنة المفاضلة المشكّلة بموجب قرار رئاسة الجامعة\u060c للنظر في طلبات الحصول على منح الدراسات العليا (ماجستير ودكتوراه)
+          المقدمة من منتسبي الكادر الإداري لجامعة صنعاء للعام الجامعي ${academicYear}\u060c
+          وبعد الدراسة والمفاضلة وفق المعايير والأوزان المعتمدة\u060c توصلت اللجنة إلى النتائج التالية:
+        </p>
+      </div>
+
+      <!-- ====== أولاً: الفائزون بمنح الماجستير ====== -->
+      <div style="margin-bottom: 20px;">
+        <h3 style="background: linear-gradient(135deg,#4ade80,#86efac); color:#14532d; padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; margin: 0 0 10px 0;">
+          ① أولاً: الفائزون بمنح الماجستير (${masterLimit} منحة)
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; border: 1.5px solid #86efac; border-radius: 8px; overflow: hidden;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#16a34a,#15803d); color: #ffffff;">
+              <th style="padding: 8px; text-align: center; width: 50px;">#</th>
+              <th style="padding: 8px; text-align: right;">اسم الموظف / المتقدم</th>
+              <th style="padding: 8px; text-align: right;">التخصص</th>
+              <th style="padding: 8px; text-align: center;">مجموع النقاط</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buildWinnersRows(masterWinners, 'الماجستير')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== ثانياً: الفائزون بمنح الدكتوراه ====== -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; margin: 0 0 10px 0;">
+          ② ثانياً: الفائزون بمنح الدكتوراه (${phdLimit} منحة)
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; border: 1.5px solid #fcd34d; border-radius: 8px; overflow: hidden;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
+              <th style="padding: 8px; text-align: center; width: 50px;">#</th>
+              <th style="padding: 8px; text-align: right;">اسم الموظف / المتقدم</th>
+              <th style="padding: 8px; text-align: right;">التخصص</th>
+              <th style="padding: 8px; text-align: center;">مجموع النقاط</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buildWinnersRows(phdWinners, 'الدكتوراه')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== توقيعات أعضاء اللجنة (الصف الأول: الأعضاء بترتيب عكسي) ====== -->
+      <div style="border-top: 2px solid #d97706; padding-top: 16px; margin-top: 4px;">
+        <h4 style="text-align: center; color: #92400e; font-size: 0.9rem; font-weight: 900; margin: 0 0 14px 0;">
+          توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
+        </h4>
+
+        <!-- الصف الأول: الأعضاء العاديون بترتيب عكسي -->
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 14px;">
+          ${regularMemberCards}
+        </div>
+
+        <!-- الصف الثاني: رئيس اللجنة + تعميد رئيس الجامعة -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 85%; margin: 0 auto; text-align: center;">
+
+          <!-- رئيس اللجنة -->
+          <div style="border: 1.5px solid #d97706; padding: 10px; border-radius: 8px; background: #fffbeb;">
+            <p style="font-weight: 900; color: #92400e; font-size: 0.86rem; margin: 0 0 2px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #1a1a00; font-size: 0.9rem; margin: 0 0 1px 0;">${chairman.name}</p>
+            <p style="color: #78350f; font-size: 0.72rem; margin: 0 0 8px 0;">${chairman.adminTitle || ''}</p>
+            <div style="height: 22px; border-bottom: 1px dashed #d97706; margin-bottom: 4px;"></div>
+            <p style="font-size: 0.63rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          </div>
+
+          <!-- يعتمد رئيس الجامعة -->
+          <div style="border: 2px solid #16a34a; padding: 10px; border-radius: 8px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.86rem; margin: 0 0 2px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.9rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #166534; font-size: 0.72rem; margin: 0 0 8px 0;">رئيس ${univName}</p>
+            <div style="height: 22px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 4px;"></div>
+            <p style="font-size: 0.63rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== تذييل MAQATECH ====== -->
+      <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 1px 5px; border-radius: 3px; font-family: sans-serif;">MT</span>
+          <strong>MAQATECH SOFTWARE SOLUTIONS</strong>
+        </div>
+        <span>جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك © 2026</span>
+      </div>
+    </div>
+  `;
+}
+
+// طباعة المحضر الرسمي
+function printMinutes() {
+  document.body.classList.add('is-minutes-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-minutes-print');
+  }, 1000);
+}

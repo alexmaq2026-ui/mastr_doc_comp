@@ -77,6 +77,7 @@
     <button class="tab-btn" id="tab-btn-candidates" data-tab="tab-candidates">إدارة المتنافسين والكشوفات</button>
     <button class="tab-btn" id="tab-btn-scoring" data-tab="tab-scoring">مصفوفة المفاضلة والترتيب</button>
     <button class="tab-btn" id="tab-btn-report" data-tab="tab-report">التقرير التفصيلي المعتمد</button>
+    <button class="tab-btn" id="tab-btn-minutes" data-tab="tab-minutes" style="background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #ffffff; font-weight: 800;">📜 المحضر الرسمي</button>
     <button class="tab-btn" id="tab-btn-analytics" data-tab="tab-analytics">التقارير التحليلية والرقابية</button>
     <button class="tab-btn" id="tab-btn-criteria" data-tab="tab-criteria">تهيئة المعايير والأوزان</button>
     <button class="tab-btn" id="tab-btn-admin" data-tab="tab-admin">إدارة النظام والصلاحيات</button>
@@ -302,6 +303,33 @@
 
       <!-- ورقة التقرير الجاهزة للطباعة والتوقيع -->
       <div id="detailed-report-content"></div>
+    </section>
+
+    <!-- 4.7. شاشة المحضر الرسمي لنتائج المفاضلة (رئيس اللجنة فقط) -->
+    <section id="tab-minutes" class="tab-content">
+      <!-- شريط أدوات المحضر (لا يطبع) -->
+      <div class="card no-print" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(91,33,182,0.08)); border: 1.5px solid rgba(124,58,237,0.4);">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+          <h2 class="card-title" style="color: #7c3aed; display: flex; align-items: center; gap: 8px;">
+            <span>📜</span>
+            <span>المحضر الرسمي لجلسة المفاضلة على منح الدراسات العليا</span>
+          </h2>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <span style="background: rgba(124,58,237,0.2); color: #7c3aed; border: 1px solid rgba(124,58,237,0.4); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 800;">
+              🔒 متاح لرئيس اللجنة فقط
+            </span>
+            <button class="btn btn-secondary" onclick="printMinutes()" style="background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; font-weight: 800;">
+              🖨️ طباعة المحضر الرسمي
+            </button>
+          </div>
+        </div>
+        <div style="padding: 0 20px 12px; color: #94a3b8; font-size: 0.82rem;">
+          ⚠️ تأكد من تنفيذ المفاضلة أولاً قبل طباعة المحضر. جميع البيانات تُسحب تلقائياً من قاعدة البيانات.
+        </div>
+      </div>
+
+      <!-- ورقة المحضر الرسمي الجاهزة للطباعة -->
+      <div id="minutes-content"></div>
     </section>
 
     <!-- 4.5. شاشة التقارير التحليلية والرقابية المتقدمة -->
