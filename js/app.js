@@ -3474,12 +3474,12 @@ function renderMinutes() {
 
   // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
   const regularMemberCards = regularMembers.map(m => `
-    <div style="border: 1px solid #fcd34d; padding: 8px; border-radius: 6px; background: #fffbeb; text-align: center; min-width: 140px;">
-      <p style="font-weight: 800; color: #92400e; font-size: 0.76rem; margin: 0 0 2px 0;">${m.committeeRole || 'عضواً'}</p>
-      <p style="font-weight: 900; color: #1a1a00; font-size: 0.82rem; margin: 0 0 1px 0;">${m.name}</p>
-      <p style="color: #78350f; font-size: 0.67rem; margin: 0 0 8px 0;">${m.adminTitle || ''}</p>
-      <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 4px;"></div>
-      <p style="font-size: 0.6rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
+    <div style="border: 1px solid #fcd34d; padding: 5px 6px; border-radius: 5px; background: #fffbeb; text-align: center; min-width: 120px;">
+      <p style="font-weight: 800; color: #92400e; font-size: 0.7rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #78350f; font-size: 0.62rem; margin: 0 0 5px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 14px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
+      <p style="font-size: 0.56rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
     </div>
   `).join('');
 
@@ -3491,69 +3491,68 @@ function renderMinutes() {
       direction: rtl;
       max-width: 800px;
       margin: 0 auto 30px auto;
-      padding: 30px 36px;
+      padding: 18px 28px;
       border: 2px solid #d97706;
       border-radius: 10px;
       box-shadow: 0 4px 30px rgba(217,119,6,0.18);
     ">
 
       <!-- ====== رأس الوثيقة ====== -->
-      <div style="text-align: center; border-bottom: 3px double #d97706; padding-bottom: 14px; margin-bottom: 16px;">
-
-        <h1 style="margin: 0 0 4px 0; color: #78350f; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.3px;">
+      <div style="text-align: center; border-bottom: 2px double #d97706; padding-bottom: 8px; margin-bottom: 10px;">
+        <h1 style="margin: 0 0 2px 0; color: #78350f; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.3px;">
           ${univName}
         </h1>
-        <h2 style="margin: 0 0 6px 0; color: #92400e; font-size: 1.0rem; font-weight: 800;">
+        <h2 style="margin: 0 0 2px 0; color: #92400e; font-size: 0.92rem; font-weight: 800;">
           لجنة المفاضلة للمتقدمين لمنح الدراسات العليا
         </h2>
-        <h3 style="margin: 0; color: #b45309; font-size: 0.88rem; font-weight: 700;">
+        <h3 style="margin: 0; color: #b45309; font-size: 0.82rem; font-weight: 700;">
           الكادر الإداري
         </h3>
       </div>
 
       <!-- ====== عنوان المحضر ====== -->
-      <div style="text-align: center; background: linear-gradient(135deg, #d97706, #f59e0b, #84cc16); color: #1a1a00; padding: 12px 20px; border-radius: 8px; margin-bottom: 18px;">
-        <h2 style="margin: 0 0 4px 0; font-size: 1.12rem; font-weight: 900; letter-spacing: 0.4px;">
+      <div style="text-align: center; background: #4ade80; color: #14532d; padding: 8px 16px; border-radius: 7px; margin-bottom: 10px;">
+        <h2 style="margin: 0 0 2px 0; font-size: 1rem; font-weight: 900; letter-spacing: 0.3px;">
           محضر جلسة المفاضلة على منح الدراسات العليا للكادر الإداري
         </h2>
-        <p style="margin: 0; font-size: 0.92rem; font-weight: 700; color: #451a03;">
+        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #166534;">
           العام الجامعي ${academicYear}
         </p>
       </div>
 
       <!-- ====== بيانات الجلسة ====== -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; font-size: 0.85rem;">
-        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 7px; padding: 10px 14px;">
-          <strong style="color: #92400e; display: block; margin-bottom: 4px;">📍 مكان عقد الجلسة:</strong>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; font-size: 0.8rem;">
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 2px;">📍 مكان عقد الجلسة:</strong>
           <span style="color: #78350f; font-weight: 600;">${location}</span>
         </div>
-        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 7px; padding: 10px 14px;">
-          <strong style="color: #92400e; display: block; margin-bottom: 4px;">🗓️ تاريخ ووقت الجلسة:</strong>
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 2px;">🗓️ تاريخ ووقت الجلسة:</strong>
           <span style="color: #78350f; font-weight: 600;">${dateStr}</span>
         </div>
       </div>
 
       <!-- ====== عدد المتقدمين ====== -->
-      <div style="background: #fefce8; border: 1.5px solid #fcd34d; border-radius: 8px; padding: 12px 18px; margin-bottom: 18px;">
-        <h4 style="margin: 0 0 10px 0; color: #92400e; font-size: 0.9rem; font-weight: 900;">📊 بيان بعدد المتقدمين للحصول على المنح الدراسية:</h4>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 160px; text-align: center; background: #fff; border: 1px solid #86efac; border-radius: 7px; padding: 10px;">
-            <div style="font-size: 2rem; font-weight: 900; color: #166534;">${masterCount}</div>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #14532d;">عدد المتقدمين لمنح الماجستير</div>
+      <div style="background: #fefce8; border: 1.5px solid #fcd34d; border-radius: 7px; padding: 8px 14px; margin-bottom: 10px;">
+        <h4 style="margin: 0 0 6px 0; color: #92400e; font-size: 0.82rem; font-weight: 900;">📊 بيان بعدد المتقدمين للحصول على المنح الدراسية:</h4>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 120px; text-align: center; background: #fff; border: 1px solid #86efac; border-radius: 6px; padding: 6px;">
+            <div style="font-size: 1.6rem; font-weight: 900; color: #166534; line-height: 1.2;">${masterCount}</div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #14532d;">عدد متقدمي الماجستير</div>
           </div>
-          <div style="flex: 1; min-width: 160px; text-align: center; background: #fff; border: 1px solid #fde68a; border-radius: 7px; padding: 10px;">
-            <div style="font-size: 2rem; font-weight: 900; color: #b45309;">${phdCount}</div>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #92400e;">عدد المتقدمين لمنح الدكتوراه</div>
+          <div style="flex: 1; min-width: 120px; text-align: center; background: #fff; border: 1px solid #fde68a; border-radius: 6px; padding: 6px;">
+            <div style="font-size: 1.6rem; font-weight: 900; color: #b45309; line-height: 1.2;">${phdCount}</div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #92400e;">عدد متقدمي الدكتوراه</div>
           </div>
-          <div style="flex: 1; min-width: 160px; text-align: center; background: linear-gradient(135deg,#d97706,#f59e0b); border-radius: 7px; padding: 10px;">
-            <div style="font-size: 2rem; font-weight: 900; color: #1a1a00;">${totalCount}</div>
-            <div style="font-size: 0.8rem; font-weight: 700; color: #451a03;">إجمالي المتقدمين</div>
+          <div style="flex: 1; min-width: 120px; text-align: center; background: linear-gradient(135deg,#d97706,#f59e0b); border-radius: 6px; padding: 6px;">
+            <div style="font-size: 1.6rem; font-weight: 900; color: #1a1a00; line-height: 1.2;">${totalCount}</div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #451a03;">إجمالي المتقدمين</div>
           </div>
         </div>
       </div>
 
       <!-- ====== نص المحضر الديباجي ====== -->
-      <div style="background: #fffbeb; border-right: 4px solid #f59e0b; padding: 10px 16px; margin-bottom: 18px; font-size: 0.85rem; line-height: 1.8; color: #78350f;">
+      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 7px 12px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.65; color: #78350f;">
         <p style="margin: 0;">
           <strong>بسم الله الرحمن الرحيم</strong>
         </p>
@@ -3565,17 +3564,17 @@ function renderMinutes() {
       </div>
 
       <!-- ====== أولاً: الفائزون بمنح الماجستير ====== -->
-      <div style="margin-bottom: 20px;">
-        <h3 style="background: linear-gradient(135deg,#4ade80,#86efac); color:#14532d; padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; margin: 0 0 10px 0;">
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: #4ade80; color:#14532d; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0;">
           ① أولاً: الفائزون بمنح الماجستير (${masterLimit} منحة)
         </h3>
-        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; border: 1.5px solid #86efac; border-radius: 8px; overflow: hidden;">
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #86efac; border-radius: 6px; overflow: hidden;">
           <thead>
             <tr style="background: linear-gradient(135deg,#16a34a,#15803d); color: #ffffff;">
-              <th style="padding: 8px; text-align: center; width: 50px;">#</th>
-              <th style="padding: 8px; text-align: right;">اسم الموظف / المتقدم</th>
-              <th style="padding: 8px; text-align: right;">التخصص</th>
-              <th style="padding: 8px; text-align: center;">مجموع النقاط</th>
+              <th style="padding: 5px; text-align: center; width: 40px;">#</th>
+              <th style="padding: 5px; text-align: right;">اسم الموظف / المتقدم</th>
+              <th style="padding: 5px; text-align: right;">التخصص</th>
+              <th style="padding: 5px; text-align: center;">مجموع النقاط</th>
             </tr>
           </thead>
           <tbody>
@@ -3585,17 +3584,17 @@ function renderMinutes() {
       </div>
 
       <!-- ====== ثانياً: الفائزون بمنح الدكتوراه ====== -->
-      <div style="margin-bottom: 24px;">
-        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; margin: 0 0 10px 0;">
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0;">
           ② ثانياً: الفائزون بمنح الدكتوراه (${phdLimit} منحة)
         </h3>
-        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; border: 1.5px solid #fcd34d; border-radius: 8px; overflow: hidden;">
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden;">
           <thead>
             <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
-              <th style="padding: 8px; text-align: center; width: 50px;">#</th>
-              <th style="padding: 8px; text-align: right;">اسم الموظف / المتقدم</th>
-              <th style="padding: 8px; text-align: right;">التخصص</th>
-              <th style="padding: 8px; text-align: center;">مجموع النقاط</th>
+              <th style="padding: 5px; text-align: center; width: 40px;">#</th>
+              <th style="padding: 5px; text-align: right;">اسم الموظف / المتقدم</th>
+              <th style="padding: 5px; text-align: right;">التخصص</th>
+              <th style="padding: 5px; text-align: center;">مجموع النقاط</th>
             </tr>
           </thead>
           <tbody>
@@ -3605,35 +3604,35 @@ function renderMinutes() {
       </div>
 
       <!-- ====== توقيعات أعضاء اللجنة (الصف الأول: الأعضاء بترتيب عكسي) ====== -->
-      <div style="border-top: 2px solid #d97706; padding-top: 16px; margin-top: 4px;">
-        <h4 style="text-align: center; color: #92400e; font-size: 0.9rem; font-weight: 900; margin: 0 0 14px 0;">
+      <div style="border-top: 2px solid #d97706; padding-top: 10px; margin-top: 4px; page-break-inside: avoid;">
+        <h4 style="text-align: center; color: #92400e; font-size: 0.85rem; font-weight: 900; margin: 0 0 8px 0;">
           توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
         </h4>
 
         <!-- الصف الأول: الأعضاء العاديون بترتيب عكسي -->
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 14px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px;">
           ${regularMemberCards}
         </div>
 
         <!-- الصف الثاني: رئيس اللجنة + تعميد رئيس الجامعة -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 85%; margin: 0 auto; text-align: center;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 85%; margin: 0 auto; text-align: center;">
 
           <!-- رئيس اللجنة -->
-          <div style="border: 1.5px solid #d97706; padding: 10px; border-radius: 8px; background: #fffbeb;">
-            <p style="font-weight: 900; color: #92400e; font-size: 0.86rem; margin: 0 0 2px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
-            <p style="font-weight: 900; color: #1a1a00; font-size: 0.9rem; margin: 0 0 1px 0;">${chairman.name}</p>
-            <p style="color: #78350f; font-size: 0.72rem; margin: 0 0 8px 0;">${chairman.adminTitle || ''}</p>
-            <div style="height: 22px; border-bottom: 1px dashed #d97706; margin-bottom: 4px;"></div>
-            <p style="font-size: 0.63rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          <div style="border: 1.5px solid #d97706; padding: 7px; border-radius: 7px; background: #fffbeb;">
+            <p style="font-weight: 900; color: #92400e; font-size: 0.8rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #1a1a00; font-size: 0.85rem; margin: 0 0 1px 0;">${chairman.name}</p>
+            <p style="color: #78350f; font-size: 0.68rem; margin: 0 0 6px 0;">${chairman.adminTitle || ''}</p>
+            <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
+            <p style="font-size: 0.6rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
           </div>
 
           <!-- يعتمد رئيس الجامعة -->
-          <div style="border: 2px solid #16a34a; padding: 10px; border-radius: 8px; background: #f0fdf4;">
-            <p style="font-weight: 900; color: #15803d; font-size: 0.86rem; margin: 0 0 2px 0;">يُعتمُد / رئيس الجامعة</p>
-            <p style="font-weight: 900; color: #14532d; font-size: 0.9rem; margin: 0 0 1px 0;">${rectorName}</p>
-            <p style="color: #166534; font-size: 0.72rem; margin: 0 0 8px 0;">رئيس ${univName}</p>
-            <div style="height: 22px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 4px;"></div>
-            <p style="font-size: 0.63rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          <div style="border: 2px solid #16a34a; padding: 7px; border-radius: 7px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.8rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.85rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #166534; font-size: 0.68rem; margin: 0 0 6px 0;">رئيس ${univName}</p>
+            <div style="height: 18px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 3px;"></div>
+            <p style="font-size: 0.6rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
           </div>
         </div>
       </div>
