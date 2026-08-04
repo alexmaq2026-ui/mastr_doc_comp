@@ -78,6 +78,7 @@
     <button class="tab-btn" id="tab-btn-scoring" data-tab="tab-scoring">مصفوفة المفاضلة والترتيب</button>
     <button class="tab-btn" id="tab-btn-report" data-tab="tab-report">التقرير التفصيلي المعتمد</button>
     <button class="tab-btn" id="tab-btn-minutes" data-tab="tab-minutes" style="background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #ffffff; font-weight: 800;">📜 المحضر الرسمي</button>
+    <button class="tab-btn" id="tab-btn-criteria-doc" data-tab="tab-criteria-doc" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #ffffff; font-weight: 800;">📋 وثيقة المعايير والأوزان</button>
     <button class="tab-btn" id="tab-btn-analytics" data-tab="tab-analytics">التقارير التحليلية والرقابية</button>
     <button class="tab-btn" id="tab-btn-criteria" data-tab="tab-criteria">تهيئة المعايير والأوزان</button>
     <button class="tab-btn" id="tab-btn-admin" data-tab="tab-admin">إدارة النظام والصلاحيات</button>
@@ -338,6 +339,26 @@
 
       <!-- ورقة المحضر الرسمي الجاهزة للطباعة -->
       <div id="minutes-content"></div>
+    </section>
+
+    <!-- 4.2. شاشة وثيقة دليل معايير وأوزان المفاضلة المعتمدة -->
+    <section id="tab-criteria-doc" class="tab-content">
+      <div class="card no-print" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(13,148,136,0.15), rgba(15,118,110,0.08)); border: 1.5px solid rgba(13,148,136,0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 style="margin: 0 0 4px 0; color: #0d9488; font-size: 1.15rem; font-weight: 900;">📋 وثيقة دليل معايير وأوزان المفاضلة المعتمدة</h2>
+            <p style="margin: 0; color: #134e4a; font-size: 0.85rem;">عرض وتوثيق جميع معايير المفاضلة والشرائح النقاطية والأوزان المعيارية المعتمدة حالياً وطباعتها PDF مع الاعتماد الرسمي.</p>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="printCriteriaDoc()" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; font-weight: 800;">
+              🖨️ طباعة وثيقة المعايير (PDF)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ورقة التقرير الجاهزة للطباعة المعيارية -->
+      <div id="criteria-doc-content"></div>
     </section>
 
     <!-- 4.5. شاشة التقارير التحليلية والرقابية المتقدمة -->

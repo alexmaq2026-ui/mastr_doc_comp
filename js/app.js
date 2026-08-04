@@ -199,16 +199,16 @@ function renderTabsByRole() {
 
   // تعريف التبويبات لكل دور
   const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-minutes','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
+                   'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
 
   // الخريطة: ما يُظهر لكل دور
   const visibilityMap = {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-minutes','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
+                  'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
     data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
     auditor:     ['tab-btn-candidates','tab-btn-analytics'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                       'tab-btn-report','tab-btn-analytics','tab-btn-criteria']
+                       'tab-btn-report','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria']
   };
 
   const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
@@ -606,6 +606,7 @@ function refreshAllViews() {
   renderDetailedReport();
   renderAnalyticsView();
   renderMinutes();
+  renderCriteriaDoc();
   renderTabsByRole();
 }
 
@@ -3713,5 +3714,301 @@ function printMinutes() {
   window.print();
   setTimeout(() => {
     document.body.classList.remove('is-minutes-print');
+  }, 1000);
+}
+
+// توليد وعرض وثيقة دليل معايير وأوزان المفاضلة المعتمدة
+function renderCriteriaDoc() {
+  const container = document.getElementById('criteria-doc-content');
+  if (!container) return;
+
+  const univName = state.settings.universityName || 'جامعة صنعاء';
+  const academicYear = calculateAcademicYear(state.settings.referenceYear || 2026);
+  const location = state.settings.sessionLocation || 'مبنى رئاسة الجامعة - مكتب نائب رئيس الجامعة للشؤون الأكاديمية';
+  const dateStr = state.settings.sessionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)';
+  const rectorName = state.settings.rectorName || 'أ.د. القاسم محمد عباس';
+
+  const committee = state.committeeMembers || [];
+  const chairman = committee.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committee[0] || { name: 'أ.د. ابراهيم المطاع', committeeRole: 'رئيس اللجنة', adminTitle: 'نائب رئيس الجامعة للشؤون الأكاديمية' };
+  const regularMembers = committee.filter(m => m !== chairman).reverse();
+
+  const regularMemberCards = regularMembers.map(m => `
+    <div style="border: 1px solid #fcd34d; padding: 5px 6px; border-radius: 5px; background: #fffbeb; text-align: center; min-width: 120px;">
+      <p style="font-weight: 800; color: #92400e; font-size: 0.7rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #78350f; font-size: 0.62rem; margin: 0 0 5px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 14px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
+      <p style="font-size: 0.56rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
+    </div>
+  `).join('');
+
+  // استخراج معايير المفاضلة المعتمدة من state.criteria
+  const cData = state.criteria || {};
+
+  // 1. الأقدمية
+  const sen = cData.seniority || {};
+  const senRows = (sen.brackets || []).map(b => `
+    <tr style="border-bottom: 1px solid #fcd34d;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">الشريحة الزمانية للتعيين (${b.label || (b.minYear + ' - ' + b.maxYear + 'م')})</td>
+      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+    </tr>
+  `).join('');
+
+  // 2. العمر
+  const age = cData.age || {};
+  const ageRows = (age.brackets || []).map(b => `
+    <tr style="border-bottom: 1px solid #fcd34d;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">الفئة العمرية (${b.label})</td>
+      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+    </tr>
+  `).join('');
+
+  // 3. التخصص
+  const spec = cData.specialization || {};
+  const specRows = (spec.items || []).map(i => `
+    <tr style="border-bottom: 1px solid #fcd34d;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تخصص (${i.name})</td>
+      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+    </tr>
+  `).join('');
+
+  // 4. التقدير
+  const gr = cData.grade || {};
+  const gradeRows = (gr.items || []).map(i => `
+    <tr style="border-bottom: 1px solid #fcd34d;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تقدير مؤهل (${i.name})</td>
+      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+    </tr>
+  `).join('') + `
+    <tr style="border-bottom: 1px solid #fcd34d;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">مؤهل (بدون معدل)</td>
+      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
+    </tr>
+  `;
+
+  // 5. المعايير المخصصة
+  const custom = cData.customCriteria || [];
+  const activeCustom = custom.filter(c => c.enabled);
+  const customSection = activeCustom.length > 0 ? `
+    <div style="margin-bottom: 10px;">
+      <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0;">
+        ⑤ المعايير الإضافية المخصصة
+      </h3>
+      <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
+        <thead>
+          <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
+            <th style="padding: 6px 10px; text-align: right;">اسم المعيار المخصص</th>
+            <th style="padding: 6px 10px; text-align: center; width: 120px;">الوزن والحد الأقصى</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${activeCustom.map(c => `
+            <tr style="border-bottom: 1px solid #fcd34d;">
+              <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">${c.name}</td>
+              <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${c.maxPoints || 5} نقاط</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '';
+
+  // حساب مجموع سقف النقاط
+  const maxSeniority = sen.maxPoints || 10;
+  const maxAge = age.maxPoints || 5;
+  const maxSpec = spec.maxPoints || 5;
+  const maxGrade = gr.maxPoints || 5;
+  const totalMax = maxSeniority + maxAge + maxSpec + maxGrade + activeCustom.reduce((sum, c) => sum + (c.maxPoints || 5), 0);
+
+  container.innerHTML = `
+    <div id="criteria-doc-printable-area" style="
+      background: #fffdf5;
+      color: #1a1a00;
+      font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+      direction: rtl;
+      max-width: 800px;
+      margin: 0 auto 30px auto;
+      padding: 18px 28px;
+      border: 2px solid #d97706;
+      border-radius: 10px;
+      box-shadow: 0 4px 30px rgba(217,119,6,0.18);
+    ">
+
+      <!-- ====== رأس الوثيقة ====== -->
+      <div style="text-align: center; border-bottom: 2px double #d97706; padding-bottom: 8px; margin-bottom: 10px;">
+        <h1 style="margin: 0 0 2px 0; color: #78350f; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.3px;">
+          ${univName}
+        </h1>
+        <h2 style="margin: 0 0 2px 0; color: #92400e; font-size: 0.92rem; font-weight: 800;">
+          لجنة المفاضلة للمتقدمين لمنح الدراسات العليا
+        </h2>
+        <h3 style="margin: 0; color: #b45309; font-size: 0.82rem; font-weight: 700;">
+          الكادر الإداري
+        </h3>
+      </div>
+
+      <!-- ====== عنوان الوثيقة ====== -->
+      <div style="text-align: center; background: #4ade80; color: #14532d; padding: 8px 16px; border-radius: 7px; margin-bottom: 10px;">
+        <h2 style="margin: 0 0 2px 0; font-size: 1rem; font-weight: 900; letter-spacing: 0.3px;">
+          وثيقة دليل معايير وأوزان المفاضلة المعتمدة
+        </h2>
+        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #166534;">
+          العام الجامعي ${academicYear} (إجمالي سقف منظومة المفاضلة: ${totalMax} نقطة)
+        </p>
+      </div>
+
+      <!-- ====== بيانات اعتماد الوثيقة ====== -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; font-size: 0.8rem;">
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 2px;">📍 مقر الاعتماد والجلسة:</strong>
+          <span style="color: #78350f; font-weight: 600;">${location}</span>
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px;">
+          <strong style="color: #92400e; display: block; margin-bottom: 2px;">🗓️ تاريخ وثيقة المعايير:</strong>
+          <span style="color: #78350f; font-weight: 600;">${dateStr}</span>
+        </div>
+      </div>
+
+      <!-- ====== ديباجة التقرير ====== -->
+      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 7px 12px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.65; color: #78350f;">
+        <p style="margin: 0;">
+          <strong>بسم الله الرحمن الرحيم</strong>
+        </p>
+        <p style="margin: 4px 0 0 0;">
+          تعتمد لجنة المفاضلة المشكّلة بموجب قرار رئاسة جامعة صنعاء جدول المعايير والشرائح والأوزان المعيارية المبينة أدناه لمفاضلة المتقدمين للحصول على منح الدراسات العليا (ماجستير ودكتوراه) للكادر الإداري للعام الجامعي ${academicYear}:
+        </p>
+      </div>
+
+      <!-- ====== 1. معيار الأقدمية ====== -->
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: #4ade80; color:#14532d; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>① معيار الأقدمية بالخدمة / تاريخ التعيين</span>
+          <span style="background: #15803d; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxSeniority} نقاط</span>
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #86efac; border-radius: 6px; overflow: hidden; background: #fff;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#16a34a,#15803d); color: #ffffff;">
+              <th style="padding: 6px 10px; text-align: right;">الشريحة الزمانية لسنة التعيين بالخدمة/الجامعة</th>
+              <th style="padding: 6px 10px; text-align: center; width: 120px;">النقاط المستحقة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${senRows}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== 2. معيار العمر ====== -->
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>② معيار الفئة العمرية للموظف المتقدم</span>
+          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxAge} نقاط</span>
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
+              <th style="padding: 6px 10px; text-align: right;">شرائح العمر (محسوبة بالسنة المرجعية)</th>
+              <th style="padding: 6px 10px; text-align: center; width: 120px;">النقاط المستحقة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ageRows}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== 3. معيار التخصص ====== -->
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: #4ade80; color:#14532d; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>③ معيار مدى احتياج الجامعة للتخصص</span>
+          <span style="background: #15803d; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxSpec} نقاط</span>
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #86efac; border-radius: 6px; overflow: hidden; background: #fff;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#16a34a,#15803d); color: #ffffff;">
+              <th style="padding: 6px 10px; text-align: right;">التخصص المطلـوب</th>
+              <th style="padding: 6px 10px; text-align: center; width: 120px;">نقاط الاحتياج</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${specRows}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== 4. معيار التقدير ====== -->
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>④ معيار تقدير المؤهل الدراسي السابق</span>
+          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxGrade} نقاط</span>
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
+              <th style="padding: 6px 10px; text-align: right;">تقدير المؤهل الأكاديمي</th>
+              <th style="padding: 6px 10px; text-align: center; width: 120px;">النقاط الممنوحة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${gradeRows}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ====== المعايير المخصصة ====== -->
+      ${customSection}
+
+      <!-- ====== توقيعات أعضاء اللجنة ====== -->
+      <div style="border-top: 2px solid #d97706; padding-top: 10px; margin-top: 4px; page-break-inside: avoid;">
+        <h4 style="text-align: center; color: #92400e; font-size: 0.85rem; font-weight: 900; margin: 0 0 8px 0;">
+          اعتماد توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
+        </h4>
+
+        <!-- الصف الأول: الأعضاء العاديون بترتيب عكسي -->
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px;">
+          ${regularMemberCards}
+        </div>
+
+        <!-- الصف الثاني: رئيس اللجنة + تعميد رئيس الجامعة -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 85%; margin: 0 auto; text-align: center;">
+
+          <!-- رئيس اللجنة -->
+          <div style="border: 1.5px solid #d97706; padding: 7px; border-radius: 7px; background: #fffbeb;">
+            <p style="font-weight: 900; color: #92400e; font-size: 0.8rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #1a1a00; font-size: 0.85rem; margin: 0 0 1px 0;">${chairman.name}</p>
+            <p style="color: #78350f; font-size: 0.68rem; margin: 0 0 6px 0;">${chairman.adminTitle || ''}</p>
+            <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
+            <p style="font-size: 0.6rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          </div>
+
+          <!-- يعتمد رئيس الجامعة -->
+          <div style="border: 2px solid #16a34a; padding: 7px; border-radius: 7px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.8rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.85rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #166534; font-size: 0.68rem; margin: 0 0 6px 0;">رئيس ${univName}</p>
+            <div style="height: 18px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 3px;"></div>
+            <p style="font-size: 0.6rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== تذييل MAQATECH ====== -->
+      <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 1px 5px; border-radius: 3px; font-family: sans-serif;">MT</span>
+          <strong>MAQATECH SOFTWARE SOLUTIONS</strong>
+        </div>
+        <span>جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك © 2026</span>
+      </div>
+    </div>
+  `;
+}
+
+// دالة طباعة وثيقة معايير وأوزان المفاضلة المعتمدة
+function printCriteriaDoc() {
+  document.body.classList.add('is-criteria-doc-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-criteria-doc-print');
   }, 1000);
 }

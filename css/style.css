@@ -1394,3 +1394,48 @@ body {
         break-after: avoid !important;
     }
 }
+
+/* ====================================================
+   CSS طباعة وثيقة معايير وأوزان المفاضلة المعتمدة (A4 portrait)
+   ==================================================== */
+@media print {
+    body.is-criteria-doc-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-criteria-doc-print header.navbar,
+    body.is-criteria-doc-print nav.tabs-nav,
+    body.is-criteria-doc-print .no-print,
+    body.is-criteria-doc-print .btn,
+    body.is-criteria-doc-print .modal-overlay {
+        display: none !important;
+    }
+    body.is-criteria-doc-print main.main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+    body.is-criteria-doc-print .tab-content {
+        display: none !important;
+    }
+    body.is-criteria-doc-print #tab-criteria-doc {
+        display: block !important;
+    }
+    body.is-criteria-doc-print #criteria-doc-content {
+        display: block !important;
+    }
+    body.is-criteria-doc-print #criteria-doc-printable-area {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 4mm 8mm !important;
+    }
+    @page {
+        size: A4 portrait;
+        margin: 4mm 6mm;
+    }
+}
