@@ -3499,13 +3499,6 @@ function renderMinutes() {
 
       <!-- ====== رأس الوثيقة ====== -->
       <div style="text-align: center; border-bottom: 3px double #d97706; padding-bottom: 14px; margin-bottom: 16px;">
-        <!-- شعار MAQATECH صغير -->
-        <div style="display: flex; justify-content: flex-start; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 6px; background: #78350f; color: #fef3c7; padding: 3px 8px; border-radius: 5px; font-size: 0.65rem;">
-            <span style="background: linear-gradient(135deg,#f59e0b,#84cc16); font-weight:900; padding: 2px 5px; border-radius:3px; color:#1a1a00;">MT</span>
-            <span style="font-weight:700; letter-spacing:0.5px;">MAQATECH</span>
-          </div>
-        </div>
 
         <h1 style="margin: 0 0 4px 0; color: #78350f; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.3px;">
           ${univName}
