@@ -3556,10 +3556,8 @@ function renderMinutes() {
       box-shadow: 0 4px 30px rgba(217,119,6,0.18);
     ">
 
-      <!-- ====== شريط المسودة (يظهر فقط عند طباعة المسودة) ====== -->
-      <div id="minutes-draft-watermark" style="display: none; background: #fff3cd; color: #856404; border: 1.5px dashed #d97706; text-align: center; padding: 6px 12px; border-radius: 6px; font-weight: 900; font-size: 0.9rem; margin-bottom: 10px;">
-        ⚠️ مســودة للمراجعــة والتنقيــح — غير معتمدة رسمياً
-      </div>
+      <!-- ====== العلامة المائية الشبحية لمسودة التدقيق والمراجعة ====== -->
+      <div id="minutes-print-watermark" class="print-watermark">مسودة للتدقيق والمراجعة</div>
 
       <!-- ====== رأس الوثيقة ====== -->
       <div style="text-align: center; border-bottom: 2px double #d97706; padding-bottom: 8px; margin-bottom: 10px;">
@@ -3716,7 +3714,8 @@ function renderMinutes() {
 // طباعة المحضر الرسمي النهائي
 function printMinutesFinal() {
   document.body.classList.add('is-minutes-print');
-  const watermarkEl = document.getElementById('minutes-draft-watermark');
+  document.body.classList.remove('is-draft-print');
+  const watermarkEl = document.getElementById('minutes-print-watermark');
   if (watermarkEl) watermarkEl.style.display = 'none';
 
   window.print();
@@ -3728,12 +3727,14 @@ function printMinutesFinal() {
 // طباعة مسودة المحضر الرسمي للمراجعة والتنقيح
 function printMinutesDraft() {
   document.body.classList.add('is-minutes-print');
-  const watermarkEl = document.getElementById('minutes-draft-watermark');
+  document.body.classList.add('is-draft-print');
+  const watermarkEl = document.getElementById('minutes-print-watermark');
   if (watermarkEl) watermarkEl.style.display = 'block';
 
   window.print();
   setTimeout(() => {
     document.body.classList.remove('is-minutes-print');
+    document.body.classList.remove('is-draft-print');
     if (watermarkEl) watermarkEl.style.display = 'none';
   }, 1000);
 }
