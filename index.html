@@ -193,7 +193,15 @@
 
         <div class="card-header">
           <h2 class="card-title">سجل المتنافسين على منح الدراسات العليا</h2>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: 6px; align-items: center; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 4px 8px; border-radius: 6px;">
+              <select id="select-print-cards-degree" class="form-control" style="width: 125px; padding: 4px 6px; font-size: 0.82rem; font-weight: 700;">
+                <option value="">جميع الدرجات</option>
+                <option value="ماجستير">ماجستير فقط</option>
+                <option value="دكتوراه">دكتوراه فقط</option>
+              </select>
+              <button class="btn" onclick="printAllCandidateCards()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none; padding: 6px 12px; font-size: 0.85rem; white-space: nowrap;">🆔 طباعة جميع البطائق (PDF)</button>
+            </div>
             <button class="btn btn-outline" id="btn-print-candidates" onclick="printCandidatesRegisterPDF()" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; font-weight: 700; border: none;">🖨️ طباعة سجل المتنافسين (PDF)</button>
             <button class="btn btn-secondary" id="btn-import-excel" onclick="document.getElementById('file-excel-import').click()">استيراد ملف إكسل</button>
             <input type="file" id="file-excel-import" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(event)">
@@ -664,6 +672,9 @@
       </div>
     </div>
   </div>
+
+  <!-- حاوية الطباعة الجماعية لجميع بطاقات المتنافسين -->
+  <div id="batch-cards-print-area" style="display: none;"></div>
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -858,136 +858,182 @@ function viewCandidateDetails(candidateId) {
   const container = document.getElementById('modal-candidate-details-body');
   if (!container) return;
 
+  container.innerHTML = generateCandidateCardHTML(candidate);
+  openModal('modal-candidate-details');
+}
+
+// دالة توليد كود HTML لبطاقة تأكيد البيانات وإقرارها لمتنافس واحد
+function generateCandidateCardHTML(candidate) {
   const currentYear = state.settings.referenceYear || 2026;
   const birthYear = parseInt(candidate.birth_date) || (candidate.birth_date ? (candidate.birth_date.match(/(\d{4})/) || [])[1] : 0);
   const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
   const hiringUnivStr = candidate.hiring_univ || candidate.hiring_service || '-';
 
-  const customScores = candidate.scores.customScores || {};
+  const customScores = (candidate.scores && candidate.scores.customScores) || {};
   const activeCustom  = (state.criteria.customCriteria || []).filter(c => c.enabled);
 
-  // جلب اسم رئيس اللجنة ديناميكياً من شاشة تهيئة المعايير والأعضاء
   const committeeList = state.committeeMembers || [];
   const chairmanObj   = committeeList.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committeeList[0];
   const chairmanName  = chairmanObj ? chairmanObj.name : 'أ.د. ابراهيم المطاع';
 
-  container.innerHTML = `
-    <!-- ترويسة البطاقة الرسمية للطباعة -->
-    <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
-      <div>
-        <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-        <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تأكيد البيانات وإقرارها</h3>
-      </div>
-      <div style="text-align: left;">
-        <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
-        <strong style="font-size: 1.15rem; color: #1e3a8a; background: #eff6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">المركز #${candidate.rank}</strong>
-      </div>
-    </div>
+  const seniorityScore = candidate.scores ? candidate.scores.seniorityScore : 0;
+  const ageScore = candidate.scores ? candidate.scores.ageScore : 0;
+  const specScore = candidate.scores ? candidate.scores.specScore : 0;
+  const gradeScore = candidate.scores ? candidate.scores.gradeScore : 0;
+  const totalScore = candidate.scores ? candidate.scores.totalScore : 0;
 
-    <!-- كارت اسم المتنافس والتخصص -->
-    <div class="card-print-section" style="background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 900; color: #0f172a;">${candidate.name}</h3>
-        <span style="font-size: 0.8rem; color: #1e3a8a; font-weight: 700;">التخصص: (${candidate.specialization})</span>
+  return `
+    <div class="single-candidate-card-page" style="page-break-after: always; break-after: page; background: #ffffff; padding: 10px 14px; font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #0f172a;">
+      <!-- ترويسة البطاقة الرسمية للطباعة -->
+      <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+          <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تأكيد البيانات وإقرارها</h3>
+        </div>
+        <div style="text-align: left;">
+          <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
+          <strong style="font-size: 1.15rem; color: #1e3a8a; background: #eff6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">المركز #${candidate.rank || '-'}</strong>
+        </div>
       </div>
-      <div>
-        <span style="background: #1e3a8a; color: #ffffff; padding: 3px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 800;">🎓 منحة (${candidate.degree})</span>
-      </div>
-    </div>
 
-    <!-- 1. شبكة البيانات الشخصية والأكاديمية مع نوع المنحة البارز -->
-    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
-      <h4 style="margin: 0 0 6px 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
-        📌 البيانات الشخصية ونوع المنحة المتقدم لها
-      </h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #0f172a; font-weight: 600;">
-        <div style="grid-column: span 2; background: #eff6ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e3a8a;">
-          <strong>🎓 نوع المنحة المطلوبة:</strong>
-          <span class="badge-degree" style="font-size: 0.8rem; font-weight: 800; margin-right: 6px;">منحة (${candidate.degree})</span>
+      <!-- كارت اسم المتنافس والتخصص -->
+      <div class="card-print-section" style="background: #f8fafc; border: 1.5px solid #1e3a8a; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3 style="margin: 0; font-size: 1.05rem; font-weight: 900; color: #0f172a;">${candidate.name}</h3>
+          <span style="font-size: 0.8rem; color: #1e3a8a; font-weight: 700;">التخصص: (${candidate.specialization})</span>
         </div>
-        <div><strong>تاريخ التعيين بالخدمة/الجامعة:</strong> <span style="color:#1e3a8a;">${hiringUnivStr}</span></div>
-        <div><strong>تاريخ الميلاد (العمر):</strong> <span style="color:#1e3a8a;">${candidate.birth_date || '-'} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</span></div>
-        <div><strong>التقدير الأكاديمي:</strong> <span style="color:#1e3a8a;">${candidate.grade || '-'}</span></div>
-        <div><strong>سنة التخرج:</strong> <span style="color:#1e3a8a;">${candidate.grad_year || '-'}</span></div>
+        <div>
+          <span style="background: #1e3a8a; color: #ffffff; padding: 3px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 800;">🎓 منحة (${candidate.degree})</span>
+        </div>
       </div>
-    </div>
 
-    <!-- 2. تفكيك احتساب النقاط التنافسية -->
-    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #059669; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
-      <h4 style="margin: 0 0 6px 0; color: #047857; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px;">
-        📊 تفكيك احتساب النقاط المعيارية (من 25 نقطة)
-      </h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #064e3b;">
-        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى 10ن):</span>
-          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.seniorityScore} نقاط</strong>
-        </div>
-        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى 5ن):</span>
-          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.ageScore} نقاط</strong>
-        </div>
-        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى 5ن):</span>
-          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.specScore} نقاط</strong>
-        </div>
-        <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
-          <strong style="font-size: 1rem; color: #047857;">${candidate.scores.gradeScore} نقاط</strong>
-        </div>
-        ${activeCustom.map(custom => `
-          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}:</span>
-            <strong style="font-size: 1rem; color: #047857;">${(customScores[custom.id]) || 0} نقاط</strong>
+      <!-- 1. شبكة البيانات الشخصية والأكاديمية مع نوع المنحة البارز -->
+      <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
+        <h4 style="margin: 0 0 6px 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px;">
+          📌 البيانات الشخصية ونوع المنحة المتقدم لها
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #0f172a; font-weight: 600;">
+          <div style="grid-column: span 2; background: #eff6ff; padding: 4px 8px; border-radius: 4px; border: 1px solid #bfdbfe; color: #1e3a8a;">
+            <strong>🎓 نوع المنحة المطلوبة:</strong>
+            <span class="badge-degree" style="font-size: 0.8rem; font-weight: 800; margin-right: 6px;">منحة (${candidate.degree})</span>
           </div>
-        `).join('')}
+          <div><strong>تاريخ التعيين بالخدمة/الجامعة:</strong> <span style="color:#1e3a8a;">${hiringUnivStr}</span></div>
+          <div><strong>تاريخ الميلاد (العمر):</strong> <span style="color:#1e3a8a;">${candidate.birth_date || '-'} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</span></div>
+          <div><strong>التقدير الأكاديمي:</strong> <span style="color:#1e3a8a;">${candidate.grade || '-'}</span></div>
+          <div><strong>سنة التخرج:</strong> <span style="color:#1e3a8a;">${candidate.grad_year || '-'}</span></div>
+        </div>
       </div>
 
-      <div style="margin-top: 8px; background: #047857; color: #ffffff; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 800; font-size: 0.9rem;">إجمالي النقاط الكلية المحسوبة:</span>
-        <strong style="font-size: 1.25rem;">${candidate.scores.totalScore} نقطة</strong>
-      </div>
-    </div>
+      <!-- 2. تفكيك احتساب النقاط التنافسية -->
+      <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #059669; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
+        <h4 style="margin: 0 0 6px 0; color: #047857; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px;">
+          📊 تفكيك احتساب النقاط المعيارية (من 25 نقطة)
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #064e3b;">
+          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى 10ن):</span>
+            <strong style="font-size: 1rem; color: #047857;">${seniorityScore} نقاط</strong>
+          </div>
+          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى 5ن):</span>
+            <strong style="font-size: 1rem; color: #047857;">${ageScore} نقاط</strong>
+          </div>
+          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى 5ن):</span>
+            <strong style="font-size: 1rem; color: #047857;">${specScore} نقاط</strong>
+          </div>
+          <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
+            <strong style="font-size: 1rem; color: #047857;">${gradeScore} نقاط</strong>
+          </div>
+          ${activeCustom.map(custom => `
+            <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}:</span>
+              <strong style="font-size: 1rem; color: #047857;">${(customScores[custom.id]) || 0} نقاط</strong>
+            </div>
+          `).join('')}
+        </div>
 
-    <!-- 3. حالة التنافس والمفاضلة الاستثنائية -->
-    <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #78350f;">
-      <h4 style="margin: 0 0 6px 0; color: #b45309; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #fde68a; padding-bottom: 3px;">
-        ⚖️ حالة التنافس وملاحظات الاستحقاق
-      </h4>
-      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px;">
-        <span><strong>النتيجة والاعتماد:</strong></span>
-        ${candidate.status === 'مقبول' 
-          ? `<span class="badge-status badge-accepted" style="font-size:0.8rem; font-weight:800; padding: 3px 8px;">✅ مرشح مقبول بالفوز بـ (منحة ${candidate.degree})</span>` 
-          : '<span style="color:#64748b; font-weight:700;">— خارج خط المنح المتاحة</span>'}
+        <div style="margin-top: 8px; background: #047857; color: #ffffff; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 800; font-size: 0.9rem;">إجمالي النقاط الكلية المحسوبة:</span>
+          <strong style="font-size: 1.25rem;">${totalScore} نقطة</strong>
+        </div>
       </div>
-      ${candidate.tieBreaker ? `
-        <div style="background:#fffbeb; border-right:4px solid #d97706; padding:6px 10px; border-radius:4px; margin-top:6px;">
-          <strong style="color:#b45309; display:block;">⚖️ مفاضلة استثنائية (حالة تعادل عند خط القبول)</strong>
-          <span style="font-size:0.78rem; color:#92400e;">تم حسم الترتيب بناءً على معيار: <strong>${candidate.tieBreaker}</strong></span>
-        </div>
-      ` : `
-        <div style="color:#64748b; font-size:0.78rem; margin-top:2px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
-      `}
-    </div>
 
-    <!-- 4. تذييل الاعتماد والتواقيع المعتمدة عند الطباعة -->
-    <div class="card-print-signatures" style="margin-top: 14px; border-top: 1.5px dashed #1e3a8a; padding-top: 10px; font-size: 0.8rem; color: #0f172a;">
-      <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 800;">
-        <div>
-          <span>توقيع المتقدم</span><br><br>
-          <span style="color:#475569; font-weight:700; display:block; margin-top:2px;">الاسم: ${candidate.name}</span>
-          <span style="color:#94a3b8; font-weight:600;">التوقيع: ............................</span>
+      <!-- 3. حالة التنافس والمفاضلة الاستثنائية -->
+      <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #d97706; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #78350f;">
+        <h4 style="margin: 0 0 6px 0; color: #b45309; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #fde68a; padding-bottom: 3px;">
+          ⚖️ حالة التنافس وملاحظات الاستحقاق
+        </h4>
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 4px;">
+          <span><strong>النتيجة والاعتماد:</strong></span>
+          ${candidate.status === 'مقبول' 
+            ? `<span class="badge-status badge-accepted" style="font-size:0.8rem; font-weight:800; padding: 3px 8px;">✅ مرشح مقبول بالفوز بـ (منحة ${candidate.degree})</span>` 
+            : '<span style="color:#64748b; font-weight:700;">— خارج خط المنح المتاحة</span>'}
         </div>
-        <div>
-          <span>المراجع</span><br><br><br>
-          <span style="color:#94a3b8; font-weight:600;">التوقيع: ............................</span>
-        </div>
-        <div>
-          <span>يعتمد / رئيس لجنة المفاضلة</span><br><br>
-          <span style="color:#1e3a8a; font-weight:800; display:block; margin-top:2px;">${chairmanName}</span>
+        ${candidate.tieBreaker ? `
+          <div style="background:#fffbeb; border-right:4px solid #d97706; padding:6px 10px; border-radius:4px; margin-top:6px;">
+            <strong style="color:#b45309; display:block;">⚖️ مفاضلة استثنائية (حالة تعادل عند خط القبول)</strong>
+            <span style="font-size:0.78rem; color:#92400e;">تم حسم الترتيب بناءً على معيار: <strong>${candidate.tieBreaker}</strong></span>
+          </div>
+        ` : `
+          <div style="color:#64748b; font-size:0.78rem; margin-top:2px;">لم يتطلب الترتيب مفاضلة استثنائية للدرجة الكلية.</div>
+        `}
+      </div>
+
+      <!-- 4. تذييل الاعتماد والتواقيع المعتمدة عند الطباعة -->
+      <div class="card-print-signatures" style="margin-top: 14px; border-top: 1.5px dashed #1e3a8a; padding-top: 10px; font-size: 0.8rem; color: #0f172a;">
+        <div style="display: flex; justify-content: space-between; text-align: center; font-weight: 800;">
+          <div>
+            <span>توقيع المتقدم</span><br><br>
+            <span style="color:#475569; font-weight:700; display:block; margin-top:2px;">الاسم: ${candidate.name}</span>
+            <span style="color:#94a3b8; font-weight:600;">التوقيع: ............................</span>
+          </div>
+          <div>
+            <span>المراجع</span><br><br><br>
+            <span style="color:#94a3b8; font-weight:600;">التوقيع: ............................</span>
+          </div>
+          <div>
+            <span>يعتمد / رئيس لجنة المفاضلة</span><br><br>
+            <span style="color:#1e3a8a; font-weight:800; display:block; margin-top:2px;">${chairmanName}</span>
+          </div>
         </div>
       </div>
     </div>
   `;
+}
+
+// دالة طباعة جميع بطاقات المتنافسين دفعة واحدة مع التصفية بالدرجة
+function printAllCandidateCards() {
+  const degreeFilter = document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '';
+
+  let candidatesToPrint = [];
+  if (degreeFilter === 'ماجستير') {
+    candidatesToPrint = getRankedCandidates('ماجستير');
+  } else if (degreeFilter === 'دكتوراه') {
+    candidatesToPrint = getRankedCandidates('دكتوراه');
+  } else {
+    const masters = getRankedCandidates('ماجستير');
+    const phds = getRankedCandidates('دكتوراه');
+    candidatesToPrint = [...masters, ...phds];
+  }
+
+  if (!candidatesToPrint || candidatesToPrint.length === 0) {
+    alert('لا يوجد متنافسون متاحون لطباعة بطاقاتهم.');
+    return;
+  }
+
+  const batchContainer = document.getElementById('batch-cards-print-area');
+  if (!batchContainer) return;
+
+  batchContainer.innerHTML = candidatesToPrint.map(c => generateCandidateCardHTML(c)).join('');
+
+  document.body.classList.add('is-batch-cards-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-batch-cards-print');
+  }, 1000);
+}
 
   openModal('modal-candidate-details');
 }

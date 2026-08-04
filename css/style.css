@@ -1356,3 +1356,41 @@ body {
         padding: 4mm 8mm !important;
     }
 }
+
+/* ====================================================
+   CSS طباعة جميع بطاقات المتنافسين دفعة واحدة (Batch Cards Print)
+   ==================================================== */
+@media print {
+    body.is-batch-cards-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-batch-cards-print header.navbar,
+    body.is-batch-cards-print nav.tabs-nav,
+    body.is-batch-cards-print main.main-container,
+    body.is-batch-cards-print .no-print,
+    body.is-batch-cards-print .btn,
+    body.is-batch-cards-print .modal-backdrop,
+    body.is-batch-cards-print .modal-overlay {
+        display: none !important;
+    }
+    body.is-batch-cards-print #batch-cards-print-area {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    body.is-batch-cards-print .single-candidate-card-page {
+        page-break-after: always !important;
+        break-after: page !important;
+        padding: 4mm 6mm !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    body.is-batch-cards-print .single-candidate-card-page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+}
