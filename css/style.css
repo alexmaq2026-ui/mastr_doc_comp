@@ -1345,6 +1345,14 @@ body {
     }
     @page {
         size: A4 portrait;
-        margin: 8mm 10mm;
+        margin: 4mm 6mm;
+    }
+    body.is-minutes-print #minutes-printable-area {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 4mm 8mm !important;
     }
 }

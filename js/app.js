@@ -3460,14 +3460,14 @@ function renderMinutes() {
   // -- بناء صفوف أسماء الفائزين --
   function buildWinnersRows(winners, degreeLabel) {
     if (winners.length === 0) {
-      return `<tr><td colspan="4" style="text-align:center; color:#64748b; font-style:italic; padding: 10px;">لا يوجد متقدمون لّ${degreeLabel} أو لم يتم تنفيذ المفاضلة بعد.</td></tr>`;
+      return `<tr><td colspan="4" style="text-align:center; color:#64748b; font-style:italic; padding: 6px;">لا يوجد متقدمون لّ${degreeLabel} أو لم يتم تنفيذ المفاضلة بعد.</td></tr>`;
     }
     return winners.map((c, idx) => `
       <tr style="background: ${idx % 2 === 0 ? '#fefefe' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
-        <td style="text-align: center; font-weight: 900; font-size: 1rem; color: #1e3a8a; width: 50px; padding: 8px;">${idx + 1}</td>
-        <td style="font-weight: 800; color: #0f172a; padding: 8px 12px;">${c.name}</td>
-        <td style="color: #334155; font-weight: 600; padding: 8px 12px;">${c.specialization || 'غير محدد'}</td>
-        <td style="text-align: center; font-weight: 800; color: #059669; padding: 8px;"><strong>${c.scores.totalScore} نقطة</strong></td>
+        <td style="text-align: center; font-weight: 900; font-size: 0.85rem; color: #1e3a8a; width: 40px; padding: 4px 3px;">${idx + 1}</td>
+        <td style="font-weight: 800; color: #0f172a; padding: 4px 8px; font-size: 0.8rem;">${c.name}</td>
+        <td style="color: #334155; font-weight: 600; padding: 4px 8px; font-size: 0.8rem;">${c.specialization || 'غير محدد'}</td>
+        <td style="text-align: center; font-weight: 800; color: #059669; padding: 4px 3px; font-size: 0.8rem;"><strong>${c.scores.totalScore} نقطة</strong></td>
       </tr>
     `).join('');
   }
