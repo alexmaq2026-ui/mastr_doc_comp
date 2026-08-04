@@ -3556,6 +3556,11 @@ function renderMinutes() {
       box-shadow: 0 4px 30px rgba(217,119,6,0.18);
     ">
 
+      <!-- ====== شريط المسودة (يظهر فقط عند طباعة المسودة) ====== -->
+      <div id="minutes-draft-watermark" style="display: none; background: #fff3cd; color: #856404; border: 1.5px dashed #d97706; text-align: center; padding: 6px 12px; border-radius: 6px; font-weight: 900; font-size: 0.9rem; margin-bottom: 10px;">
+        ⚠️ مســودة للمراجعــة والتنقيــح — غير معتمدة رسمياً
+      </div>
+
       <!-- ====== رأس الوثيقة ====== -->
       <div style="text-align: center; border-bottom: 2px double #d97706; padding-bottom: 8px; margin-bottom: 10px;">
         <h1 style="margin: 0 0 2px 0; color: #78350f; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.3px;">
@@ -3708,13 +3713,33 @@ function renderMinutes() {
   `;
 }
 
-// طباعة المحضر الرسمي
-function printMinutes() {
+// طباعة المحضر الرسمي النهائي
+function printMinutesFinal() {
   document.body.classList.add('is-minutes-print');
+  const watermarkEl = document.getElementById('minutes-draft-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'none';
+
   window.print();
   setTimeout(() => {
     document.body.classList.remove('is-minutes-print');
   }, 1000);
+}
+
+// طباعة مسودة المحضر الرسمي للمراجعة والتنقيح
+function printMinutesDraft() {
+  document.body.classList.add('is-minutes-print');
+  const watermarkEl = document.getElementById('minutes-draft-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'block';
+
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-minutes-print');
+    if (watermarkEl) watermarkEl.style.display = 'none';
+  }, 1000);
+}
+
+function printMinutes() {
+  printMinutesFinal();
 }
 
 // توليد وعرض وثيقة دليل معايير وأوزان المفاضلة المعتمدة
