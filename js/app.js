@@ -889,7 +889,10 @@ function generateCandidateCardHTML(candidate) {
   const totalScore = candidate.scores ? candidate.scores.totalScore : 0;
 
   return `
-    <div class="single-candidate-card-page" style="page-break-after: always; break-after: page; background: #ffffff; padding: 10px 14px; font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #0f172a;">
+    <div class="single-candidate-card-page" style="position: relative; page-break-after: always; break-after: page; background: #ffffff; padding: 10px 14px; font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #0f172a;">
+      <!-- العلامة المائية الشبحية لمسودة التدقيق والمراجعة -->
+      <div class="print-watermark">مسودة للتدقيق والمراجعة</div>
+
       <!-- ترويسة البطاقة الرسمية للطباعة -->
       <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
@@ -1009,8 +1012,8 @@ function generateCandidateCardHTML(candidate) {
   `;
 }
 
-// دالة طباعة جميع بطاقات المتنافسين دفعة واحدة مع التصفية بالدرجة
-function printAllCandidateCards() {
+// دالة طباعة جميع بطاقات المتنافسين دفعة واحدة (النسخة النهائية)
+function printAllCandidateCardsFinal() {
   const degreeFilter = document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '';
 
   let candidatesToPrint = [];
@@ -1035,10 +1038,49 @@ function printAllCandidateCards() {
   batchContainer.innerHTML = candidatesToPrint.map(c => generateCandidateCardHTML(c)).join('');
 
   document.body.classList.add('is-batch-cards-print');
+  document.body.classList.remove('is-draft-print');
   window.print();
   setTimeout(() => {
     document.body.classList.remove('is-batch-cards-print');
   }, 1000);
+}
+
+// دالة طباعة جميع بطاقات المتنافسين دفعة واحدة (مسودة للمراجعة)
+function printAllCandidateCardsDraft() {
+  const degreeFilter = document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '';
+
+  let candidatesToPrint = [];
+  if (degreeFilter === 'ماجستير') {
+    candidatesToPrint = getRankedCandidates('ماجستير');
+  } else if (degreeFilter === 'دكتوراه') {
+    candidatesToPrint = getRankedCandidates('دكتوراه');
+  } else {
+    const masters = getRankedCandidates('ماجستير');
+    const phds = getRankedCandidates('دكتوراه');
+    candidatesToPrint = [...masters, ...phds];
+  }
+
+  if (!candidatesToPrint || candidatesToPrint.length === 0) {
+    alert('لا يوجد متنافسون متاحون لطباعة بطاقاتهم.');
+    return;
+  }
+
+  const batchContainer = document.getElementById('batch-cards-print-area');
+  if (!batchContainer) return;
+
+  batchContainer.innerHTML = candidatesToPrint.map(c => generateCandidateCardHTML(c)).join('');
+
+  document.body.classList.add('is-batch-cards-print');
+  document.body.classList.add('is-draft-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-batch-cards-print');
+    document.body.classList.remove('is-draft-print');
+  }, 1000);
+}
+
+function printAllCandidateCards() {
+  printAllCandidateCardsFinal();
 }
 
 // دالة طباعة بطاقة تفاصيل المتنافس الاحترافية A4
