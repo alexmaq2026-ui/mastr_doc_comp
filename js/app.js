@@ -1035,9 +1035,6 @@ function printAllCandidateCards() {
   }, 1000);
 }
 
-  openModal('modal-candidate-details');
-}
-
 // دالة طباعة بطاقة تفاصيل المتنافس الاحترافية A4
 function printCandidateDetailsCard() {
   document.body.classList.add('is-card-print');
