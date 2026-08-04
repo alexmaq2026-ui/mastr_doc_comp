@@ -492,7 +492,7 @@ function calculateCandidateScore(candidate) {
 
 // حساب الترتيب وكسر التعادل (Ranking & Tie-Breaking Engine)
 function getRankedCandidates(degreeFilter = null) {
-  const GRADE_ORDER = { 'ممتاز': 4, 'جيد جداً': 3, 'جيد': 2, 'مقبول': 1 };
+  const GRADE_ORDER = { 'ممتاز': 4, 'جيد جداً': 3, 'جيد': 2, 'مقبول': 1, 'بدون': 0 };
 
   // دوال مساعدة لاستخراج السنوات
   function getHiringYear(c) {
@@ -2819,6 +2819,7 @@ function normalizeGradeText(g) {
   if (str === 'جيدجدا' || str === 'جيدجداً') return 'جيد جداً';
   if (str === 'جيد') return 'جيد';
   if (str === 'مقبول' || str === 'مفبول') return 'مقبول';
+  if (str === 'بدون' || str === 'بدونمعدل' || str === 'بدونمعدل') return 'بدون';
   return g;
 }
 
@@ -2828,7 +2829,7 @@ function isInvalidGradeValue(grade) {
   if (g === '' || g === '-' || g === 'ــــــــــــ' || g === '0' || g === '0.00' || g === '0%' || g === 'غير محدد') return true;
   if (/\b(19\d\d|20\d\d)م?\b/.test(g)) return true;
   const norm = normalizeGradeText(g);
-  const validGrades = ['ممتاز', 'جيد جداً', 'جيد', 'مقبول'];
+  const validGrades = ['ممتاز', 'جيد جداً', 'جيد', 'مقبول', 'بدون'];
   if (!validGrades.includes(norm) && (isNaN(parseFloat(g)) || parseFloat(g) <= 0)) return true;
   return false;
 }
