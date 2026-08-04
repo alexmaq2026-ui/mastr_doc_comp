@@ -248,16 +248,27 @@
     <!-- 3. شاشة المفاضلة والترتيب -->
     <section id="tab-scoring" class="tab-content">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center;">
           <h2 class="card-title">مصفوفة التنافس والترتيب التلقائي</h2>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <label style="font-weight: 700;">عرض درجة:</label>
-            <select id="filter-rankings-degree" class="form-control" style="width: 160px;">
-              <option value="ماجستير">منح الماجستير</option>
-              <option value="دكتوراه">منح الدكتوراه</option>
-            </select>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <label style="font-weight: 700;">عرض درجة:</label>
+              <select id="filter-rankings-degree" class="form-control" style="width: 145px;">
+                <option value="ماجستير">منح الماجستير</option>
+                <option value="دكتوراه">منح الدكتوراه</option>
+              </select>
+            </div>
+            <button class="btn btn-warning" onclick="printScoringMatrixDraft()" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 800; border: none;">
+              📝 طباعة مسودة للمراجعة
+            </button>
+            <button class="btn btn-primary" onclick="printScoringMatrixFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
+              🖨️ طباعة مصفوفة نهائية
+            </button>
           </div>
         </div>
+
+        <!-- العلامة المائية الشبحية لمسودة مصفوفة المفاضلة -->
+        <div id="scoring-print-watermark" class="print-watermark">مسودة للتدقيق والمراجعة</div>
 
         <!-- البانر التحذيري عند التنفيذ بنواقص -->
         <div id="scoring-warning-banner"></div>

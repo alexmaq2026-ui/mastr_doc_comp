@@ -1439,3 +1439,45 @@ body {
         margin: 4mm 6mm;
     }
 }
+
+/* ====================================================
+   CSS طباعة مصفوفة التنافس والترتيب (A4 landscape)
+   ==================================================== */
+@media print {
+    body.is-scoring-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-scoring-print header.navbar,
+    body.is-scoring-print nav.tabs-nav,
+    body.is-scoring-print .no-print,
+    body.is-scoring-print .btn,
+    body.is-scoring-print .col-action,
+    body.is-scoring-print .modal-overlay {
+        display: none !important;
+    }
+    body.is-scoring-print main.main-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+    }
+    body.is-scoring-print .tab-content {
+        display: none !important;
+    }
+    body.is-scoring-print #tab-scoring {
+        display: block !important;
+        width: 100% !important;
+    }
+    body.is-scoring-print #tab-scoring .card {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+    @page {
+        size: A4 landscape;
+        margin: 6mm 8mm;
+    }
+}

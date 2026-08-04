@@ -767,13 +767,18 @@ function renderScoringTable() {
 
   const bannerContainer = document.getElementById('scoring-warning-banner');
   if (bannerContainer) {
-    if (state.hasRunDeficient) {
+    const currentDeficientCount = typeof getCandidatesWithDeficiencies === 'function' ? getCandidatesWithDeficiencies().length : 0;
+    if (currentDeficientCount === 0) {
+      state.hasRunDeficient = false;
+    }
+
+    if (state.hasRunDeficient && currentDeficientCount > 0) {
       bannerContainer.innerHTML = `
         <div style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.25), rgba(15, 23, 42, 0.85)); border: 1.5px solid #d97706; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.25);">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.3rem;">⚠️</span>
             <div>
-              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين!</strong>
+              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين! (${currentDeficientCount} متنافس)</strong>
               <span style="font-size: 0.8rem; color: #cbd5e1;">يتطلب مراجعة واستكمال السجلات المعلقة لضمان استيفاء المعايير التنافسية.</span>
             </div>
           </div>
@@ -1051,13 +1056,18 @@ function renderDetailedReport() {
 
   const bannerContainer = document.getElementById('report-warning-banner');
   if (bannerContainer) {
-    if (state.hasRunDeficient) {
+    const currentDeficientCount = typeof getCandidatesWithDeficiencies === 'function' ? getCandidatesWithDeficiencies().length : 0;
+    if (currentDeficientCount === 0) {
+      state.hasRunDeficient = false;
+    }
+
+    if (state.hasRunDeficient && currentDeficientCount > 0) {
       bannerContainer.innerHTML = `
         <div style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.25), rgba(15, 23, 42, 0.85)); border: 1.5px solid #d97706; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.25);">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.3rem;">⚠️</span>
             <div>
-              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين!</strong>
+              <strong style="color: #fde047; font-size: 0.95rem; display: block; margin-bottom: 2px;">تنبيه رقابي ممتد: تم تنفيذ وتطبيق المفاضلة بنواقص في بيانات بعض المتنافسين! (${currentDeficientCount} متنافس)</strong>
               <span style="font-size: 0.8rem; color: #cbd5e1;">يتطلب مراجعة واستكمال السجلات المعلقة لضمان استيفاء المعايير التنافسية.</span>
             </div>
           </div>
@@ -2553,6 +2563,34 @@ function printDetailedReportFinal() {
 
 function printDetailedReport() {
   printDetailedReportFinal();
+}
+
+function printScoringMatrixDraft() {
+  document.body.classList.add('is-scoring-print');
+  document.body.classList.add('is-draft-print');
+  const watermarkEl = document.getElementById('scoring-print-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'block';
+
+  window.print();
+
+  setTimeout(() => {
+    document.body.classList.remove('is-scoring-print');
+    document.body.classList.remove('is-draft-print');
+    if (watermarkEl) watermarkEl.style.display = 'none';
+  }, 1000);
+}
+
+function printScoringMatrixFinal() {
+  document.body.classList.add('is-scoring-print');
+  document.body.classList.remove('is-draft-print');
+  const watermarkEl = document.getElementById('scoring-print-watermark');
+  if (watermarkEl) watermarkEl.style.display = 'none';
+
+  window.print();
+
+  setTimeout(() => {
+    document.body.classList.remove('is-scoring-print');
+  }, 1000);
 }
 
 // دوال تهيئة وإدارة أعضاء لجنة المفاضلة والتوقيعات
