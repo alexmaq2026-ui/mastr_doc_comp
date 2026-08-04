@@ -3723,7 +3723,8 @@ function renderCriteriaDoc() {
   if (!container) return;
 
   const univName = state.settings.universityName || 'جامعة صنعاء';
-  const academicYear = calculateAcademicYear(state.settings.referenceYear || 2026);
+  const refYear = parseInt(state.settings.referenceYear) || 2026;
+  const academicYear = `${refYear - 1}/${refYear}م`;
   const location = state.settings.sessionLocation || 'مبنى رئاسة الجامعة - مكتب نائب رئيس الجامعة للشؤون الأكاديمية';
   const dateStr = state.settings.sessionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)';
   const rectorName = state.settings.rectorName || 'أ.د. القاسم محمد عباس';
