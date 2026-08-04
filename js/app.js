@@ -1860,11 +1860,11 @@ function showAddCandidateModal() {
   document.getElementById('cand-grade').value = 'جيد جداً';
 
   renderCustomCriteriaFormFields(null);
-  document.getElementById('modal-candidate').classList.add('open');
+  openModal('modal-candidate');
 }
 
 function editCandidate(id) {
-  const cand = state.candidates.find(c => c.id === id);
+  const cand = state.candidates.find(c => String(c.id) === String(id));
   if (!cand) return;
 
   document.getElementById('modal-candidate-title').innerText = 'تعديل بيانات المتنافس';
@@ -1878,7 +1878,7 @@ function editCandidate(id) {
   document.getElementById('cand-grade').value = cand.grade || 'جيد';
 
   renderCustomCriteriaFormFields(cand);
-  document.getElementById('modal-candidate').classList.add('open');
+  openModal('modal-candidate');
 }
 
 function saveCandidateForm() {
@@ -1905,9 +1905,11 @@ function saveCandidateForm() {
     }
   });
 
+  let savedCandidate = null;
+
   if (id) {
     // تعديل
-    const idx = state.candidates.findIndex(c => c.id === parseInt(id));
+    const idx = state.candidates.findIndex(c => String(c.id) === String(id));
     if (idx !== -1) {
       state.candidates[idx] = {
         ...state.candidates[idx],
@@ -1920,11 +1922,12 @@ function saveCandidateForm() {
         grade,
         customValues
       };
+      savedCandidate = state.candidates[idx];
     }
   } else {
     // إضافة جديد
     const newId = Date.now();
-    state.candidates.unshift({
+    savedCandidate = {
       id: newId,
       name,
       degree,
@@ -1934,10 +1937,21 @@ function saveCandidateForm() {
       grad_year,
       grade,
       customValues
-    });
+    };
+    state.candidates.unshift(savedCandidate);
   }
 
   saveStore();
+
+  // 1. حفظ في قاعدة بيانات Supabase أيضاً لضمان استمراريته بعد Refresh
+  if (savedCandidate && typeof saveCandidateToSupabase === 'function') {
+    saveCandidateToSupabase(savedCandidate).then(() => {
+      console.log(`✅ تم مزامنة المتنافس (${savedCandidate.name}) على Supabase بنجاح.`);
+    }).catch(err => {
+      console.error('❌ خطأ في حفظ المتنافس على Supabase:', err);
+    });
+  }
+
   closeModal('modal-candidate');
   refreshAllViews();
 }
