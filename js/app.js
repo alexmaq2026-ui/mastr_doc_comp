@@ -4009,25 +4009,35 @@ function renderMinutes() {
           }
         ];
 
-    const ordinalNames = ['الأولى', 'ثانية', 'ثالثة', 'رابعة', 'خامسة', 'سادسة', 'سابعة', 'ثامنة'];
+    const ordinalNames = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة'];
 
+    // إذا كانت جلسة واحدة فقط
     if (history.length === 1) {
       return `وحيث عُقدت <strong>جلسة المفاضلة والتنافس لمرة واحدة</strong> بتاريخ <strong>(${history[0].dateStr})</strong> وتم اعتماد نتائجها وإغلاقها رسمياً`;
     }
 
-    const countLabel = history.length === 2 ? 'مرتين' : `(${history.length}) مرات`;
+    // إذا كانت أكثر من جلسة (جلسة ثانية أو ثالثة...)
+    const currentIdx = history.length - 1;
+    const currentSession = history[currentIdx];
+    const currentOrd = ordinalNames[currentIdx] || `رقم (${currentIdx + 1})`;
+    
+    const prevCount = currentIdx;
+    const prevCountLabel = prevCount === 1 ? 'جلسة واحدة' : prevCount === 2 ? 'جلسان' : `(${prevCount}) جلسات`;
+    const currentReasonText = currentSession.reason ? `بناءً على <strong>(${currentSession.reason})</strong>` : '';
 
-    const parts = history.map((item, idx) => {
+    const historyDetails = history.map((item, idx) => {
       const ord = ordinalNames[idx] || `رقم (${idx + 1})`;
       if (idx === 0) {
         return `كانت الجلسة <strong>الأولى</strong> بتاريخ <strong>(${item.dateStr})</strong> وتم إغلاقها`;
+      } else if (idx === currentIdx) {
+        return `ثم انعقدت هذه الجلسة الحالية <strong>(${ord})</strong> بتاريخ <strong>(${item.dateStr})</strong> لإقرار الاعتماد النهائي وإغلاق المفاضلة رسمياً`;
       } else {
-        const reasonText = item.reason ? `بسبب <strong>(${item.reason})</strong>` : '';
-        return `ثم اضطرت اللجنة لفتح باب المفاضلة <strong>مرة ${ord}</strong> بتاريخ <strong>(${item.dateStr})</strong> ${reasonText}`;
+        const rText = item.reason ? `بسبب <strong>(${item.reason})</strong>` : '';
+        return `ثم انعقدت الجلسة <strong>(${ord})</strong> بتاريخ <strong>(${item.dateStr})</strong> ${rText}`;
       }
-    });
+    }).join('، ');
 
-    return `وحيث بلغت عدد مرات وإجراءات المفاضلة المتعاقبة <strong>${countLabel}</strong>؛ ${parts.join('، ')}؛ حيث قُرّر اعتماد النتائج النهائية وإغلاق الجلسة رسمياً`;
+    return `وقد عُقدت هذه الجلسة <strong>(${currentOrd})</strong> ${currentReasonText}، بعد أن سَبَقَ عَقْد <strong>${prevCountLabel}</strong> قبلها؛ حيث ${historyDetails}`;
   }
 
   // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
