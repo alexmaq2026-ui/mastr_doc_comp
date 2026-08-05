@@ -1329,7 +1329,7 @@ function renderDetailedReport() {
       ${(() => {
         const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
         const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
-        const regularMembers = members.filter(m => m !== chairman);
+        const regularMembers = members.filter(m => m !== chairman).reverse();
         const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. القاسم محمد عباس';
 
         return `
