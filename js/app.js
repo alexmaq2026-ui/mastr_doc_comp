@@ -1395,6 +1395,17 @@ function renderCriteriaSettings() {
 
   const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
 
+  const cData = state.criteria || {};
+  let totalMaxPoints = 0;
+  if (cData.seniority && cData.seniority.enabled) totalMaxPoints += (parseInt(cData.seniority.maxPoints) || 10);
+  if (cData.age && cData.age.enabled) totalMaxPoints += (parseInt(cData.age.maxPoints) || 5);
+  if (cData.specialization && cData.specialization.enabled) totalMaxPoints += (parseInt(cData.specialization.maxPoints) || 5);
+  if (cData.grade && cData.grade.enabled) totalMaxPoints += (parseInt(cData.grade.maxPoints) || 5);
+
+  (cData.customCriteria || []).forEach(c => {
+    if (c.enabled) totalMaxPoints += (parseInt(c.maxPoints) || 0);
+  });
+
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
@@ -1589,18 +1600,21 @@ function renderCriteriaSettings() {
       </div>
     </div>
 
-    <!-- إضافة وتصنيع معايير جديدة ومخصصة -->
+    <!-- جدول التحكم الشامل بكافة معايير المفاضلة (الأساسية والمخصصة) -->
     <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"> إضافة وتصنيع معايير جديدة ومخصصة (Custom Criteria Builder)</h3>
+      <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+        <h3 class="card-title" style="margin: 0;">⚖️ جدول منظومة معايير المفاضلة الشامل (الأساسية والمخصصة)</h3>
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; padding: 6px 16px; border-radius: 20px; font-weight: 900; font-size: 0.88rem; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+          🏆 إجمالي سقف منظومة المفاضلة الحالية: ${totalMaxPoints} نقطة
+        </div>
       </div>
       <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-        يتيح لك هذا المحرك إضافة أي معيار جديد حسب الحاجة (مثل: تقييم الأداء السنوي، الجزاءات، الأبحاث والنشر، المقابلة...) وتحديد وزنه الأقصى!
+        يعرض هذا الجدول جميع المعايير المعتمدة في النظام (المعايير الأساسية الـ 4 + المعايير المخصصة المصنعة)، ويوفر تحكماً كاملاً بأوزانها وحالة تفعيلها!
       </p>
 
       ${isSuperAdmin ? `
         <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
-          <h4 style="color: var(--accent); margin-bottom: 10px;"> تصميم وإنشاء معيار جديد مع الوزن</h4>
+          <h4 style="color: var(--accent); margin-bottom: 10px;"> تصميم وإنشاء معيار مخصص جديد مع الوزن</h4>
           <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
             <div style="flex: 2; min-width: 220px;">
               <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">اسم المعيار الجديد:</label>
@@ -1619,32 +1633,105 @@ function renderCriteriaSettings() {
         <table class="data-table">
           <thead>
             <tr>
-              <th>م</th>
-              <th>اسم المعيار المخصص</th>
-              <th>الوزن / النقاط القصوى</th>
-              <th>حالة المعيار</th>
-              <th>الإجراءات</th>
+              <th style="width: 5%;">م</th>
+              <th>اسم المعيار التنافسي</th>
+              <th style="width: 15%;">تصنيف المعيار</th>
+              <th style="width: 16%; text-align: center;">الوزن / النقاط القصوى</th>
+              <th style="width: 15%; text-align: center;">حالة المعيار</th>
+              <th style="width: 18%; text-align: center;">الإجراءات والتحكم</th>
             </tr>
           </thead>
           <tbody>
-            ${(state.criteria.customCriteria || []).length === 0 ? `
-              <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 15px;">لا توجد معايير مخصصة إضافية حالياً</td></tr>
-            ` : (state.criteria.customCriteria || []).map((c, idx) => `
+            <!-- 1. معيار الأقدمية -->
+            <tr>
+              <td style="text-align: center; font-weight: bold;">1</td>
+              <td><strong>تاريخ التعيين بالخدمة والجامعة (الأقدمية)</strong></td>
+              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
+              <td style="text-align: center;">
+                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.seniority ? (cData.seniority.maxPoints || 10) : 10}" onchange="updateCoreCriterionMaxPoints('seniority', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge-status ${cData.seniority && cData.seniority.enabled ? 'badge-accepted' : 'badge-reserve'}">
+                  ${cData.seniority && cData.seniority.enabled ? 'مُفعّل' : 'معطّل'}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('seniority')">${cData.seniority && cData.seniority.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+              </td>
+            </tr>
+
+            <!-- 2. معيار العمر -->
+            <tr>
+              <td style="text-align: center; font-weight: bold;">2</td>
+              <td><strong>الفئة العمرية للموظف المتنافس (العمر)</strong></td>
+              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
+              <td style="text-align: center;">
+                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.age ? (cData.age.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('age', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge-status ${cData.age && cData.age.enabled ? 'badge-accepted' : 'badge-reserve'}">
+                  ${cData.age && cData.age.enabled ? 'مُفعّل' : 'معطّل'}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('age')">${cData.age && cData.age.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+              </td>
+            </tr>
+
+            <!-- 3. معيار التخصص -->
+            <tr>
+              <td style="text-align: center; font-weight: bold;">3</td>
+              <td><strong>مدى احتياج الجامعة للتخصص الدراسي</strong></td>
+              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
+              <td style="text-align: center;">
+                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.specialization ? (cData.specialization.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('specialization', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge-status ${cData.specialization && cData.specialization.enabled ? 'badge-accepted' : 'badge-reserve'}">
+                  ${cData.specialization && cData.specialization.enabled ? 'مُفعّل' : 'معطّل'}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('specialization')">${cData.specialization && cData.specialization.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+              </td>
+            </tr>
+
+            <!-- 4. معيار التقدير -->
+            <tr>
+              <td style="text-align: center; font-weight: bold;">4</td>
+              <td><strong>تقدير المؤهل الأكاديمي السابق (التقدير)</strong></td>
+              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
+              <td style="text-align: center;">
+                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.grade ? (cData.grade.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('grade', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              </td>
+              <td style="text-align: center;">
+                <span class="badge-status ${cData.grade && cData.grade.enabled ? 'badge-accepted' : 'badge-reserve'}">
+                  ${cData.grade && cData.grade.enabled ? 'مُفعّل' : 'معطّل'}
+                </span>
+              </td>
+              <td style="text-align: center;">
+                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('grade')">${cData.grade && cData.grade.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+              </td>
+            </tr>
+
+            <!-- 5. المعايير المخصصة الإضافية -->
+            ${(cData.customCriteria || []).map((c, idx) => `
               <tr>
-                <td>${idx + 1}</td>
+                <td style="text-align: center; font-weight: bold;">${idx + 5}</td>
                 <td><strong>${c.name}</strong></td>
-                <td>
-                  <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${c.maxPoints}" onchange="updateCustomCriterionPoints('${c.id}', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                <td><span class="badge-status" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid #f59e0b;">معيار مخصص</span></td>
+                <td style="text-align: center;">
+                  <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${c.maxPoints}" onchange="updateCustomCriterionPoints('${c.id}', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                 </td>
-                <td>
+                <td style="text-align: center;">
                   <span class="badge-status ${c.enabled ? 'badge-accepted' : 'badge-reserve'}">
                     ${c.enabled ? 'مُفعّل' : 'معطّل'}
                   </span>
                 </td>
-                <td>
+                <td style="text-align: center;">
                   ${isSuperAdmin ? `
                     <button class="btn btn-outline btn-sm" onclick="toggleCustomCriterion('${c.id}')">${c.enabled ? 'إيقاف' : 'تفعيل'}</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteCustomCriterion('${c.id}')"> حذف المعيار</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCustomCriterion('${c.id}')">حذف</button>
                   ` : '-'}
                 </td>
               </tr>
@@ -2386,6 +2473,22 @@ function addCustomCriterion() {
   saveStore();
   refreshAllViews();
   alert(`تم إضافة المعيار الجديد (${name}) بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
+}
+
+function toggleCoreCriterion(key) {
+  if (state.criteria && state.criteria[key]) {
+    state.criteria[key].enabled = !state.criteria[key].enabled;
+    saveStore();
+    refreshAllViews();
+  }
+}
+
+function updateCoreCriterionMaxPoints(key, points) {
+  if (state.criteria && state.criteria[key]) {
+    state.criteria[key].maxPoints = parseFloat(points) || 0;
+    saveStore();
+    refreshAllViews();
+  }
 }
 
 function updateCustomCriterionPoints(id, points) {
