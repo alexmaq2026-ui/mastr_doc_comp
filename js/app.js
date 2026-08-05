@@ -598,6 +598,7 @@ function getRankedCandidates(degreeFilter = null) {
 
 // تحديث كافة الشاشات والواجهات
 function refreshAllViews() {
+  renderLockBanner();
   renderDashboard();
   renderCandidatesTable();
   renderScoringTable();
@@ -1974,6 +1975,7 @@ function setupEventListeners() {
 
 // وظائف الحفظ والتعديل
 function saveSettings() {
+  if (checkSystemLockGuard()) return;
   const masterGrants = parseInt(document.getElementById('input-master-grants').value) || 3;
   const phdGrants = parseInt(document.getElementById('input-phd-grants').value) || 3;
   const refYear = parseInt(document.getElementById('input-ref-year').value) || 2026;
@@ -2117,6 +2119,7 @@ function editCandidate(id) {
 }
 
 function saveCandidateForm() {
+  if (checkSystemLockGuard()) return;
   const id = document.getElementById('candidate-id-hidden').value;
   const name = document.getElementById('cand-name').value.trim();
   const degree = document.getElementById('cand-degree').value;
@@ -2192,6 +2195,7 @@ function saveCandidateForm() {
 }
 
 function deleteCandidate(id) {
+  if (checkSystemLockGuard()) return;
   if (confirm('هل أنت متأكد من رغبتك في حذف هذا المتنافس؟ لا يمكن التراجع عن هذا الإجراء.')) {
     // 1. حذف من الذاكرة المحلية
     state.candidates = state.candidates.filter(c => c.id !== id);
@@ -2536,6 +2540,147 @@ function scrollToCriteriaSection(sectionId) {
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ==========================================
+// 🔒 نظام الاعتماد والقفل النهائي والفتح الاستثنائي
+// ==========================================
+
+function checkSystemLockGuard() {
+  if (state.settings && state.settings.isLocked) {
+    alert(`🔒 لا يمكن إجراء هذا التعديل!\nالنظام في حالة اعتماد وقفل نهائي لمفاضلة عام ${state.settings.referenceYear || 2026}م برقم توثيق: (${state.settings.lockHash || ''}).\n\nلا يمكن إضافة أو تعديل أو حذف أي بيانات في هذا الوضع إلا بعد الفتح الاستثنائي بواسطة رئيس اللجنة / المدير الأعلى (Super Admin).`);
+    return true;
+  }
+  return false;
+}
+
+function renderLockBanner() {
+  const container = document.getElementById('global-lock-banner');
+  if (!container) return;
+
+  const isLocked = state.settings && state.settings.isLocked;
+  const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
+
+  if (isLocked) {
+    document.body.classList.add('is-system-locked');
+    container.innerHTML = `
+      <div class="no-print" style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(153, 27, 27, 0.95)); color: #ffffff; padding: 12px 20px; font-weight: 800; font-size: 0.88rem; box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border-bottom: 2px solid #f87171;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🔒</span>
+          <div>
+            <div><strong>المفاضلة الرسمية لعام ${state.settings.referenceYear || 2026}م معتمدة ومغلقة نهائياً</strong></div>
+            <div style="font-size: 0.76rem; opacity: 0.9; font-weight: 600;">تاريخ الاعتماد: ${state.settings.lockedAt || '-'} | المعتمد: ${state.settings.lockedBy || 'رئيس اللجنة'} | كود التوثيق الإلكتروني: <span style="font-family: monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">${state.settings.lockHash || '-'}</span></div>
+          </div>
+        </div>
+        <div>
+          ${isSuperAdmin ? `
+            <button class="btn btn-sm btn-secondary" onclick="openUnlockSessionModal()" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1px solid rgba(255,255,255,0.4); font-weight: 900; font-size: 0.78rem;">
+              🔓 إعادة الفتح الاستثنائي للمفاضلة (Super Admin)
+            </button>
+          ` : `
+            <span class="badge-status" style="background: rgba(0,0,0,0.25); color: #ffffff; border: 1px solid rgba(255,255,255,0.3);">وضع القراءة والتفتيش المعتمد (Read Only)</span>
+          `}
+        </div>
+      </div>
+    `;
+  } else {
+    document.body.classList.remove('is-system-locked');
+    container.innerHTML = '';
+  }
+}
+
+function openLockSessionModal() {
+  const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
+  if (!isSuperAdmin) {
+    alert('تنبيه: صلاحية الاعتماد الإداري وإغلاق المفاضلة نهائياً خاصة برئيس اللجنة / المدير الأعلى فقط!');
+    return;
+  }
+  const input = document.getElementById('lock-confirm-input');
+  if (input) input.value = '';
+  const modal = document.getElementById('modal-lock-session');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeLockSessionModal() {
+  const modal = document.getElementById('modal-lock-session');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmLockSessionSubmit() {
+  const input = document.getElementById('lock-confirm-input');
+  const val = input ? input.value.trim() : '';
+
+  if (val !== 'تأكيد الإغلاق') {
+    alert('يرجى كتابة النص المطابق بتمام الدقة: (تأكيد الإغلاق) للمتابعة والاعتماد.');
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-YE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const refYear = state.settings.referenceYear || 2026;
+  const lockHash = `#US-${refYear}-LOCK-` + Math.random().toString(36).substring(2, 7).toUpperCase();
+
+  state.settings.isLocked = true;
+  state.settings.lockedAt = dateStr;
+  state.settings.lockedBy = state.currentUser ? (state.currentUser.name + ' (' + state.currentUser.title + ')') : 'رئيس لجنة المفاضلة';
+  state.settings.lockHash = lockHash;
+
+  if (!state.settings.auditLog) state.settings.auditLog = [];
+  state.settings.auditLog.push({
+    timestamp: new Date().toISOString(),
+    user: state.currentUser ? state.currentUser.name : 'Super Admin',
+    action: 'LOCK_SESSION',
+    reason: `اعتماد وإغلاق محضر مفاضلة عام ${refYear}م رسمياً وتسجيل كود التوثيق ${lockHash}`
+  });
+
+  saveStore();
+  closeLockSessionModal();
+  refreshAllViews();
+  alert(`🔒 تم اعتماد نتائج المحضر الرسمي وإغلاق مفاضلة عام ${refYear}م رسمياً برقم توثيق: ${lockHash}`);
+}
+
+function openUnlockSessionModal() {
+  const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
+  if (!isSuperAdmin) {
+    alert('تنبيه أمني: صلاحية فتح المفاضلة الاستثنائي تقتصر حصرياً على مدير النظام الأعلى (Super Admin)!');
+    return;
+  }
+  const input = document.getElementById('unlock-reason-input');
+  if (input) input.value = '';
+  const modal = document.getElementById('modal-unlock-session');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeUnlockSessionModal() {
+  const modal = document.getElementById('modal-unlock-session');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmUnlockSessionSubmit() {
+  const input = document.getElementById('unlock-reason-input');
+  const reason = input ? input.value.trim() : '';
+
+  if (!reason || reason.length < 5) {
+    alert('يرجى كتابة سبب ومبرر رسمي واضح لإعادة الفتح الاستثنائي (أكثر من 5 أحرف)');
+    return;
+  }
+
+  const refYear = state.settings.referenceYear || 2026;
+
+  state.settings.isLocked = false;
+
+  if (!state.settings.auditLog) state.settings.auditLog = [];
+  state.settings.auditLog.push({
+    timestamp: new Date().toISOString(),
+    user: state.currentUser ? state.currentUser.name : 'Super Admin',
+    action: 'UNLOCK_SESSION',
+    reason: `إعادة الفتح الاستثنائي لمفاضلة عام ${refYear}م - المبرر: ${reason}`
+  });
+
+  saveStore();
+  closeUnlockSessionModal();
+  refreshAllViews();
+  alert(`🔓 تم إعادة الفتح الاستثنائي لمفاضلة عام ${refYear}م بنجاح، وتم تسطير المبرر في سجل التتبع الأمني.`);
+}
+
 // تعديل أوزان تقدير البكالوريوس
 function updateGradeItemPoints(index, points) {
   state.criteria.grade.items[index].points = parseFloat(points) || 0;
@@ -2574,6 +2719,7 @@ function addCustomCriterion() {
 }
 
 function toggleCoreCriterion(key) {
+  if (checkSystemLockGuard()) return;
   if (state.criteria && state.criteria[key]) {
     state.criteria[key].enabled = !state.criteria[key].enabled;
     saveStore();
@@ -2582,6 +2728,7 @@ function toggleCoreCriterion(key) {
 }
 
 function updateCoreCriterionMaxPoints(key, points) {
+  if (checkSystemLockGuard()) return;
   if (state.criteria && state.criteria[key]) {
     state.criteria[key].maxPoints = parseFloat(points) || 0;
     saveStore();
@@ -2590,6 +2737,7 @@ function updateCoreCriterionMaxPoints(key, points) {
 }
 
 function updateCustomCriterionPoints(id, points) {
+  if (checkSystemLockGuard()) return;
   const custom = (state.criteria.customCriteria || []).find(c => c.id === id);
   if (custom) {
     custom.maxPoints = parseFloat(points) || 0;
@@ -2599,6 +2747,7 @@ function updateCustomCriterionPoints(id, points) {
 }
 
 function toggleCustomCriterion(id) {
+  if (checkSystemLockGuard()) return;
   const custom = (state.criteria.customCriteria || []).find(c => c.id === id);
   if (custom) {
     custom.enabled = !custom.enabled;
@@ -2608,6 +2757,7 @@ function toggleCustomCriterion(id) {
 }
 
 function deleteCustomCriterion(id) {
+  if (checkSystemLockGuard()) return;
   const custom = (state.criteria.customCriteria || []).find(c => c.id === id);
   if (!custom) return;
 
