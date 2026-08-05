@@ -67,6 +67,7 @@
 
     <div class="nav-controls">
       <button id="btn-run-nav" class="btn btn-secondary btn-run-nav" onclick="openRunCompetitionModal()">تنفيذ وتطبيق المفاضلة</button>
+      <button id="btn-lock-session-nav" class="btn btn-danger no-print" onclick="openLockSessionModal()" style="font-weight: 800; background: linear-gradient(135deg, #dc2626, #991b1b); border: none; font-size: 0.82rem; padding: 6px 14px;">🔒 اعتماد المفاضلة</button>
       <div id="user-badge-container"></div>
     </div>
   </header>
@@ -351,6 +352,9 @@
             </button>
             <button class="btn btn-primary" onclick="printMinutesFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
               🖨️ طباعة المحضر النهائي
+            </button>
+            <button class="btn btn-danger" onclick="openLockSessionModal()" style="background: linear-gradient(135deg, #dc2626, #991b1b); color: #ffffff; font-weight: 900; border: none; box-shadow: 0 4px 15px rgba(220,38,38,0.4);">
+              🔒 اعتماد وتأمين المفاضلة نهائياً
             </button>
           </div>
         </div>
