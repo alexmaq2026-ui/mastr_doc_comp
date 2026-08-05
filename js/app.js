@@ -4009,11 +4009,13 @@ function renderMinutes() {
           }
         ];
 
-    const ordinalNames = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة'];
+    const ordinalNames = ['الأولى', 'ثانية', 'ثالثة', 'رابعة', 'خامسة', 'سادسة', 'سابعة', 'ثامنة'];
 
     if (history.length === 1) {
-      return `وحيث عُقدت <strong>جلسة المفاضلة والتنافس لمرة واحدة</strong> بتاريخ <strong>(${history[0].dateStr})</strong> وتم اعتماد نتائجها وإغلاقها رسمياً.`;
+      return `وحيث عُقدت <strong>جلسة المفاضلة والتنافس لمرة واحدة</strong> بتاريخ <strong>(${history[0].dateStr})</strong> وتم اعتماد نتائجها وإغلاقها رسمياً`;
     }
+
+    const countLabel = history.length === 2 ? 'مرتين' : `(${history.length}) مرات`;
 
     const parts = history.map((item, idx) => {
       const ord = ordinalNames[idx] || `رقم (${idx + 1})`;
@@ -4025,7 +4027,7 @@ function renderMinutes() {
       }
     });
 
-    return `وحيث بلغت عدد مرات وإجراءات المفاضلة المتعاقبة <strong>(${history.length} مرات)</strong>؛ ${parts.join('، ')}؛ حيث قُرّر اعتماد النتائج النهائية وإغلاق الجلسة رسمياً.`;
+    return `وحيث بلغت عدد مرات وإجراءات المفاضلة المتعاقبة <strong>${countLabel}</strong>؛ ${parts.join('، ')}؛ حيث قُرّر اعتماد النتائج النهائية وإغلاق الجلسة رسمياً`;
   }
 
   // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
@@ -4110,19 +4112,16 @@ function renderMinutes() {
         </div>
       </div>
 
-      <!-- ====== نص المحضر الديباجي ====== -->
-      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 8px 12px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.65; color: #78350f;">
-        <p style="margin: 0;">
+      <!-- ====== نص المحضر الديباجي الموحد والمتناسق ====== -->
+      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 10px 14px; margin-bottom: 12px; font-size: 0.82rem; line-height: 1.7; color: #78350f; border-radius: 4px;">
+        <p style="margin: 0 0 6px 0;">
           <strong>بسم الله الرحمن الرحيم</strong>
         </p>
-        <p style="margin: 6px 0 0 0;">
+        <p style="margin: 0; text-align: justify;">
           في يوم ${dateStr}، وفي مقر ${location}، اجتمعت لجنة المفاضلة المشكّلة بموجب قرار رئاسة الجامعة، للنظر في طلبات الحصول على منح الدراسات العليا (ماجستير ودكتوراه)
           المقدمة من منتسبي الكادر الإداري لجامعة صنعاء للعام الجامعي ${academicYear}،
-          وبعد الدراسة والمفاضلة وفق المعايير والأوزان المعتمدة، توصلت اللجنة إلى النتائج التالية:
+          ${buildSequentialSessionsNarrative()}، وبعد الدراسة والمفاضلة وفق المعايير والأوزان المعتمدة، توصلت اللجنة إلى النتائج التالية:
         </p>
-        <div style="margin-top: 8px; background: rgba(245, 158, 11, 0.12); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; color: #92400e;">
-          📜 ${buildSequentialSessionsNarrative()}
-        </div>
       </div>
 
       <!-- ====== أولاً: الفائزون بمنح الماجستير ====== -->
