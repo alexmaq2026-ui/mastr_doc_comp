@@ -1407,274 +1407,258 @@ function renderCriteriaSettings() {
   });
 
   container.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">⚙️ تهيئة إعدادات النظام وتاريخ ومكان المفاضلة ورئاسة الجامعة</h3>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
-        <div class="form-group">
-          <label style="font-weight: 700;">عدد منح الماجستير المتاحة:</label>
-          <input type="number" id="input-master-grants" class="form-control" value="${state.settings.masterGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
+    <!-- شريط الفهرس والتنقل المباشر والتحكم في طي/توسيع الجداول والمعايير -->
+    <div class="card no-print" style="position: sticky; top: 70px; z-index: 99; margin-bottom: 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1.5px solid rgba(37, 99, 235, 0.4); box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+      <div style="padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;">
+        
+        <!-- الأزرار السريعة للانتقال المباشر -->
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+          <span style="font-size: 0.82rem; font-weight: 800; color: #94a3b8; margin-left: 4px;">🚀 انتقل مباشرة إلى:</span>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-general')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">⚙️ الجلسة</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-spec')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">🎯 التخصصات</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-seniority')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">⏳ الأقدمية</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-age')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">👤 العمر</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-grade')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">🎓 التقدير</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-all')" style="font-size: 0.78rem; padding: 4px 10px; border-color: #10b981; color: #34d399;">⚖️ الجدول الشامل</button>
+          <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-committee')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">✍️ اللجنة</button>
         </div>
-        <div class="form-group">
-          <label style="font-weight: 700;">عدد منح الدكتوراه المتاحة:</label>
-          <input type="number" id="input-phd-grants" class="form-control" value="${state.settings.phdGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
-        </div>
-        <div class="form-group">
-          <label style="font-weight: 700;">السنة المرجعية لاحتساب المفاضلة:</label>
-          <input type="number" id="input-ref-year" class="form-control" value="${state.settings.referenceYear || 2026}" ${!isSuperAdmin ? 'disabled' : ''}>
-        </div>
-        <div class="form-group">
-          <label style="font-weight: 700;">اسم رئيس الجامعة الحالي (الجهة المعتمدة):</label>
-          <input type="text" id="input-rector-name" class="form-control" value="${state.settings.rectorName || 'أ.د. القاسم محمد عباس'}" ${!isSuperAdmin ? 'disabled' : ''}>
-        </div>
-      </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-        <div class="form-group">
-          <label style="font-weight: 700;">مكان تنفيذ وتطبيق المفاضلة التنافسية:</label>
-          <input type="text" id="input-comp-location" class="form-control" value="${state.settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء'}" ${!isSuperAdmin ? 'disabled' : ''}>
+        <!-- أزرار طي وتوسيع كافة الجداول -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-sm btn-secondary" onclick="collapseAllCriteriaCards()" style="font-size: 0.78rem; padding: 4px 10px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 800;">
+            📁 طي كافة الجداول
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="expandAllCriteriaCards()" style="font-size: 0.78rem; padding: 4px 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-weight: 800;">
+            📂 توسيع كافة الجداول
+          </button>
         </div>
-        <div class="form-group">
-          <label style="font-weight: 700;">تاريخ ووقت جلسة المفاضلة والفرز الرسمية:</label>
-          <input type="text" id="input-comp-date" class="form-control" value="${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}" ${!isSuperAdmin ? 'disabled' : ''}>
-        </div>
-      </div>
 
-      <div class="form-group" style="margin-bottom: 16px;">
-        <label style="font-weight: 700;">عنوان ونوع التطبيق المعتمد للتقرير:</label>
-        <input type="text" id="input-app-title" class="form-control" value="${state.settings.applicationTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)'}" ${!isSuperAdmin ? 'disabled' : ''}>
       </div>
-
-      ${isSuperAdmin ? `<button class="btn btn-primary" onclick="saveSettings()">💾 حفظ كود وإعدادات المفاضلة والرئاسة</button>` : ''}
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"> تهيئة أوزان التخصصات والاحتياج</h3>
+    <!-- 1. إعدادات الجلسة العامة -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-general">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-general')" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">⚙️ تهيئة إعدادات النظام وتاريخ ومكان المفاضلة ورئاسة الجامعة</h3>
+        <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        ${state.criteria.specialization.items.map((item, idx) => `
-          <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <span style="flex: 1; font-weight: 700;">${item.name}</span>
-            <input type="number" class="form-control" style="width: 80px; text-align: center;" value="${item.points}" onchange="updateSpecPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-            <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">نقطة</span>
-            ${isSuperAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteSpecialization(${idx})" title="حذف هذا التخصص"> حذف</button>` : ''}
+      <div class="collapsible-body" style="padding-top: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label style="font-weight: 700;">عدد منح الماجستير المتاحة:</label>
+            <input type="number" id="input-master-grants" class="form-control" value="${state.settings.masterGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
           </div>
-        `).join('')}
-      </div>
-      ${isSuperAdmin ? `
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-          <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
-            <input type="text" id="new-spec-name" class="form-control" placeholder="اسم تخصص جديد..." style="max-width: 250px;">
-            <input type="number" id="new-spec-points" class="form-control" placeholder="النقاط" style="max-width: 100px;">
-            <button class="btn btn-secondary" onclick="addSpecialization()"> إضافة تخصص جديد</button>
+          <div class="form-group">
+            <label style="font-weight: 700;">عدد منح الدكتوراه المتاحة:</label>
+            <input type="number" id="input-phd-grants" class="form-control" value="${state.settings.phdGrantsCount || 3}" ${!isSuperAdmin ? 'disabled' : ''}>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="resetDefaultSpecializations()" title="استعادة القائمة النظيفة (شريعة، حاسوب، اقتصاد، إدارة، أخرى)"> استعادة التخصصات الأساسية</button>
+          <div class="form-group">
+            <label style="font-weight: 700;">السنة المرجعية لاحتساب المفاضلة:</label>
+            <input type="number" id="input-ref-year" class="form-control" value="${state.settings.referenceYear || 2026}" ${!isSuperAdmin ? 'disabled' : ''}>
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 700;">اسم رئيس الجامعة الحالي (الجهة المعتمدة):</label>
+            <input type="text" id="input-rector-name" class="form-control" value="${state.settings.rectorName || 'أ.د. القاسم محمد عباس'}" ${!isSuperAdmin ? 'disabled' : ''}>
+          </div>
         </div>
-      ` : ''}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label style="font-weight: 700;">مكان تنفيذ وتطبيق المفاضلة التنافسية:</label>
+            <input type="text" id="input-comp-location" class="form-control" value="${state.settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء'}" ${!isSuperAdmin ? 'disabled' : ''}>
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 700;">تاريخ ووقت جلسة المفاضلة والفرز الرسمية:</label>
+            <input type="text" id="input-comp-date" class="form-control" value="${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}" ${!isSuperAdmin ? 'disabled' : ''}>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-weight: 700;">عنوان ونوع التطبيق المعتمد للتقرير:</label>
+          <input type="text" id="input-app-title" class="form-control" value="${state.settings.applicationTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)'}" ${!isSuperAdmin ? 'disabled' : ''}>
+        </div>
+
+        ${isSuperAdmin ? `<button class="btn btn-primary" onclick="saveSettings()">💾 حفظ كود وإعدادات المفاضلة والرئاسة</button>` : ''}
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"> تهيئة شرائح الأقدمية وتاريخ التعيين التفاعلية</h3>
+    <!-- 2. تهيئة أوزان التخصصات -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-spec">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-spec')" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">🎯 تهيئة أوزان التخصصات والاحتياج</h3>
+        <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
       </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-        ادخل سنة البداية والنهاية وعدد السنوات (خطوة الفئة) واضغط على زر التوليد التلقائي لإنشاء الفئات فورياً!
-      </p>
-      
-      ${isSuperAdmin ? `
-        <div style="background: rgba(37, 99, 235, 0.08); border: 1px solid var(--border-highlight); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
-          <h4 style="color: var(--primary); margin-bottom: 10px;"> مولد شرائح الأقدمية التفاعلي التلقائي</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">سنة البداية:</label>
-              <input type="number" id="gen-seniority-start" class="form-control" value="${state.criteria.seniority.startYear || 1990}">
+      <div class="collapsible-body" style="padding-top: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          ${state.criteria.specialization.items.map((item, idx) => `
+            <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+              <span style="flex: 1; font-weight: 700;">${item.name}</span>
+              <input type="number" class="form-control" style="width: 80px; text-align: center;" value="${item.points}" onchange="updateSpecPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">نقطة</span>
+              ${isSuperAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteSpecialization(${idx})" title="حذف هذا التخصص"> حذف</button>` : ''}
             </div>
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">سنة النهاية:</label>
-              <input type="number" id="gen-seniority-end" class="form-control" value="${state.criteria.seniority.endYear || 2030}">
-            </div>
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">خطوة الفئة (بالسنوات):</label>
-              <input type="number" id="gen-seniority-step" class="form-control" value="${state.criteria.seniority.stepYears || 5}" min="1" max="20">
-            </div>
-            <button class="btn btn-primary" onclick="autoGenerateSeniorityBrackets()"> توليد الفئات آلياً</button>
-          </div>
+          `).join('')}
         </div>
-      ` : ''}
+        ${isSuperAdmin ? `
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+              <input type="text" id="new-spec-name" class="form-control" placeholder="اسم تخصص جديد..." style="max-width: 250px;">
+              <input type="number" id="new-spec-points" class="form-control" placeholder="النقاط" style="max-width: 100px;">
+              <button class="btn btn-secondary" onclick="addSpecialization()"> إضافة تخصص جديد</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="resetDefaultSpecializations()" title="استعادة القائمة النظيفة (شريعة، حاسوب، اقتصاد، إدارة، أخرى)"> استعادة التخصصات الأساسية</button>
+          </div>
+        ` : ''}
+      </div>
+    </div>
 
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>الشريحة الوظيفية / سنة التعيين</th>
-              <th>من سنة</th>
-              <th>إلى سنة</th>
-              <th>النقاط المخصصة</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.criteria.seniority.brackets.map((b, idx) => `
+    <!-- 3. تهيئة شرائح الأقدمية -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-seniority">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-seniority')" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">⏳ تهيئة شرائح الأقدمية وتاريخ التعيين التفاعلية</h3>
+        <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
+      </div>
+      <div class="collapsible-body" style="padding-top: 15px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+          ادخل سنة البداية والنهاية وعدد السنوات (خطوة الفئة) واضغط على زر التوليد التلقائي لإنشاء الفئات فورياً!
+        </p>
+        
+        ${isSuperAdmin ? `
+          <div style="background: rgba(37, 99, 235, 0.08); border: 1px solid var(--border-highlight); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
+            <h4 style="color: var(--primary); margin-bottom: 10px;"> مولد شرائح الأقدمية التفاعلي التلقائي</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">سنة البداية:</label>
+                <input type="number" id="gen-seniority-start" class="form-control" value="${state.criteria.seniority.startYear || 1990}">
+              </div>
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">سنة النهاية:</label>
+                <input type="number" id="gen-seniority-end" class="form-control" value="${state.criteria.seniority.endYear || 2030}">
+              </div>
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">خطوة الفئة (بالسنوات):</label>
+                <input type="number" id="gen-seniority-step" class="form-control" value="${state.criteria.seniority.stepYears || 5}" min="1" max="20">
+              </div>
+              <button class="btn btn-primary" onclick="autoGenerateSeniorityBrackets()"> توليد الفئات آلياً</button>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td><strong>${b.label}</strong></td>
-                <td>${b.minYear}</td>
-                <td>${b.maxYear}</td>
-                <td>
-                  <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateSeniorityBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-                </td>
+                <th>الشريحة الوظيفية / سنة التعيين</th>
+                <th>من سنة</th>
+                <th>إلى سنة</th>
+                <th>النقاط المخصصة</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"> تهيئة الفئات العمرية التفاعلية</h3>
-      </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-        ادخل عمر البداية والنهاية وعدد السنوات (خطوة الفئة) واضغط على زر التوليد التلقائي لإنشاء الشرائح العمرية فورياً!
-      </p>
-
-      ${isSuperAdmin ? `
-        <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
-          <h4 style="color: var(--secondary); margin-bottom: 10px;"> مولد الشرائح العمرية التفاعلي التلقائي</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">عمر البداية (سنوات):</label>
-              <input type="number" id="gen-age-start" class="form-control" value="${state.criteria.age.minAge || 25}">
-            </div>
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">عمر النهاية (سنوات):</label>
-              <input type="number" id="gen-age-end" class="form-control" value="${state.criteria.age.maxAge || 56}">
-            </div>
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">خطوة الفئة العمرية (بالسنوات):</label>
-              <input type="number" id="gen-age-step" class="form-control" value="${state.criteria.age.stepYears || 5}" min="1" max="20">
-            </div>
-            <button class="btn btn-secondary" onclick="autoGenerateAgeBrackets()"> توليد الشرائح آلياً</button>
-          </div>
+            </thead>
+            <tbody>
+              ${state.criteria.seniority.brackets.map((b, idx) => `
+                <tr>
+                  <td><strong>${b.label}</strong></td>
+                  <td>${b.minYear}</td>
+                  <td>${b.maxYear}</td>
+                  <td>
+                    <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateSeniorityBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
-      ` : ''}
-
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>الشريحة العمرية</th>
-              <th>النقاط المخصصة</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.criteria.age.brackets.map((b, idx) => `
-              <tr>
-                <td><strong>${b.label}</strong></td>
-                <td>
-                  <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateAgeBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
       </div>
     </div>
 
-    <!-- تهيئة أوزان تقدير ومعدل البكالوريوس -->
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"> تهيئة أوزان تقدير ومعدل البكالوريوس</h3>
+    <!-- 4. تهيئة الفئات العمرية -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-age">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-age')" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">👤 تهيئة الفئات العمرية التفاعلية</h3>
+        <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
       </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-        حدد النقاط المخصصة لكل تقدير أكاديمي في مؤهل البكالوريوس/المؤهل السابق.
-      </p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-        ${state.criteria.grade.items.map((item, idx) => `
-          <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <span style="flex: 1; font-weight: 700;">${item.name}</span>
-            <input type="number" class="form-control" style="width: 80px; text-align: center;" value="${item.points}" onchange="updateGradeItemPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">نقطة</span>
+      <div class="collapsible-body" style="padding-top: 15px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+          ادخل عمر البداية والنهاية وعدد السنوات (خطوة الفئة) واضغط على زر التوليد التلقائي لإنشاء الشرائح العمرية فورياً!
+        </p>
+
+        ${isSuperAdmin ? `
+          <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
+            <h4 style="color: var(--secondary); margin-bottom: 10px;"> مولد الشرائح العمرية التفاعلي التلقائي</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">عمر البداية (سنوات):</label>
+                <input type="number" id="gen-age-start" class="form-control" value="${state.criteria.age.minAge || 25}">
+              </div>
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">عمر النهاية (سنوات):</label>
+                <input type="number" id="gen-age-end" class="form-control" value="${state.criteria.age.maxAge || 56}">
+              </div>
+              <div style="flex: 1; min-width: 130px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">خطوة الفئة العمرية (بالسنوات):</label>
+                <input type="number" id="gen-age-step" class="form-control" value="${state.criteria.age.stepYears || 5}" min="1" max="20">
+              </div>
+              <button class="btn btn-secondary" onclick="autoGenerateAgeBrackets()"> توليد الشرائح آلياً</button>
+            </div>
           </div>
-        `).join('')}
+        ` : ''}
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الشريحة العمرية</th>
+                <th>النقاط المخصصة</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${state.criteria.age.brackets.map((b, idx) => `
+                <tr>
+                  <td><strong>${b.label}</strong></td>
+                  <td>
+                    <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateAgeBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- جدول التحكم الشامل بكافة معايير المفاضلة (الأساسية والمخصصة) -->
-    <div class="card">
-      <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
-        <h3 class="card-title" style="margin: 0;">⚖️ جدول منظومة معايير المفاضلة الشامل (الأساسية والمخصصة)</h3>
+    <!-- 5. تهيئة أوزان تقدير البكالوريوس -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-grade">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-grade')" style="cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;">🎓 تهيئة أوزان تقدير ومعدل البكالوريوس</h3>
+        <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
+      </div>
+      <div class="collapsible-body" style="padding-top: 15px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+          حدد النقاط المخصصة لكل تقدير أكاديمي في مؤهل البكالوريوس/المؤهل السابق.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+          ${state.criteria.grade.items.map((item, idx) => `
+            <div style="display: flex; gap: 8px; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+              <span style="flex: 1; font-weight: 700;">${item.name}</span>
+              <input type="number" class="form-control" style="width: 80px; text-align: center;" value="${item.points}" onchange="updateGradeItemPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">نقطة</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. جدول المنظومة الشامل لكافة المعايير -->
+    <div class="card criteria-collapsible-card" id="sec-criteria-all">
+      <div class="card-header" onclick="toggleCriteriaCard('sec-criteria-all')" style="cursor: pointer; user-select: none; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 class="card-title" style="margin: 0;">⚖️ جدول منظومة معايير المفاضلة الشامل (الأساسية والمخصصة)</h3>
+          <span class="card-toggle-icon" style="font-size: 1.1rem; color: var(--primary); transition: transform 0.2s;">🔽</span>
+        </div>
         <div style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; padding: 6px 16px; border-radius: 20px; font-weight: 900; font-size: 0.88rem; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
           🏆 إجمالي سقف منظومة المفاضلة الحالية: ${totalMaxPoints} نقطة
         </div>
       </div>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-        يعرض هذا الجدول جميع المعايير المعتمدة في النظام (المعايير الأساسية الـ 4 + المعايير المخصصة المصنعة)، ويوفر تحكماً كاملاً بأوزانها وحالة تفعيلها!
-      </p>
-
-      ${isSuperAdmin ? `
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
-          <h4 style="color: var(--accent); margin-bottom: 10px;"> تصميم وإنشاء معيار مخصص جديد مع الوزن</h4>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-            <div style="flex: 2; min-width: 220px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">اسم المعيار الجديد:</label>
-              <input type="text" id="new-custom-criterion-name" class="form-control" placeholder="مثال: تقييم الأداء السنوي، أبحاث ونشر...">
-            </div>
-            <div style="flex: 1; min-width: 130px;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">الوزن / النقاط القصوى:</label>
-              <input type="number" id="new-custom-criterion-points" class="form-control" placeholder="مثال: 10" value="10">
-            </div>
-            <button class="btn btn-secondary" onclick="addCustomCriterion()"> إضافة المعيار للنظام</button>
-          </div>
-        </div>
-      ` : ''}
-
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 5%;">م</th>
-              <th>اسم المعيار التنافسي</th>
-              <th style="width: 15%;">تصنيف المعيار</th>
-              <th style="width: 16%; text-align: center;">الوزن / النقاط القصوى</th>
-              <th style="width: 15%; text-align: center;">حالة المعيار</th>
-              <th style="width: 18%; text-align: center;">الإجراءات والتحكم</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- 1. معيار الأقدمية -->
-            <tr>
-              <td style="text-align: center; font-weight: bold;">1</td>
-              <td><strong>تاريخ التعيين بالخدمة والجامعة (الأقدمية)</strong></td>
-              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
-              <td style="text-align: center;">
-                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.seniority ? (cData.seniority.maxPoints || 10) : 10}" onchange="updateCoreCriterionMaxPoints('seniority', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-              </td>
-              <td style="text-align: center;">
-                <span class="badge-status ${cData.seniority && cData.seniority.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                  ${cData.seniority && cData.seniority.enabled ? 'مُفعّل' : 'معطّل'}
-                </span>
-              </td>
-              <td style="text-align: center;">
-                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('seniority')">${cData.seniority && cData.seniority.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
-              </td>
-            </tr>
-
-            <!-- 2. معيار العمر -->
-            <tr>
-              <td style="text-align: center; font-weight: bold;">2</td>
-              <td><strong>الفئة العمرية للموظف المتنافس (العمر)</strong></td>
-              <td><span class="badge-status" style="background: rgba(37,99,235,0.15); color: #60a5fa; border: 1px solid #2563eb;">معيار أساسي</span></td>
-              <td style="text-align: center;">
-                <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.age ? (cData.age.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('age', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
-              </td>
-              <td style="text-align: center;">
-                <span class="badge-status ${cData.age && cData.age.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                  ${cData.age && cData.age.enabled ? 'مُفعّل' : 'معطّل'}
-                </span>
-              </td>
-              <td style="text-align: center;">
-                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('age')">${cData.age && cData.age.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
               </td>
             </tr>
 
@@ -2436,6 +2420,52 @@ function autoGenerateAgeBrackets() {
   saveStore();
   refreshAllViews();
   alert(`تم توليد ${brackets.length} شريحة عمرية بنجاح بناءً على خطوة (${stepYears}) سنوات! يمكنك الآن تعديل نقاط كل شريحة حسب الرغبة.`);
+}
+
+function toggleCriteriaCard(sectionId) {
+  const card = document.getElementById(sectionId);
+  if (!card) return;
+  const body = card.querySelector('.collapsible-body');
+  const icon = card.querySelector('.card-toggle-icon');
+  if (!body) return;
+
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    if (icon) icon.textContent = '🔽';
+  } else {
+    body.style.display = 'none';
+    if (icon) icon.textContent = '◀️';
+  }
+}
+
+function collapseAllCriteriaCards() {
+  document.querySelectorAll('.criteria-collapsible-card').forEach(card => {
+    const body = card.querySelector('.collapsible-body');
+    const icon = card.querySelector('.card-toggle-icon');
+    if (body) body.style.display = 'none';
+    if (icon) icon.textContent = '◀️';
+  });
+}
+
+function expandAllCriteriaCards() {
+  document.querySelectorAll('.criteria-collapsible-card').forEach(card => {
+    const body = card.querySelector('.collapsible-body');
+    const icon = card.querySelector('.card-toggle-icon');
+    if (body) body.style.display = 'block';
+    if (icon) icon.textContent = '🔽';
+  });
+}
+
+function scrollToCriteriaSection(sectionId) {
+  const card = document.getElementById(sectionId);
+  if (!card) return;
+  const body = card.querySelector('.collapsible-body');
+  const icon = card.querySelector('.card-toggle-icon');
+  if (body && body.style.display === 'none') {
+    body.style.display = 'block';
+    if (icon) icon.textContent = '🔽';
+  }
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // تعديل أوزان تقدير البكالوريوس
