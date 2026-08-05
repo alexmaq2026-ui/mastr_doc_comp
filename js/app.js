@@ -1424,11 +1424,14 @@ function renderCriteriaSettings() {
           <button class="btn btn-sm btn-outline" onclick="scrollToCriteriaSection('sec-criteria-committee')" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(255,255,255,0.2);">✍️ اللجنة</button>
         </div>
 
-        <!-- أزرار الاعتماد وطي وتوسيع كافة الجداول -->
+        <!-- أزرار الاعتماد وطي وتوسيع كافة الجداول وتصفير السجلات التجريبية -->
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           ${isSuperAdmin ? `
             <button class="btn btn-sm btn-danger" onclick="openLockSessionModal()" style="font-size: 0.78rem; padding: 4px 12px; background: linear-gradient(135deg, #dc2626, #991b1b); color: #ffffff; border: none; font-weight: 800;">
               🔒 اعتماد وإغلاق المفاضلة
+            </button>
+            <button class="btn btn-sm btn-outline" onclick="resetSystemSessionsHistory()" style="font-size: 0.78rem; padding: 4px 10px; border-color: rgba(239, 68, 68, 0.4); color: #f87171; font-weight: 800;" title="مسح وتصفير تجارب الفتح والإغلاق السابقة للانطلاق بالنواية الحقيقية">
+              🧹 تصفير سجلات التجربة
             </button>
           ` : ''}
           <button class="btn btn-sm btn-secondary" onclick="collapseAllCriteriaCards()" style="font-size: 0.78rem; padding: 4px 10px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 800;">
@@ -2714,6 +2717,27 @@ function confirmUnlockSessionSubmit() {
   closeUnlockSessionModal();
   refreshAllViews();
   alert(`🔓 تم إعادة الفتح الاستثنائي لمفاضلة عام ${refYear}م بنجاح، وتوثيق مبرر الجلسة رقم (${state.settings.sessionHistory.length}) في السجل النصي التتابعي للمحضر.`);
+}
+
+function resetSystemSessionsHistory() {
+  const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
+  if (!isSuperAdmin) {
+    alert('تنبيه أمني: دالة تصفير السجلات تجريبياً خاصة حصرياً برئيس اللجنة / المدير الأعلى (Super Admin)!');
+    return;
+  }
+
+  if (confirm('🧹 هل أنت متأكد من رغبتك في تصفير مسودة السجلات والتجارب السابقة؟\n\nسيتم مسح كافة سجلات الفتح والإغلاق والتجارب السابقة كلياً، لتبدأ المفاضلة الحقيقية من "الجلسة الأولى" بنظافة تامة وسجلات رسمية جديدة.')) {
+    state.settings.sessionHistory = [];
+    state.settings.auditLog = [];
+    state.settings.isLocked = false;
+    state.settings.lockedAt = null;
+    state.settings.lockedBy = null;
+    state.settings.lockHash = null;
+
+    saveStore();
+    refreshAllViews();
+    alert('✨ تم تصفير سجلات التجربة بنجاح! النظام الآن نظيف 100% وجاهز لبدء المفاضلة والاعتماد الحقيقي من الجلسة الأولى.');
+  }
 }
 
 // تعديل أوزان تقدير البكالوريوس
