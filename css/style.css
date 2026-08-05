@@ -547,25 +547,32 @@ body {
 }
 
 /* النافذة المنبثقة Modal */
-.modal-backdrop {
+.modal-backdrop,
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 99999;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
-.modal-backdrop.open {
+.modal-backdrop.open,
+.modal-overlay.open {
     display: flex;
 }
 
-.modal-dialog {
+.modal-dialog,
+.modal-box {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -573,8 +580,11 @@ body {
     max-width: 650px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     padding: 24px;
+    margin: auto;
+    position: relative;
+    z-index: 100000;
 }
 
 .modal-header {

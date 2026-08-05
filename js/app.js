@@ -2601,12 +2601,18 @@ function openLockSessionModal() {
   const input = document.getElementById('lock-confirm-input');
   if (input) input.value = '';
   const modal = document.getElementById('modal-lock-session');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
 
 function closeLockSessionModal() {
   const modal = document.getElementById('modal-lock-session');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
 }
 
 function confirmLockSessionSubmit() {
@@ -2651,12 +2657,18 @@ function openUnlockSessionModal() {
   const input = document.getElementById('unlock-reason-input');
   if (input) input.value = '';
   const modal = document.getElementById('modal-unlock-session');
-  if (modal) modal.style.display = 'flex';
+  if (modal) {
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
 }
 
 function closeUnlockSessionModal() {
   const modal = document.getElementById('modal-unlock-session');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
 }
 
 function confirmUnlockSessionSubmit() {
