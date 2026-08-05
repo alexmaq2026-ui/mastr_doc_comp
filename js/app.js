@@ -2680,9 +2680,27 @@ function confirmUnlockSessionSubmit() {
     return;
   }
 
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-YE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   const refYear = state.settings.referenceYear || 2026;
 
   state.settings.isLocked = false;
+
+  if (!state.settings.sessionHistory || state.settings.sessionHistory.length === 0) {
+    state.settings.sessionHistory = [
+      {
+        sessionNum: 1,
+        dateStr: state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+        reason: 'جلسة الفرز والتنافس الرئيسية المعلنة'
+      }
+    ];
+  }
+
+  state.settings.sessionHistory.push({
+    sessionNum: state.settings.sessionHistory.length + 1,
+    dateStr: dateStr,
+    reason: reason
+  });
 
   if (!state.settings.auditLog) state.settings.auditLog = [];
   state.settings.auditLog.push({
@@ -2695,7 +2713,7 @@ function confirmUnlockSessionSubmit() {
   saveStore();
   closeUnlockSessionModal();
   refreshAllViews();
-  alert(`🔓 تم إعادة الفتح الاستثنائي لمفاضلة عام ${refYear}م بنجاح، وتم تسطير المبرر في سجل التتبع الأمني.`);
+  alert(`🔓 تم إعادة الفتح الاستثنائي لمفاضلة عام ${refYear}م بنجاح، وتوثيق مبرر الجلسة رقم (${state.settings.sessionHistory.length}) في السجل النصي التتابعي للمحضر.`);
 }
 
 // تعديل أوزان تقدير البكالوريوس
@@ -3979,6 +3997,37 @@ function renderMinutes() {
     `).join('');
   }
 
+  // -- بناء النص التتابعي القانوني الموجز لجلسات المفاضلة المتعاقبة --
+  function buildSequentialSessionsNarrative() {
+    const history = (state.settings && state.settings.sessionHistory && state.settings.sessionHistory.length > 0)
+      ? state.settings.sessionHistory
+      : [
+          {
+            sessionNum: 1,
+            dateStr: state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+            reason: 'جلسة الفرز والتنافس الرئيسية المعلنة'
+          }
+        ];
+
+    const ordinalNames = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة'];
+
+    if (history.length === 1) {
+      return `وحيث عُقدت <strong>جلسة المفاضلة والتنافس لمرة واحدة</strong> بتاريخ <strong>(${history[0].dateStr})</strong> وتم اعتماد نتائجها وإغلاقها رسمياً.`;
+    }
+
+    const parts = history.map((item, idx) => {
+      const ord = ordinalNames[idx] || `رقم (${idx + 1})`;
+      if (idx === 0) {
+        return `كانت الجلسة <strong>الأولى</strong> بتاريخ <strong>(${item.dateStr})</strong> وتم إغلاقها`;
+      } else {
+        const reasonText = item.reason ? `بسبب <strong>(${item.reason})</strong>` : '';
+        return `ثم اضطرت اللجنة لفتح باب المفاضلة <strong>مرة ${ord}</strong> بتاريخ <strong>(${item.dateStr})</strong> ${reasonText}`;
+      }
+    });
+
+    return `وحيث بلغت عدد مرات وإجراءات المفاضلة المتعاقبة <strong>(${history.length} مرات)</strong>؛ ${parts.join('، ')}؛ حيث قُرّر اعتماد النتائج النهائية وإغلاق الجلسة رسمياً.`;
+  }
+
   // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
   const regularMemberCards = regularMembers.map(m => `
     <div style="border: 1px solid #fcd34d; padding: 5px 6px; border-radius: 5px; background: #fffbeb; text-align: center; min-width: 120px;">
@@ -4062,15 +4111,18 @@ function renderMinutes() {
       </div>
 
       <!-- ====== نص المحضر الديباجي ====== -->
-      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 7px 12px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.65; color: #78350f;">
+      <div style="background: #fffbeb; border-right: 3px solid #f59e0b; padding: 8px 12px; margin-bottom: 10px; font-size: 0.8rem; line-height: 1.65; color: #78350f;">
         <p style="margin: 0;">
           <strong>بسم الله الرحمن الرحيم</strong>
         </p>
         <p style="margin: 6px 0 0 0;">
-          في يوم ${dateStr}\u060c وفي مقر ${location}\u060c اجتمعت لجنة المفاضلة المشكّلة بموجب قرار رئاسة الجامعة\u060c للنظر في طلبات الحصول على منح الدراسات العليا (ماجستير ودكتوراه)
-          المقدمة من منتسبي الكادر الإداري لجامعة صنعاء للعام الجامعي ${academicYear}\u060c
-          وبعد الدراسة والمفاضلة وفق المعايير والأوزان المعتمدة\u060c توصلت اللجنة إلى النتائج التالية:
+          في يوم ${dateStr}، وفي مقر ${location}، اجتمعت لجنة المفاضلة المشكّلة بموجب قرار رئاسة الجامعة، للنظر في طلبات الحصول على منح الدراسات العليا (ماجستير ودكتوراه)
+          المقدمة من منتسبي الكادر الإداري لجامعة صنعاء للعام الجامعي ${academicYear}،
+          وبعد الدراسة والمفاضلة وفق المعايير والأوزان المعتمدة، توصلت اللجنة إلى النتائج التالية:
         </p>
+        <div style="margin-top: 8px; background: rgba(245, 158, 11, 0.12); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; color: #92400e;">
+          📜 ${buildSequentialSessionsNarrative()}
+        </div>
       </div>
 
       <!-- ====== أولاً: الفائزون بمنح الماجستير ====== -->
