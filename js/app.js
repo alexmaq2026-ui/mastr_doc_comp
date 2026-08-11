@@ -47,8 +47,15 @@ function initStore() {
       if (!state.candidates) {
         state.candidates = [];
       }
-      if (state.criteria && (state.criteria.seniority.maxPoints === 30 || state.criteria.age.maxPoints === 25 || state.criteria.specialization.maxPoints === 25)) {
+      if (!state.criteria) {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
+      } else {
+        if (!state.criteria.customCriteria) {
+          state.criteria.customCriteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria || []));
+        }
+        if (state.criteria.seniority && state.criteria.seniority.maxPoints === 30) state.criteria.seniority.maxPoints = 10;
+        if (state.criteria.age && state.criteria.age.maxPoints === 25) state.criteria.age.maxPoints = 5;
+        if (state.criteria.specialization && state.criteria.specialization.maxPoints === 25) state.criteria.specialization.maxPoints = 5;
       }
       if (state.criteria && state.criteria.seniority && state.criteria.seniority.brackets) {
         state.criteria.seniority.brackets.forEach(b => {
