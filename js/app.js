@@ -674,8 +674,31 @@ function renderCandidatesTable() {
 
   initAnnotations();
 
+  const activeCustom = (state.criteria.customCriteria || []).filter(c => c.enabled);
+  const candTable = document.querySelector('#tab-candidates table.data-table');
+  if (candTable) {
+    const thead = candTable.querySelector('thead');
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 4%;">م</th>
+          <th style="width: 22%; text-align: right;">اسم الموظف المتنافس</th>
+          <th style="width: 10%;">الدرجة المطلوبة</th>
+          <th style="width: 13%;">التخصص</th>
+          <th style="width: 12%;">تاريخ التعيين</th>
+          <th style="width: 10%;">تاريخ الميلاد</th>
+          <th style="width: 9%;">سنة التخرج</th>
+          <th style="width: 9%;">التقدير</th>
+          ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;">${c.name}</th>`).join('')}
+          <th class="col-action no-print" style="width: 11%;">الإجراءات</th>
+        </tr>
+      `;
+    }
+  }
+
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات مطابقة للبحث</td></tr>`;
+    const colCount = 9 + activeCustom.length;
+    tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات مطابقة للبحث</td></tr>`;
     return;
   }
 
@@ -747,6 +770,9 @@ function renderCandidatesTable() {
       <td>${rawBirth || '-'}</td>
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
+      ${activeCustom.map(custom => `
+        <td style="font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.08); text-align: center;">${(c.customValues && c.customValues[custom.id]) !== undefined ? c.customValues[custom.id] : 0}</td>
+      `).join('')}
       <td class="col-action no-print" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
         ${editBtn}
         ${deleteBtn}
@@ -800,11 +826,35 @@ function renderScoringTable() {
     }
   }
 
+  const activeCustom = (state.criteria.customCriteria || []).filter(c => c.enabled);
+
+  // ── 1. تحديث رأس الجدول (thead) ديناميكياً لإضافة أعمدة المعايير المخصصة المفعلة ──
+  const thead = document.querySelector('#scoring-table thead');
+  if (thead) {
+    thead.innerHTML = `
+      <tr>
+        <th style="width: 45px;">الترتيب</th>
+        <th>اسم المتنافس</th>
+        <th>التخصص</th>
+        <th>نقاط الأقدمية</th>
+        <th>نقاط العمر</th>
+        <th>نقاط التخصص</th>
+        <th>نقاط التقدير</th>
+        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 900;">${c.name} (${c.maxPoints}ن)</th>`).join('')}
+        <th>المجموع الكلي</th>
+        <th>النتيجة والاعتماد</th>
+        <th>ملاحظات المفاضلة</th>
+        <th>التفاصيل</th>
+      </tr>
+    `;
+  }
+
   const degreeFilter = document.getElementById('filter-rankings-degree') ? document.getElementById('filter-rankings-degree').value : 'ماجستير';
   const rankedList = getRankedCandidates(degreeFilter);
 
   if (rankedList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد متنافسين في هذا القسم</td></tr>`;
+    const colCount = 10 + activeCustom.length;
+    tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد متنافسين في هذا القسم</td></tr>`;
     return;
   }
 
@@ -835,6 +885,9 @@ function renderScoringTable() {
       <td>${c.scores.ageScore}</td>
       <td>${c.scores.specScore}</td>
       <td>${c.scores.gradeScore}</td>
+      ${activeCustom.map(custom => `
+        <td style="font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.08); text-align: center;">${(c.scores.customScores && c.scores.customScores[custom.id]) !== undefined ? c.scores.customScores[custom.id] : 0}</td>
+      `).join('')}
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
         ${c.status === 'مقبول' ? `
