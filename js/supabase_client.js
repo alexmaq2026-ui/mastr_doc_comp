@@ -25,9 +25,10 @@ async function syncCandidatesFromSupabase() {
         const { data: cData, error: cErr } = await supabaseClient.from('candidates').select('*');
         if (cErr) console.warn('خطأ استجلاب المتنافسين من Supabase:', cErr);
         if (cData && cData.length > 0) {
-            const existingIds = new Set(cData.map(d => d.id));
-            const missingPreseeded = PRESEEDED_CANDIDATES.filter(p => !existingIds.has(p.id));
-            state.candidates = [...cData, ...missingPreseeded].sort((a, b) => a.id - b.id);
+            state.candidates = [...cData].sort((a, b) => a.id - b.id);
+        } else {
+            // قاعدة البيانات فارغة — نُفرّغ القائمة المحلية أيضاً
+            state.candidates = [];
         }
 
         // 2. استجلاب إعدادات المعايير والمستخدمين
@@ -35,7 +36,16 @@ async function syncCandidatesFromSupabase() {
         if (!sErr && sData && sData.length > 0) {
             const criteriaSetting = sData.find(s => s.key === 'global_criteria');
             if (criteriaSetting && criteriaSetting.value) {
-                state.criteria = criteriaSetting.value;
+                const remoteCriteria = criteriaSetting.value;
+                const localCustom = (state.criteria && state.criteria.customCriteria) ? state.criteria.customCriteria : [];
+                const remoteCustom = (remoteCriteria && remoteCriteria.customCriteria) ? remoteCriteria.customCriteria : [];
+
+                const mergedCustomMap = {};
+                remoteCustom.forEach(c => { if (c && c.id) mergedCustomMap[c.id] = c; });
+                localCustom.forEach(c => { if (c && c.id) mergedCustomMap[c.id] = c; });
+
+                state.criteria = remoteCriteria;
+                state.criteria.customCriteria = Object.values(mergedCustomMap);
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
             if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value)) {
@@ -141,6 +151,21 @@ async function uploadAllDataToSupabase() {
     } catch (err) {
         console.error('خطأ أثناء رفع البيانات إلى Supabase:', err);
         alert(`❌ حدث خطأ أثناء الرفع إلى Supabase:\n${err.message || JSON.stringify(err)}\n\nتأكد من أنك قمت بتنفيذ كود الجدول supabase_schema.sql في SQL Editor أولاً.`);
+        return false;
+    }
+}
+
+// مزامنة حصرية وإصدار فوري لمصفوفة المعايير أونلاين على Supabase
+async function syncCriteriaToSupabase(criteria) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_criteria', value: criteria }
+        ]);
+        console.log('✅ تم مزامنة المعايير المخصصة أونلاين على Supabase بنجاح.');
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: تعذر مزامنة المعايير أونلاين على Supabase:', e);
         return false;
     }
 }

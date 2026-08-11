@@ -2780,6 +2780,7 @@ function addCustomCriterion() {
   });
 
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
   alert(`تم إضافة المعيار الجديد (${name}) بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
 }
@@ -2789,6 +2790,7 @@ function toggleCoreCriterion(key) {
   if (state.criteria && state.criteria[key]) {
     state.criteria[key].enabled = !state.criteria[key].enabled;
     saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
   }
 }
@@ -2798,6 +2800,7 @@ function updateCoreCriterionMaxPoints(key, points) {
   if (state.criteria && state.criteria[key]) {
     state.criteria[key].maxPoints = parseFloat(points) || 0;
     saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
   }
 }
@@ -2808,6 +2811,7 @@ function updateCustomCriterionPoints(id, points) {
   if (custom) {
     custom.maxPoints = parseFloat(points) || 0;
     saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
   }
 }
@@ -2818,6 +2822,7 @@ function toggleCustomCriterion(id) {
   if (custom) {
     custom.enabled = !custom.enabled;
     saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
   }
 }
@@ -2830,6 +2835,7 @@ function deleteCustomCriterion(id) {
   if (confirm(`هل أنت تأكد من رغبتك في حذف المعيار المخصص (${custom.name})؟`)) {
     state.criteria.customCriteria = state.criteria.customCriteria.filter(c => c.id !== id);
     saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
   }
 }
