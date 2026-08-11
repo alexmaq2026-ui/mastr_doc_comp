@@ -770,9 +770,17 @@ function renderCandidatesTable() {
       <td>${rawBirth || '-'}</td>
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
-      ${activeCustom.map(custom => `
-        <td style="font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.08); text-align: center;">${(c.customValues && c.customValues[custom.id]) !== undefined ? c.customValues[custom.id] : 0}</td>
-      `).join('')}
+      ${activeCustom.map(custom => {
+        const val = (c.customValues && c.customValues[custom.id]) !== undefined ? c.customValues[custom.id] : 0;
+        const isOk = val > 0;
+        return `
+          <td style="font-weight: 800; text-align: center;">
+            <span style="display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.74rem; background: ${isOk ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${isOk ? '#10b981' : '#ef4444'}; border: 1px solid ${isOk ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'};">
+              ${isOk ? `🟢 مستمر` : `🔴 منقطع`}
+            </span>
+          </td>
+        `;
+      }).join('')}
       <td class="col-action no-print" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
         ${editBtn}
         ${deleteBtn}
@@ -885,9 +893,17 @@ function renderScoringTable() {
       <td>${c.scores.ageScore}</td>
       <td>${c.scores.specScore}</td>
       <td>${c.scores.gradeScore}</td>
-      ${activeCustom.map(custom => `
-        <td style="font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.08); text-align: center;">${(c.scores.customScores && c.scores.customScores[custom.id]) !== undefined ? c.scores.customScores[custom.id] : 0}</td>
-      `).join('')}
+      ${activeCustom.map(custom => {
+        const val = (c.scores.customScores && c.scores.customScores[custom.id]) !== undefined ? c.scores.customScores[custom.id] : 0;
+        const isOk = val > 0;
+        return `
+          <td style="font-weight: 800; text-align: center; background: rgba(245, 158, 11, 0.05);">
+            <span style="display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem; background: ${isOk ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${isOk ? '#10b981' : '#ef4444'}; border: 1px solid ${isOk ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'};">
+              ${isOk ? `🟢 مستمر (${val}ن)` : `🔴 منقطع`}
+            </span>
+          </td>
+        `;
+      }).join('')}
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
         ${c.status === 'مقبول' ? `
@@ -2136,15 +2152,21 @@ function renderCustomCriteriaFormFields(candidate = null) {
   }
 
   container.innerHTML = `
-    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-      <h5 style="color: var(--accent); margin-bottom: 8px; font-weight: 800;"> نقاط المعايير المخصصة الجديدة:</h5>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+    <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+      <h5 style="color: #f59e0b; margin-bottom: 8px; font-weight: 900; font-size: 0.88rem;">🎯 مؤشرات واستحقاق المعايير المخصصة:</h5>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
         ${activeCustom.map(c => {
-          const val = (candidate && candidate.customValues && candidate.customValues[c.id]) !== undefined ? candidate.customValues[c.id] : 0;
+          const rawVal = (candidate && candidate.customValues && candidate.customValues[c.id]) !== undefined ? parseFloat(candidate.customValues[c.id]) : c.maxPoints;
+          const isContinuous = rawVal > 0;
           return `
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.78rem;">${c.name} (أقصى: ${c.maxPoints} نقطة):</label>
-              <input type="number" class="form-control cand-custom-val-input" data-criterion-id="${c.id}" value="${val}" min="0" max="${c.maxPoints}">
+              <label style="font-size: 0.8rem; font-weight: 800; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                مؤشر المعيار: <strong>${c.name}</strong> (${c.maxPoints}ن):
+              </label>
+              <select class="form-control cand-custom-val-input" data-criterion-id="${c.id}" style="font-weight: 800; border: 1.5px solid #f59e0b; background-color: #0f172a; color: #ffffff; padding: 6px 10px; border-radius: 6px;">
+                <option value="${c.maxPoints}" ${isContinuous ? 'selected' : ''}>🟢 مستمر (مستحق كاملاً: ${c.maxPoints} نقطة)</option>
+                <option value="0" ${!isContinuous ? 'selected' : ''}>🔴 منقطع / غير مستمر (0 نقطة)</option>
+              </select>
             </div>
           `;
         }).join('')}
