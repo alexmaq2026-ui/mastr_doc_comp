@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAuthVisibility();
   renderUserBadge();
   renderTabsByRole();
+  initDropdownNav();
   setupEventListeners();
   refreshAllViews();
   if (typeof syncCandidatesFromSupabase === 'function') {
@@ -185,7 +186,6 @@ function renderUserBadge() {
           </div>
         </div>
         <div class="user-actions">
-          <button class="btn btn-outline btn-xs" onclick="showLoginModal()">تغيير الحساب</button>
           <button class="btn btn-danger btn-xs" onclick="handleLogout()">تسجيل الخروج</button>
         </div>
       </div>
@@ -199,6 +199,61 @@ function getRoleTitle(role) {
   if (role === 'auditor') return 'مراجع مطلع';
   if (role === 'committee_member') return 'عضو لجنة المفاضلة (اطلاع فقط)';
   return role;
+}
+
+// ====================================================
+// نظام القوائم المنسدلة المجمّعة (Dropdown Nav Groups)
+// ====================================================
+
+function toggleNavGroup(groupId) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  const isOpen = group.classList.contains('open');
+  // أغلق كل المجموعات الأخرى
+  document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
+  // افتح أو أغلق الحالية
+  if (!isOpen) group.classList.add('open');
+}
+
+// إغلاق القوائم عند الضغط خارجها
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.nav-group')) {
+    document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
+  }
+});
+
+function switchTab(tabId, label) {
+  // أخفِ كل المحتوى
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+  // أظهر المطلوب
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  // تحديث الـ active على الأزرار
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-tab="${tabId}"]`);
+  if (btn) btn.classList.add('active');
+  // تحديث زر الرئيسية: مضيء فقط عند tab-home
+  const homeBtn = document.getElementById('btn-nav-home');
+  if (homeBtn) {
+    if (tabId === 'tab-home') homeBtn.classList.add('active');
+    else homeBtn.classList.remove('active');
+  }
+  // تحديث مؤشر الشاشة الحالية
+  const breadcrumb = document.getElementById('nav-breadcrumb');
+  if (breadcrumb && label) breadcrumb.textContent = label;
+  // أغلق كل القوائم المنسدلة
+  document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
+}
+
+// ربط أزرار التبويبات بالقوائم المنسدلة
+function initDropdownNav() {
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabId = this.getAttribute('data-tab');
+      const label = this.textContent.trim();
+      switchTab(tabId, label);
+    });
+  });
 }
 
 function renderTabsByRole() {
@@ -225,15 +280,19 @@ function renderTabsByRole() {
     if (el) el.style.display = allowed.includes(tabId) ? 'flex' : 'none';
   });
 
-  // إذا كان التبويب الحالي النشط غير مسموح به، انتقل للأول المسموح
-  const activeBtn = document.querySelector('.tab-btn.active');
-  if (activeBtn) {
-    const activeBtnId = activeBtn.id;
-    if (!allowed.includes(activeBtnId)) {
-      const firstAllowed = document.getElementById(allowed[0]);
-      if (firstAllowed) firstAllowed.click();
+  // إخفاء المجموعات التي لا تحتوي على أي تبويب مسموح به
+  const groups = {
+    'navgroup-data':    ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring','tab-btn-minutes'],
+    'navgroup-reports': ['tab-btn-report','tab-btn-analytics','tab-btn-criteria-doc'],
+    'navgroup-admin':   ['tab-btn-criteria','tab-btn-admin']
+  };
+  Object.entries(groups).forEach(([groupId, tabs]) => {
+    const groupEl = document.getElementById(groupId);
+    if (groupEl) {
+      const hasVisible = tabs.some(t => allowed.includes(t));
+      groupEl.style.display = hasVisible ? 'block' : 'none';
     }
-  }
+  });
 
   // أزرار الإضافة والاستيراد: للمدير الأعلى ومدخل البيانات فقط
   const canEditCandidates = (currentRole === 'super_admin' || currentRole === 'data_entry');
@@ -242,8 +301,8 @@ function renderTabsByRole() {
   if (addCandidateBtn) addCandidateBtn.style.display = canEditCandidates ? 'inline-flex' : 'none';
   if (importExcelBtn)  importExcelBtn.style.display  = canEditCandidates ? 'inline-flex' : 'none';
 
-  // زر تنفيذ المفاضلة في الشريط العلوي: يظهر للمدير الأعلى فقط
-  const runNavBtn = document.getElementById('btn-run-nav') || document.querySelector('.btn-run-nav');
+  // زر تنفيذ المفاضلة: يظهر للمدير الأعلى فقط
+  const runNavBtn = document.getElementById('btn-run-nav');
   if (runNavBtn) {
     runNavBtn.style.display = (currentRole === 'super_admin') ? 'inline-flex' : 'none';
   }
@@ -473,14 +532,48 @@ function calculateCandidateScore(candidate) {
     }
   }
 
-  // 5. احتساب المعايير المخصصة
+  // 5. احتساب المعايير المخصصة (يدعم 4 أنواع من المؤشرات)
   if (state.criteria.customCriteria) {
     for (let custom of state.criteria.customCriteria) {
-      if (custom.enabled) {
-        const val = (candidate.customValues && candidate.customValues[custom.id]) || 0;
-        customScores[custom.id] = parseFloat(val) || 0;
-        customTotal += customScores[custom.id];
+      if (!custom.enabled) continue;
+      const rawVal = (candidate.customValues && candidate.customValues[custom.id] !== undefined)
+        ? candidate.customValues[custom.id]
+        : null;
+      let pts = 0;
+      const itype = custom.indicatorType || 'binary';
+
+      if (itype === 'binary') {
+        // ثنائي: القيمة المخزنة هي نقاط الخيار المختار مباشرةً (حرة التسمية والوزن)
+        pts = parseFloat(rawVal) || 0;
+        pts = Math.min(pts, custom.maxPoints || 0);
+
+      } else if (itype === 'grade') {
+        // تقديري: القيمة المخزنة هي النقاط المرتبطة بالتصنيف
+        pts = parseFloat(rawVal) || 0;
+        pts = Math.min(pts, custom.maxPoints || 0);
+
+      } else if (itype === 'bracket') {
+        // شريحي: القيمة المخزنة هي رقم (مثل عدد السنوات) نحتسب منه النقطة
+        const numVal = parseFloat(rawVal) || 0;
+        pts = 0;
+        if (custom.config && custom.config.brackets) {
+          for (let b of custom.config.brackets) {
+            if (numVal >= b.min && numVal <= b.max) {
+              pts = b.points;
+              break;
+            }
+          }
+        }
+
+      } else if (itype === 'numeric') {
+        // كمي مباشر: القيمة المخزنة هي العدد × معامل بحد أقصى
+        const numVal = parseFloat(rawVal) || 0;
+        const multiplier = (custom.config && custom.config.pointsPerUnit) ? custom.config.pointsPerUnit : 1;
+        pts = Math.min(numVal * multiplier, custom.maxPoints || 0);
       }
+
+      customScores[custom.id] = pts;
+      customTotal += pts;
     }
   }
 
@@ -771,12 +864,40 @@ function renderCandidatesTable() {
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
       ${activeCustom.map(custom => {
-        const val = (c.customValues && c.customValues[custom.id]) !== undefined ? c.customValues[custom.id] : 0;
-        const isOk = val > 0;
+        const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+          ? c.scores.customScores[custom.id]
+          : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) || 0 : 0);
+        const rawVal = c.customValues ? c.customValues[custom.id] : null;
+        const itype = custom.indicatorType || 'binary';
+
+        let dispLabel = '';
+        if (itype === 'binary') {
+          const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
+            ? custom.config.options
+            : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
+          const matched = bOpts.find(o => o.points === computedPts);
+          dispLabel = matched ? `🔵 ${matched.label}` : `${computedPts}ن`;
+        } else if (itype === 'grade') {
+          const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
+          const matched = grades.find(g => g.points === computedPts);
+          dispLabel = matched ? `🟡 ${matched.label}` : `🟡 ${computedPts}ن`;
+        } else if (itype === 'bracket') {
+          const brackets = (custom.config && custom.config.brackets) ? custom.config.brackets : [];
+          const numVal = rawVal !== null ? parseFloat(rawVal) : null;
+          const matched = numVal !== null ? brackets.find(b => numVal >= b.min && numVal <= b.max) : null;
+          dispLabel = matched ? `🟠 ${matched.label}` : `🟠 ${computedPts}ن`;
+        } else if (itype === 'numeric') {
+          dispLabel = `🟣 ${rawVal !== null ? parseFloat(rawVal) : 0} وحدة`;
+        }
+
+        const maxPossible = itype === 'binary'
+          ? Math.max(...((custom.config && custom.config.options) || [{ points: custom.maxPoints }]).map(o => o.points))
+          : custom.maxPoints;
+        const isTopColor = computedPts >= maxPossible && maxPossible > 0;
         return `
           <td style="font-weight: 800; text-align: center;">
-            <span style="display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.74rem; background: ${isOk ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${isOk ? '#10b981' : '#ef4444'}; border: 1px solid ${isOk ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'};">
-              ${isOk ? `🟢 مستمر` : `🔴 منقطع`}
+            <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.74rem; background:${isTopColor ? 'rgba(16,185,129,0.15)' : computedPts > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color:${isTopColor ? '#10b981' : computedPts > 0 ? '#f59e0b' : '#ef4444'}; border:1px solid ${isTopColor ? 'rgba(16,185,129,0.3)' : computedPts > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'};">
+              ${dispLabel} (${computedPts}ن)
             </span>
           </td>
         `;
@@ -894,15 +1015,55 @@ function renderScoringTable() {
       <td>${c.scores.specScore}</td>
       <td>${c.scores.gradeScore}</td>
       ${activeCustom.map(custom => {
-        const val = (c.scores.customScores && c.scores.customScores[custom.id]) !== undefined ? c.scores.customScores[custom.id] : 0;
-        const isOk = val > 0;
-        return `
-          <td style="font-weight: 800; text-align: center; background: rgba(245, 158, 11, 0.05);">
-            <span style="display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem; background: ${isOk ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; color: ${isOk ? '#10b981' : '#ef4444'}; border: 1px solid ${isOk ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'};">
-              ${isOk ? `🟢 مستمر (${val}ن)` : `🔴 منقطع`}
-            </span>
-          </td>
-        `;
+        const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+          ? c.scores.customScores[custom.id] : 0;
+        const rawVal = (c.customValues && c.customValues[custom.id] !== undefined)
+          ? c.customValues[custom.id] : null;
+        const itype = custom.indicatorType || 'binary';
+
+        let cellContent = '';
+        if (itype === 'binary') {
+          // عرض الاسم المخصص للخيار المختار
+          const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
+            ? custom.config.options
+            : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
+          const matchedBOpt = bOpts.find(o => o.points === computedPts);
+          const bLabel = matchedBOpt ? matchedBOpt.label : `${computedPts}ن`;
+          const maxPossible = Math.max(...bOpts.map(o => o.points));
+          const isHighest = computedPts >= maxPossible;
+          const bgColor = isHighest ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+          const txtColor = isHighest ? '#10b981' : '#ef4444';
+          const bdColor  = isHighest ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
+          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:${bgColor}; color:${txtColor}; border:1px solid ${bdColor};">🔵 ${bLabel} (${computedPts}ن)</span>`;
+
+        } else if (itype === 'grade') {
+          const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
+          const matchedGrade = grades.find(g => g.points === computedPts);
+          const gradeLabel = matchedGrade ? matchedGrade.label : (computedPts > 0 ? `${computedPts}ن` : '—');
+          const isOk = computedPts > 0;
+          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(234,179,8,0.15); color:#fde68a; border:1px solid rgba(234,179,8,0.4);">
+            ${isOk ? `🟡 ${gradeLabel} (${computedPts}ن)` : '—'}
+          </span>`;
+
+        } else if (itype === 'bracket') {
+          const brackets = (custom.config && custom.config.brackets) ? custom.config.brackets : [];
+          const numVal = rawVal !== null ? parseFloat(rawVal) : null;
+          const matchedBracket = (numVal !== null && brackets.length)
+            ? brackets.find(b => numVal >= b.min && numVal <= b.max)
+            : null;
+          const bLabel = matchedBracket ? matchedBracket.label : (numVal !== null ? `${numVal}` : '—');
+          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(249,115,22,0.15); color:#fdba74; border:1px solid rgba(249,115,22,0.4);">
+            🟠 ${bLabel} (${computedPts}ن)
+          </span>`;
+
+        } else if (itype === 'numeric') {
+          const numVal = rawVal !== null ? parseFloat(rawVal) : 0;
+          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(139,92,246,0.15); color:#c4b5fd; border:1px solid rgba(139,92,246,0.4);">
+            🟣 ${numVal} وحدة (${computedPts}ن)
+          </span>`;
+        }
+
+        return `<td style="font-weight:800; text-align:center; background:rgba(245,158,11,0.04);">${cellContent}</td>`;
       }).join('')}
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
@@ -1032,12 +1193,40 @@ function generateCandidateCardHTML(candidate) {
             <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
             <strong style="font-size: 1rem; color: #047857;">${gradeScore} نقاط</strong>
           </div>
-          ${activeCustom.map(custom => `
+          ${activeCustom.map(custom => {
+            const computedPts = customScores[custom.id] || 0;
+            const rawVal = (candidate.customValues && candidate.customValues[custom.id] !== undefined)
+              ? candidate.customValues[custom.id] : null;
+            const itype = custom.indicatorType || 'binary';
+
+            let displayLabel = '';
+            if (itype === 'binary') {
+              const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
+                ? custom.config.options
+                : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
+              const matchedBOpt = bOpts.find(o => o.points === computedPts);
+              displayLabel = matchedBOpt ? `🔵 ${matchedBOpt.label}` : `🔵 ${computedPts}ن`;
+
+            } else if (itype === 'grade') {
+              const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
+              const matched = grades.find(g => g.points === computedPts);
+              displayLabel = matched ? `🟡 ${matched.label}` : (computedPts > 0 ? `🟡 ${computedPts}ن` : '—');
+            } else if (itype === 'bracket') {
+              const brackets = (custom.config && custom.config.brackets) ? custom.config.brackets : [];
+              const numVal = rawVal !== null ? parseFloat(rawVal) : null;
+              const matched = (numVal !== null) ? brackets.find(b => numVal >= b.min && numVal <= b.max) : null;
+              displayLabel = matched ? `🟠 ${matched.label}` : (numVal !== null ? `🟠 ${numVal}` : '—');
+            } else if (itype === 'numeric') {
+              const numVal = rawVal !== null ? parseFloat(rawVal) : 0;
+              displayLabel = `🟣 ${numVal} وحدة`;
+            }
+
+            return `
             <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}:</span>
-              <strong style="font-size: 1rem; color: #047857;">${(customScores[custom.id]) || 0} نقاط</strong>
-            </div>
-          `).join('')}
+              <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}: <span style="color:#64748b; font-weight:500;">${displayLabel}</span></span>
+              <strong style="font-size: 1rem; color: #047857;">${computedPts} نقاط</strong>
+            </div>`;
+          }).join('')}
         </div>
 
         <div style="margin-top: 8px; background: #047857; color: #ffffff; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
@@ -1750,19 +1939,51 @@ function renderCriteriaSettings() {
         </p>
 
         ${isSuperAdmin ? `
-          <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
-            <h4 style="color: var(--accent); margin-bottom: 10px;"> تصميم وإنشاء معيار مخصص جديد مع الوزن</h4>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+          <div style="background: rgba(245,158,11,0.06); border: 1.5px solid rgba(245,158,11,0.35); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+            <h4 style="color: #f59e0b; margin-bottom: 14px; font-size: 0.95rem; font-weight: 900;">🛠️ تصميم وإنشاء معيار تنافسي مخصص جديد</h4>
+
+            <!-- السطر الأول: الاسم + الوزن + النوع -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px;">
               <div style="flex: 2; min-width: 220px;">
-                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">اسم المعيار الجديد:</label>
-                <input type="text" id="new-custom-criterion-name" class="form-control" placeholder="مثال: تقييم الأداء السنوي، أبحاث ونشر...">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">اسم المعيار الجديد:</label>
+                <input type="text" id="new-custom-criterion-name" class="form-control" placeholder="مثال: الممارسة الفعلية، تقييم الأداء...">
               </div>
-              <div style="flex: 1; min-width: 130px;">
-                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">الوزن / النقاط القصوى:</label>
-                <input type="number" id="new-custom-criterion-points" class="form-control" placeholder="مثال: 10" value="10">
+              <div style="flex: 1; min-width: 110px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">الوزن الأقصى (نقطة):</label>
+                <input type="number" id="new-custom-criterion-points" class="form-control" placeholder="مثال: 5" value="5" min="1">
               </div>
-              <button class="btn btn-secondary" onclick="addCustomCriterion()"> إضافة المعيار للنظام</button>
+              <div style="flex: 1.5; min-width: 190px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">نوع مؤشر الاحتساب:</label>
+                <select id="new-custom-criterion-type" class="form-control" onchange="renderCustomCriterionTypeConfig()" style="font-weight:700;">
+                  <option value="binary">🔵 ثنائي (مستمر / منقطع)</option>
+                  <option value="grade">🟡 تقديري (ممتاز / جيد / ...)</option>
+                  <option value="bracket">🟠 شريحي (مجالات رقمية)</option>
+                  <option value="numeric">🟣 كمي مباشر (عدد × معامل)</option>
+                </select>
+              </div>
             </div>
+
+            <!-- منطقة الإعدادات الديناميكية حسب النوع -->
+            <div id="custom-criterion-type-config" style="margin-bottom: 12px;">
+              <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 0.82rem; color: #93c5fd; font-weight: 800; margin-bottom: 10px;">🔵 حدد خيارَي هذا المعيار واكتب وصفهما وأوزانهما بحرية تامة:</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+                    <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px;">الخيار الأول</span>
+                    <input type="text" class="form-control binary-label" placeholder="مثال: مستمر، نعم، طويل، أسود..." style="flex: 2; border: 1px solid rgba(59,130,246,0.5);">
+                    <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
+                  </div>
+                  <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+                    <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
+                    <input type="text" class="form-control binary-label" placeholder="مثال: منقطع، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+                    <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
+                  </div>
+                </div>
+                <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يمكنك ترك الحقول فارغة وسيتم اعتماد التسمية الافتراضية (مستمر / منقطع) تلقائياً</div>
+              </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="addCustomCriterion()" style="font-weight: 900;">➕ إضافة المعيار للنظام</button>
           </div>
         ` : ''}
 
@@ -1793,7 +2014,11 @@ function renderCriteriaSettings() {
                   </span>
                 </td>
                 <td style="text-align: center;">
-                  ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('seniority')">${cData.seniority && cData.seniority.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+                  ${isSuperAdmin ? `
+                    <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('seniority')">${cData.seniority && cData.seniority.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <button class="btn btn-warning btn-sm" onclick="editCriterion('seniority')">تعديل</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCriterion('seniority')">حذف</button>
+                  ` : '-'}
                 </td>
               </tr>
 
@@ -1811,7 +2036,11 @@ function renderCriteriaSettings() {
                   </span>
                 </td>
                 <td style="text-align: center;">
-                  ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('age')">${cData.age && cData.age.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+                  ${isSuperAdmin ? `
+                    <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('age')">${cData.age && cData.age.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <button class="btn btn-warning btn-sm" onclick="editCriterion('age')">تعديل</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCriterion('age')">حذف</button>
+                  ` : '-'}
                 </td>
               </tr>
 
@@ -1829,7 +2058,11 @@ function renderCriteriaSettings() {
                 </span>
               </td>
               <td style="text-align: center;">
-                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('specialization')">${cData.specialization && cData.specialization.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+                ${isSuperAdmin ? `
+                  <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('specialization')">${cData.specialization && cData.specialization.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                  <button class="btn btn-warning btn-sm" onclick="editCriterion('specialization')">تعديل</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCriterion('specialization')">حذف</button>
+                ` : '-'}
               </td>
             </tr>
 
@@ -1847,15 +2080,30 @@ function renderCriteriaSettings() {
                 </span>
               </td>
               <td style="text-align: center;">
-                ${isSuperAdmin ? `<button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('grade')">${cData.grade && cData.grade.enabled ? 'إيقاف' : 'تفعيل'}</button>` : '-'}
+                ${isSuperAdmin ? `
+                  <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('grade')">${cData.grade && cData.grade.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                  <button class="btn btn-warning btn-sm" onclick="editCriterion('grade')">تعديل</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCriterion('grade')">حذف</button>
+                ` : '-'}
               </td>
             </tr>
 
             <!-- 5. المعايير المخصصة الإضافية -->
-            ${(cData.customCriteria || []).map((c, idx) => `
+            ${(cData.customCriteria || []).map((c, idx) => {
+              const typeLabels = {
+                binary: '🔵 ثنائي',
+                grade: '🟡 تقديري',
+                bracket: '🟠 شريحي',
+                numeric: '🟣 كمي مباشر'
+              };
+              const typeLabel = typeLabels[c.indicatorType || 'binary'] || '🔵 ثنائي';
+              return `
               <tr>
                 <td style="text-align: center; font-weight: bold;">${idx + 5}</td>
-                <td><strong>${c.name}</strong></td>
+                <td>
+                  <strong>${c.name}</strong>
+                  <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">${typeLabel}</div>
+                </td>
                 <td><span class="badge-status" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid #f59e0b;">معيار مخصص</span></td>
                 <td style="text-align: center;">
                   <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${c.maxPoints}" onchange="updateCustomCriterionPoints('${c.id}', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
@@ -1868,11 +2116,12 @@ function renderCriteriaSettings() {
                 <td style="text-align: center;">
                   ${isSuperAdmin ? `
                     <button class="btn btn-outline btn-sm" onclick="toggleCustomCriterion('${c.id}')">${c.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <button class="btn btn-warning btn-sm" onclick="editCriterion('${c.id}')">تعديل</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteCustomCriterion('${c.id}')">حذف</button>
                   ` : '-'}
                 </td>
-              </tr>
-            `).join('')}
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -2151,25 +2400,84 @@ function renderCustomCriteriaFormFields(candidate = null) {
     return;
   }
 
+  const fields = activeCustom.map(c => {
+    const existingVal = (candidate && candidate.customValues && candidate.customValues[c.id] !== undefined)
+      ? candidate.customValues[c.id]
+      : null;
+    const itype = c.indicatorType || 'binary';
+
+    let inputHtml = '';
+
+    if (itype === 'binary') {
+      // استخدام الخيارات المعرَّفة بحرية، مع الرجوع للقيم الافتراضية للمعايير القديمة
+      const bOptions = (c.config && c.config.options && c.config.options.length >= 2)
+        ? c.config.options
+        : [{ label: 'مستمر', points: c.maxPoints }, { label: 'منقطع', points: 0 }];
+
+      const bOpts = bOptions.map((opt, idx) => {
+        let isSel = false;
+        if (existingVal !== null) {
+          isSel = parseFloat(existingVal) === opt.points;
+        } else {
+          isSel = idx === 0; // الخيار الأول افتراضياً
+        }
+        return `<option value="${opt.points}" ${isSel ? 'selected' : ''}>${opt.label} (${opt.points} نقطة)</option>`;
+      }).join('');
+
+      inputHtml = `
+        <select class="form-control cand-custom-val-input" data-criterion-id="${c.id}" data-type="binary" style="font-weight: 800; border: 1.5px solid #3b82f6; background-color: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px;">
+          ${bOpts}
+        </select>`;
+
+    } else if (itype === 'grade') {
+      const grades = (c.config && c.config.grades) ? c.config.grades : [];
+      const opts = grades.map(g => {
+        const sel = (existingVal !== null && parseFloat(existingVal) === g.points) ? 'selected' : '';
+        return `<option value="${g.points}" ${sel}>${g.label} (${g.points} نقطة)</option>`;
+      }).join('');
+      inputHtml = `
+        <select class="form-control cand-custom-val-input" data-criterion-id="${c.id}" data-type="grade" style="font-weight: 800; border: 1.5px solid #eab308; background-color: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px;">
+          <option value="">-- اختر التقدير --</option>
+          ${opts}
+        </select>`;
+
+    } else if (itype === 'bracket') {
+      const curVal = (existingVal !== null) ? existingVal : '';
+      const brackets = (c.config && c.config.brackets) ? c.config.brackets : [];
+      const bracketHint = brackets.map(b => `${b.label}: ${b.points}ن`).join(' | ');
+      inputHtml = `
+        <div>
+          <input type="number" class="form-control cand-custom-val-input" data-criterion-id="${c.id}" data-type="bracket" value="${curVal}" min="0" step="0.5" placeholder="أدخل القيمة الرقمية" style="border: 1.5px solid #f97316; background: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px;">
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">${bracketHint}</div>
+        </div>`;
+
+    } else if (itype === 'numeric') {
+      const curVal = (existingVal !== null) ? existingVal : '';
+      const ppu = (c.config && c.config.pointsPerUnit) ? c.config.pointsPerUnit : 1;
+      inputHtml = `
+        <div>
+          <input type="number" class="form-control cand-custom-val-input" data-criterion-id="${c.id}" data-type="numeric" value="${curVal}" min="0" step="1" placeholder="أدخل العدد" style="border: 1.5px solid #8b5cf6; background: #0f172a; color: #fff; padding: 6px 10px; border-radius: 6px;">
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">${ppu} نقطة لكل وحدة | الأقصى: ${c.maxPoints} نقطة</div>
+        </div>`;
+    }
+
+    const typeIcons = { binary: '🔵', grade: '🟡', bracket: '🟠', numeric: '🟣' };
+    const icon = typeIcons[itype] || '🔵';
+
+    return `
+      <div class="form-group" style="margin-bottom: 0;">
+        <label style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; display: block; margin-bottom: 4px;">
+          ${icon} <strong>${c.name}</strong> <span style="color:#94a3b8;">(أقصى: ${c.maxPoints}ن)</span>:
+        </label>
+        ${inputHtml}
+      </div>`;
+  }).join('');
+
   container.innerHTML = `
-    <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.4); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-      <h5 style="color: #f59e0b; margin-bottom: 8px; font-weight: 900; font-size: 0.88rem;">🎯 مؤشرات واستحقاق المعايير المخصصة:</h5>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-        ${activeCustom.map(c => {
-          const rawVal = (candidate && candidate.customValues && candidate.customValues[c.id]) !== undefined ? parseFloat(candidate.customValues[c.id]) : c.maxPoints;
-          const isContinuous = rawVal > 0;
-          return `
-            <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 0.8rem; font-weight: 800; color: #cbd5e1; display: block; margin-bottom: 4px;">
-                مؤشر المعيار: <strong>${c.name}</strong> (${c.maxPoints}ن):
-              </label>
-              <select class="form-control cand-custom-val-input" data-criterion-id="${c.id}" style="font-weight: 800; border: 1.5px solid #f59e0b; background-color: #0f172a; color: #ffffff; padding: 6px 10px; border-radius: 6px;">
-                <option value="${c.maxPoints}" ${isContinuous ? 'selected' : ''}>🟢 مستمر (مستحق كاملاً: ${c.maxPoints} نقطة)</option>
-                <option value="0" ${!isContinuous ? 'selected' : ''}>🔴 منقطع / غير مستمر (0 نقطة)</option>
-              </select>
-            </div>
-          `;
-        }).join('')}
+    <div style="background: rgba(245,158,11,0.06); border: 1.5px solid rgba(245,158,11,0.35); padding: 14px; border-radius: 10px; margin-bottom: 12px;">
+      <h5 style="color: #f59e0b; margin-bottom: 10px; font-weight: 900; font-size: 0.88rem;">🎯 مؤشرات المعايير التنافسية المخصصة:</h5>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px;">
+        ${fields}
       </div>
     </div>
   `;
@@ -2224,14 +2532,28 @@ function saveCandidateForm() {
     return;
   }
 
-  // تجميع قيم المعايير المخصصة
+  // تجميع قيم المعايير المخصصة (يدعم جميع أنواع المؤشرات)
   const customValues = {};
   document.querySelectorAll('.cand-custom-val-input').forEach(inp => {
     const critId = inp.getAttribute('data-criterion-id');
-    if (critId) {
+    const dtype  = inp.getAttribute('data-type') || 'binary';
+    if (!critId) return;
+
+    if (dtype === 'binary') {
+      // الثنائي: نخزّن maxPoints (مستمر) أو 0 (منقطع)
+      customValues[critId] = parseFloat(inp.value) || 0;
+    } else if (dtype === 'grade') {
+      // التقديري: نخزّن النقاط المرتبطة بالتصنيف المختار
+      customValues[critId] = parseFloat(inp.value) || 0;
+    } else if (dtype === 'bracket') {
+      // الشريحي: نخزّن القيمة الرقمية الخام (مثل: عدد السنوات)
+      customValues[critId] = parseFloat(inp.value) || 0;
+    } else if (dtype === 'numeric') {
+      // الكمي: نخزّن العدد الخام ويحتسب المحرك النقاط
       customValues[critId] = parseFloat(inp.value) || 0;
     }
   });
+
 
   let savedCandidate = null;
 
@@ -2829,35 +3151,187 @@ function updateGradeItemPoints(index, points) {
   refreshAllViews();
 }
 
+// دالة عرض إعدادات النوع ديناميكياً في نموذج إضافة المعيار
+function renderCustomCriterionTypeConfig() {
+  const typeEl = document.getElementById('new-custom-criterion-type');
+  const configEl = document.getElementById('custom-criterion-type-config');
+  if (!typeEl || !configEl) return;
+  const type = typeEl.value;
+
+  if (type === 'binary') {
+    configEl.innerHTML = `
+      <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #93c5fd; font-weight: 800; margin-bottom: 10px;">🔵 حدد خيارَي هذا المعيار واكتب وصفهما وأوزانهما بحرية تامة:</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+            <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px;">الخيار الأول</span>
+            <input type="text" class="form-control binary-label" placeholder="مثال: مستمر، نعم، طويل، أسود..." style="flex: 2; border: 1px solid rgba(59,130,246,0.5);">
+            <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
+          </div>
+          <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+            <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
+            <input type="text" class="form-control binary-label" placeholder="مثال: منقطع، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
+          </div>
+        </div>
+        <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يمكن لأي خيار أن يحمل أي وزن — لست مقيداً بـ "كامل الوزن / صفر"</div>
+      </div>`;
+  } else if (type === 'grade') {
+    configEl.innerHTML = `
+      <div style="background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #fde68a; font-weight: 800; margin-bottom: 8px;">🟡 أدخل تصنيفات الأداء ونقاطها (كل تصنيف في سطر):</div>
+        <div id="grade-options-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+          <div class="grade-option-row" style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" class="form-control grade-label" placeholder="مثال: ممتاز" style="flex: 2;">
+            <input type="number" class="form-control grade-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+            <button onclick="this.closest('.grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+          </div>
+        </div>
+        <button onclick="addGradeOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة تصنيف آخر</button>
+      </div>`;
+  } else if (type === 'bracket') {
+    configEl.innerHTML = `
+      <div style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #fdba74; font-weight: 800; margin-bottom: 4px;">🟠 أدخل المجالات الرقمية ونقاطها (مثل: سنوات الخبرة):</div>
+        <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 8px;">ما سيُدخله مدخل البيانات هو رقم (مثل 5 سنوات) والنظام يحتسب النقطة تلقائياً.</div>
+        <div id="bracket-options-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+          <div class="bracket-option-row" style="display: flex; gap: 8px; align-items: center; flex-wrap:wrap;">
+            <input type="text" class="form-control bracket-label" placeholder="مسمى الفئة (مثال: أقل من 3 سنوات)" style="flex: 2; min-width: 160px;">
+            <input type="number" class="form-control bracket-min" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
+            <input type="number" class="form-control bracket-max" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
+            <input type="number" class="form-control bracket-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+            <button onclick="this.closest('.bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+          </div>
+        </div>
+        <button onclick="addBracketOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة مجال آخر</button>
+      </div>`;
+  } else if (type === 'numeric') {
+    configEl.innerHTML = `
+      <div style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.3); padding: 12px; border-radius: 8px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 160px;">
+          <label style="font-size: 0.78rem; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">🟣 النقاط لكل وحدة (مثل: نقطة لكل بحث):</label>
+          <input type="number" id="numeric-points-per-unit" class="form-control" value="1" min="0.5" step="0.5" style="max-width: 120px;">
+        </div>
+        <div style="font-size: 0.78rem; color: #94a3b8; flex: 2;">
+          مثال: إذا كانت النقاط لكل وحدة = 2، والوزن الأقصى = 10، فالمتنافس الذي له 3 أبحاث يحصل على 6 نقاط.
+        </div>
+      </div>`;
+  }
+}
+
+function addGradeOptionRow() {
+  const list = document.getElementById('grade-options-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'grade-option-row';
+  row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  row.innerHTML = `
+    <input type="text" class="form-control grade-label" placeholder="مثال: جيد جداً" style="flex: 2;">
+    <input type="number" class="form-control grade-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+    <button onclick="this.closest('.grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function addBracketOptionRow() {
+  const list = document.getElementById('bracket-options-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'bracket-option-row';
+  row.style.cssText = 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;';
+  row.innerHTML = `
+    <input type="text" class="form-control bracket-label" placeholder="مسمى الفئة" style="flex: 2; min-width: 160px;">
+    <input type="number" class="form-control bracket-min" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
+    <input type="number" class="form-control bracket-max" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
+    <input type="number" class="form-control bracket-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+    <button onclick="this.closest('.bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+  `;
+  list.appendChild(row);
+}
+
 // إضافة وإدارة المعايير المخصصة الجديدة
 function addCustomCriterion() {
+  if (checkSystemLockGuard()) return;
   const nameEl = document.getElementById('new-custom-criterion-name');
-  const ptsEl = document.getElementById('new-custom-criterion-points');
+  const ptsEl  = document.getElementById('new-custom-criterion-points');
+  const typeEl = document.getElementById('new-custom-criterion-type');
 
-  const name = nameEl ? nameEl.value.trim() : '';
-  const maxPoints = ptsEl ? (parseFloat(ptsEl.value) || 10) : 10;
+  const name      = nameEl ? nameEl.value.trim() : '';
+  const maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 5)  : 5;
+  const itype     = typeEl ? typeEl.value : 'binary';
 
-  if (!name) {
-    alert('يرجى كتابة اسم المعيار الجديد');
-    return;
+  if (!name) { alert('يرجى كتابة اسم المعيار الجديد'); return; }
+
+  // بناء config حسب النوع
+  let config = {};
+  if (itype === 'binary') {
+    const rows = document.querySelectorAll('.binary-option-row');
+    const options = [];
+    rows.forEach(row => {
+      const label = row.querySelector('.binary-label')?.value.trim();
+      const pts   = parseFloat(row.querySelector('.binary-pts')?.value);
+      if (label) options.push({ label, points: isNaN(pts) ? maxPoints : pts });
+    });
+    // إن لم يقم المشرف بإدخال مسميات مخصصة، نعتمد التسمية الافتراضية الذكية
+    if (options.length === 0) {
+      options.push({ label: 'مستمر', points: maxPoints });
+      options.push({ label: 'منقطع', points: 0 });
+    } else if (options.length === 1) {
+      options.push({ label: 'منقطع', points: 0 });
+    }
+    config = { options };
+
+  } else if (itype === 'grade') {
+    const rows  = document.querySelectorAll('.grade-option-row');
+    const grades = [];
+    rows.forEach(row => {
+      const label = row.querySelector('.grade-label')?.value.trim();
+      const pts   = parseFloat(row.querySelector('.grade-pts')?.value) || 0;
+      if (label) grades.push({ label, points: pts });
+    });
+    if (grades.length === 0) { alert('يرجى إضافة تصنيف واحد على الأقل للمعيار التقديري'); return; }
+    config = { grades };
+
+  } else if (itype === 'bracket') {
+    const rows    = document.querySelectorAll('.bracket-option-row');
+    const brackets = [];
+    rows.forEach(row => {
+      const label = row.querySelector('.bracket-label')?.value.trim();
+      const min   = parseFloat(row.querySelector('.bracket-min')?.value);
+      const max   = parseFloat(row.querySelector('.bracket-max')?.value);
+      const pts   = parseFloat(row.querySelector('.bracket-pts')?.value) || 0;
+      if (label && !isNaN(min) && !isNaN(max)) brackets.push({ label, min, max, points: pts });
+    });
+    if (brackets.length === 0) { alert('يرجى إضافة مجال رقمي واحد على الأقل للمعيار الشريحي'); return; }
+    config = { brackets };
+
+  } else if (itype === 'numeric') {
+    const ppu = parseFloat(document.getElementById('numeric-points-per-unit')?.value) || 1;
+    config = { pointsPerUnit: ppu };
   }
 
-  if (!state.criteria.customCriteria) {
-    state.criteria.customCriteria = [];
-  }
+  if (!state.criteria.customCriteria) state.criteria.customCriteria = [];
 
   const newId = 'c_' + Date.now();
   state.criteria.customCriteria.push({
     id: newId,
-    name: name,
-    maxPoints: maxPoints,
-    enabled: true
+    name,
+    maxPoints,
+    enabled: true,
+    indicatorType: itype,
+    config
   });
+
+  if (nameEl) nameEl.value = '';
+  if (ptsEl)  ptsEl.value  = '5';
+  if (typeEl) typeEl.value = 'binary';
+  const configDiv = document.getElementById('custom-criterion-type-config');
+  if (configDiv) configDiv.innerHTML = '';
 
   saveStore();
   if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
-  alert(`تم إضافة المعيار الجديد (${name}) بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
+  alert(`✅ تم إضافة المعيار (${name}) - نوع المؤشر: ${itype} - بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
 }
 
 function toggleCoreCriterion(key) {
@@ -2912,6 +3386,278 @@ function deleteCustomCriterion(id) {
     saveStore();
     if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
     refreshAllViews();
+  }
+}
+
+// ── دوال التعديل والحذف الشاملة لكل صفوف المعايير ──
+
+// فتح نافذة تعديل المعيار الأساسي أو المخصص
+function editCriterion(idOrKey) {
+  if (checkSystemLockGuard()) return;
+  const modal = document.getElementById('modal-edit-criterion');
+  if (!modal) return;
+
+  document.getElementById('edit-criterion-id').value = idOrKey;
+  const nameEl  = document.getElementById('edit-criterion-name');
+  const ptsEl   = document.getElementById('edit-criterion-points');
+  const typeEl  = document.getElementById('edit-criterion-type');
+  const wrapper = document.getElementById('edit-criterion-type-wrapper');
+
+  const isCore = ['seniority', 'age', 'specialization', 'grade'].includes(idOrKey);
+
+  if (isCore) {
+    const c = state.criteria[idOrKey] || {};
+    const defaultNames = {
+      seniority: 'تاريخ التعيين بالخدمة والجامعة (الأقدمية)',
+      age: 'الفئة العمرية للموظف المتنافس (العمر)',
+      specialization: 'مدى احتياج الجامعة للتخصص الدراسي',
+      grade: 'تقدير المؤهل الأكاديمي السابق (التقدير)'
+    };
+    if (nameEl) nameEl.value = c.weightName || c.name || defaultNames[idOrKey] || idOrKey;
+    if (ptsEl)  ptsEl.value  = c.maxPoints || 5;
+    if (typeEl) typeEl.value = 'binary';
+    if (wrapper) wrapper.style.display = 'none';
+    const configEl = document.getElementById('edit-criterion-type-config');
+    if (configEl) configEl.innerHTML = `
+      <div style="background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.3); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; color: #93c5fd;">
+        <strong>معيار أساسي:</strong> يمكنك تعديل اسم المعيار والوزن الأقصى المستحق له. الحسابات الداخلية والشرائح لهذا المعيار مدمجة بالنظام.
+      </div>`;
+  } else {
+    if (wrapper) wrapper.style.display = 'block';
+    const c = (state.criteria.customCriteria || []).find(item => item.id === idOrKey);
+    if (!c) { alert('المعيار غير موجود!'); return; }
+
+    if (nameEl) nameEl.value = c.name || '';
+    if (ptsEl)  ptsEl.value  = c.maxPoints || 5;
+    const itype = c.indicatorType || 'binary';
+    if (typeEl) typeEl.value = itype;
+
+    renderEditCriterionTypeConfig(c);
+  }
+
+  openModal('modal-edit-criterion');
+}
+
+// عرض حقول الإعدادات التفصيلية للنوع داخل مودال التعديل
+function renderEditCriterionTypeConfig(existingCriterion = null) {
+  const typeEl   = document.getElementById('edit-criterion-type');
+  const configEl = document.getElementById('edit-criterion-type-config');
+  if (!typeEl || !configEl) return;
+  const type = typeEl.value;
+
+  const idOrKey = document.getElementById('edit-criterion-id')?.value;
+  const c = existingCriterion || (state.criteria.customCriteria || []).find(item => item.id === idOrKey);
+
+  if (type === 'binary') {
+    const bOptions = (c && c.config && c.config.options && c.config.options.length >= 2)
+      ? c.config.options
+      : [{ label: 'مستمر', points: c ? c.maxPoints : 5 }, { label: 'منقطع', points: 0 }];
+
+    configEl.innerHTML = `
+      <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #93c5fd; font-weight: 800; margin-bottom: 10px;">🔵 تعديل خيارَي المعيار المخصص وأوزانهما:</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="edit-binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+            <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px;">الخيار الأول</span>
+            <input type="text" class="form-control edit-binary-label" value="${bOptions[0]?.label || ''}" placeholder="مثال: مستمر، نعم، طويل..." style="flex: 2; border: 1px solid rgba(59,130,246,0.5);">
+            <input type="number" class="form-control edit-binary-pts" value="${bOptions[0]?.points !== undefined ? bOptions[0].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
+          </div>
+          <div class="edit-binary-option-row" style="display: flex; gap: 8px; align-items: center;">
+            <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
+            <input type="text" class="form-control edit-binary-label" value="${bOptions[1]?.label || ''}" placeholder="مثال: منقطع، لا، قصير..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="number" class="form-control edit-binary-pts" value="${bOptions[1]?.points !== undefined ? bOptions[1].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
+          </div>
+        </div>
+      </div>`;
+  } else if (type === 'grade') {
+    const grades = (c && c.config && c.config.grades && c.config.grades.length > 0) ? c.config.grades : [{ label: 'ممتاز', points: 5 }, { label: 'جيد', points: 3 }];
+    const gradeRows = grades.map(g => `
+      <div class="edit-grade-option-row" style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" class="form-control edit-grade-label" value="${g.label}" placeholder="مثال: ممتاز" style="flex: 2;">
+        <input type="number" class="form-control edit-grade-pts" value="${g.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+        <button onclick="this.closest('.edit-grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+      </div>
+    `).join('');
+
+    configEl.innerHTML = `
+      <div style="background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #fde68a; font-weight: 800; margin-bottom: 8px;">🟡 تصنيفات الأداء ونقاطها:</div>
+        <div id="edit-grade-options-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+          ${gradeRows}
+        </div>
+        <button onclick="addEditGradeOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة تصنيف آخر</button>
+      </div>`;
+  } else if (type === 'bracket') {
+    const brackets = (c && c.config && c.config.brackets && c.config.brackets.length > 0) ? c.config.brackets : [{ label: 'أقل من 3 سنوات', min: 0, max: 2, points: 1 }];
+    const bracketRows = brackets.map(b => `
+      <div class="edit-bracket-option-row" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="text" class="form-control edit-bracket-label" value="${b.label}" placeholder="الفئة" style="flex: 2; min-width: 160px;">
+        <input type="number" class="form-control edit-bracket-min" value="${b.min}" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
+        <input type="number" class="form-control edit-bracket-max" value="${b.max}" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
+        <input type="number" class="form-control edit-bracket-pts" value="${b.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+        <button onclick="this.closest('.edit-bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+      </div>
+    `).join('');
+
+    configEl.innerHTML = `
+      <div style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.3); padding: 12px; border-radius: 8px;">
+        <div style="font-size: 0.82rem; color: #fdba74; font-weight: 800; margin-bottom: 8px;">🟠 المجالات الرقمية ونقاطها:</div>
+        <div id="edit-bracket-options-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+          ${bracketRows}
+        </div>
+        <button onclick="addEditBracketOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة مجال آخر</button>
+      </div>`;
+  } else if (type === 'numeric') {
+    const ppu = (c && c.config && c.config.pointsPerUnit) ? c.config.pointsPerUnit : 1;
+    configEl.innerHTML = `
+      <div style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.3); padding: 12px; border-radius: 8px;">
+        <label style="font-size: 0.78rem; font-weight: 700; color: #c4b5fd; display: block; margin-bottom: 4px;">🟣 النقاط لكل وحدة:</label>
+        <input type="number" id="edit-numeric-points-per-unit" class="form-control" value="${ppu}" min="0.5" step="0.5" style="max-width: 120px;">
+      </div>`;
+  }
+}
+
+function addEditGradeOptionRow() {
+  const list = document.getElementById('edit-grade-options-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'edit-grade-option-row';
+  row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+  row.innerHTML = `
+    <input type="text" class="form-control edit-grade-label" placeholder="مثال: ممتاز" style="flex: 2;">
+    <input type="number" class="form-control edit-grade-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+    <button onclick="this.closest('.edit-grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function addEditBracketOptionRow() {
+  const list = document.getElementById('edit-bracket-options-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'edit-bracket-option-row';
+  row.style.cssText = 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;';
+  row.innerHTML = `
+    <input type="text" class="form-control edit-bracket-label" placeholder="الفئة" style="flex: 2; min-width: 160px;">
+    <input type="number" class="form-control edit-bracket-min" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
+    <input type="number" class="form-control edit-bracket-max" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
+    <input type="number" class="form-control edit-bracket-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+    <button onclick="this.closest('.edit-bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+// حفظ التعديلات على المعيار الأساسي أو المخصص
+function saveEditedCriterion() {
+  if (checkSystemLockGuard()) return;
+  const idOrKey = document.getElementById('edit-criterion-id')?.value;
+  const nameEl  = document.getElementById('edit-criterion-name');
+  const ptsEl   = document.getElementById('edit-criterion-points');
+  const typeEl  = document.getElementById('edit-criterion-type');
+
+  if (!idOrKey) return;
+  const name      = nameEl ? nameEl.value.trim() : '';
+  const maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 5) : 5;
+
+  if (!name) { alert('يرجى إدخال اسم المعيار'); return; }
+
+  const isCore = ['seniority', 'age', 'specialization', 'grade'].includes(idOrKey);
+
+  if (isCore) {
+    if (!state.criteria[idOrKey]) state.criteria[idOrKey] = { enabled: true };
+    state.criteria[idOrKey].weightName = name;
+    state.criteria[idOrKey].name = name;
+    state.criteria[idOrKey].maxPoints = maxPoints;
+  } else {
+    // Custom criterion
+    const cIndex = (state.criteria.customCriteria || []).findIndex(item => item.id === idOrKey);
+    if (cIndex === -1) { alert('المعيار غير موجود!'); return; }
+
+    const itype = typeEl ? typeEl.value : 'binary';
+    let config = {};
+
+    if (itype === 'binary') {
+      const rows = document.querySelectorAll('.edit-binary-option-row');
+      const options = [];
+      rows.forEach(row => {
+        const label = row.querySelector('.edit-binary-label')?.value.trim();
+        const pts   = parseFloat(row.querySelector('.edit-binary-pts')?.value);
+        if (label) options.push({ label, points: isNaN(pts) ? maxPoints : pts });
+      });
+      if (options.length === 0) {
+        options.push({ label: 'مستمر', points: maxPoints });
+        options.push({ label: 'منقطع', points: 0 });
+      } else if (options.length === 1) {
+        options.push({ label: 'منقطع', points: 0 });
+      }
+      config = { options };
+
+    } else if (itype === 'grade') {
+      const rows  = document.querySelectorAll('.edit-grade-option-row');
+      const grades = [];
+      rows.forEach(row => {
+        const label = row.querySelector('.edit-grade-label')?.value.trim();
+        const pts   = parseFloat(row.querySelector('.edit-grade-pts')?.value) || 0;
+        if (label) grades.push({ label, points: pts });
+      });
+      if (grades.length === 0) { alert('يرجى إضافة تصنيف واحد على الأقل للمعيار التقديري'); return; }
+      config = { grades };
+
+    } else if (itype === 'bracket') {
+      const rows    = document.querySelectorAll('.edit-bracket-option-row');
+      const brackets = [];
+      rows.forEach(row => {
+        const label = row.querySelector('.edit-bracket-label')?.value.trim();
+        const min   = parseFloat(row.querySelector('.edit-bracket-min')?.value);
+        const max   = parseFloat(row.querySelector('.edit-bracket-max')?.value);
+        const pts   = parseFloat(row.querySelector('.edit-bracket-pts')?.value) || 0;
+        if (label && !isNaN(min) && !isNaN(max)) brackets.push({ label, min, max, points: pts });
+      });
+      if (brackets.length === 0) { alert('يرجى إضافة مجال رقمي واحد على الأقل للمعيار الشريحي'); return; }
+      config = { brackets };
+
+    } else if (itype === 'numeric') {
+      const ppu = parseFloat(document.getElementById('edit-numeric-points-per-unit')?.value) || 1;
+      config = { pointsPerUnit: ppu };
+    }
+
+    state.criteria.customCriteria[cIndex].name = name;
+    state.criteria.customCriteria[cIndex].maxPoints = maxPoints;
+    state.criteria.customCriteria[cIndex].indicatorType = itype;
+    state.criteria.customCriteria[cIndex].config = config;
+  }
+
+  saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+  refreshAllViews();
+  closeModal('modal-edit-criterion');
+  alert(`✅ تم حفظ تعديلات المعيار (${name}) بنجاح!`);
+}
+
+// دالة الحذف العامة للمعيار أساسياً أو مخصصاً
+function deleteCriterion(idOrKey) {
+  if (checkSystemLockGuard()) return;
+  const isCore = ['seniority', 'age', 'specialization', 'grade'].includes(idOrKey);
+
+  if (isCore) {
+    const defaultNames = {
+      seniority: 'تاريخ التعيين بالخدمة والجامعة (الأقدمية)',
+      age: 'الفئة العمرية للموظف المتنافس (العمر)',
+      specialization: 'مدى احتياج الجامعة للتخصص الدراسي',
+      grade: 'تقدير المؤهل الأكاديمي السابق (التقدير)'
+    };
+    const cName = state.criteria[idOrKey]?.weightName || state.criteria[idOrKey]?.name || defaultNames[idOrKey];
+    if (confirm(`🗑️ هل أنت متأكد من رغبتك في حذف وإيقاف المعيار الأساسي (${cName}) من المفاضلة؟`)) {
+      if (state.criteria[idOrKey]) {
+        state.criteria[idOrKey].enabled = false;
+        saveStore();
+        if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+        refreshAllViews();
+        alert(`🗑️ تم حذف/إيقاف المعيار الأساسي (${cName}) بنجاح!`);
+      }
+    }
+  } else {
+    deleteCustomCriterion(idOrKey);
   }
 }
 
