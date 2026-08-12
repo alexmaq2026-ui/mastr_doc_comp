@@ -478,11 +478,14 @@ body {
    الشاشة الرئيسية الفخمة (Home Dashboard)
    ============================================================ */
 .home-dashboard {
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 40px;
-    padding: 40px 24px 60px;
+    gap: 24px;
+    padding: 24px 20px 60px;
     min-height: 60vh;
 }
 
@@ -490,17 +493,21 @@ body {
 .home-stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    gap: 15px;
     width: 100%;
-    max-width: 900px;
 }
 
 .home-stat-card {
-    background: rgba(20, 30, 50, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #111821;
+    border: 1px solid #1a2532;
     border-radius: 16px;
-    padding: 24px 20px;
+    padding: 20px 10px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     backdrop-filter: blur(16px);
     transition: all 0.3s ease;
     position: relative;
@@ -522,44 +529,225 @@ body {
 
 .home-stat-card:hover {
     transform: translateY(-4px);
-    background: rgba(30, 45, 70, 0.8);
+    background: #16202c;
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .home-stat-value {
-    font-size: 2.6rem;
-    font-weight: 900;
-    line-height: 1;
-    margin-bottom: 8px;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 5px;
 }
 
-.home-stat-card.stat-blue   .home-stat-value { color: #93c5fd; }
-.home-stat-card.stat-teal   .home-stat-value { color: #67e8f9; }
-.home-stat-card.stat-purple .home-stat-value { color: #c4b5fd; }
-.home-stat-card.stat-green  .home-stat-value { color: #6ee7b7; }
+.home-stat-card.stat-blue   .home-stat-value { color: #60A5FA !important; }
+.home-stat-card.stat-teal   .home-stat-value { color: #22D3EE !important; }
+.home-stat-card.stat-purple .home-stat-value { color: #A78BFA !important; }
+.home-stat-card.stat-green  .home-stat-value { color: #10B981 !important; }
 
 .home-stat-label {
-    font-size: 0.8rem;
-    color: #64748b;
-    font-weight: 700;
+    font-size: 0.95rem;
+    color: #8b9bb5;
+    font-weight: 500;
     line-height: 1.4;
 }
 
-/* حاوية زر التنفيذ */
-.home-run-wrapper {
+/* بطاقة الجاهزية والتوافق الرئيسية */
+.main-box-readiness {
+    background: #111821;
+    border: 1px solid #1d2b3d;
+    border-radius: 16px;
+    padding: 20px 25px 25px 25px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.main-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.main-box-title {
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f8fafc;
+}
+
+.main-box-title span {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: normal;
+}
+
+.main-box-dropdown {
+    background: #ffffff;
+    color: #111827;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.main-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.sub-stat-card {
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    border: 1px solid;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sub-stat-card h3 {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.sub-stat-card p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: #d1d5db;
+}
+
+.sub-stat-card .sub-text {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    line-height: 1.4;
+}
+
+.box-purple { border-color: #4c2d5e; background: #1a1225; }
+.box-purple h3 { color: #A78BFA; }
+
+.box-red { border-color: #5e2b2b; background: #1f1212; }
+.box-red h3 { color: #F87171; }
+
+.box-cyan { border-color: #1b4451; background: #0f1d25; }
+.box-cyan h3 { color: #22D3EE; }
+
+.box-green { border-color: #154d3a; background: #0f1f1a; }
+.box-green h3 { color: #34D399; }
+
+.progress-wrapper {
+    width: 100%;
+    height: 5px;
+    background: #374151;
+    border-radius: 4px;
+    margin-top: 15px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #34D399;
+    width: 100%;
+    transition: width 0.3s ease;
+}
+
+/* حاوية زر التنفيذ والتعليق الفرعي */
+.cta-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    margin: 20px 0 25px 0;
+    width: 100%;
 }
 
-/* زر التنفيذ الأسطوري */
-.btn-run-hero {
+.btn-main-cta {
+    background: #10B981;
+    color: #ffffff !important;
+    border: none;
+    padding: 14px 44px;
+    border-radius: 40px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    transition: all 0.25s ease;
+    outline: none;
+}
+
+.btn-main-cta:hover {
+    background: #059669;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.45);
+}
+
+.cta-sub-text {
+    color: #8b9bb5;
+    font-size: 0.82rem;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+/* شريط أزرار التحكم في الأسفل */
+.bottom-actions-box {
+    border: 1px solid #1a2532;
+    border-radius: 16px;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    background: #101720;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.btn-bottom-act {
+    padding: 11px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    color: #ffffff !important;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    padding: 18px 48px;
+    gap: 8px;
+}
+
+.btn-act-red {
+    background: #991B1B;
+    box-shadow: 0 4px 12px rgba(153, 27, 27, 0.4);
+}
+.btn-act-red:hover {
+    background: #B91C1C;
+    transform: translateY(-1px);
+}
+
+.btn-act-purple {
+    background: #4C1D95;
+    box-shadow: 0 4px 12px rgba(76, 29, 149, 0.4);
+}
+.btn-act-purple:hover {
+    background: #5B21B6;
+    transform: translateY(-1px);
+}
     font-size: 1.15rem;
     font-weight: 800;
     color: #ffffff;

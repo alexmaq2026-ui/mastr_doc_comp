@@ -54,6 +54,18 @@ function initStore() {
         if (!state.criteria.customCriteria) {
           state.criteria.customCriteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria || []));
         }
+        ['seniority', 'age', 'specialization', 'grade'].forEach(key => {
+          if (state.criteria[key] && !state.criteria[key].targetDegree) {
+            state.criteria[key].targetDegree = state.criteria[key].enabled === false ? 'none' : 'all';
+          }
+        });
+        if (state.criteria.customCriteria) {
+          state.criteria.customCriteria.forEach(c => {
+            if (!c.targetDegree) {
+              c.targetDegree = c.enabled === false ? 'none' : 'all';
+            }
+          });
+        }
         if (state.criteria.seniority && state.criteria.seniority.maxPoints === 30) state.criteria.seniority.maxPoints = 10;
         if (state.criteria.age && state.criteria.age.maxPoints === 25) state.criteria.age.maxPoints = 5;
         if (state.criteria.specialization && state.criteria.specialization.maxPoints === 25) state.criteria.specialization.maxPoints = 5;
@@ -450,6 +462,57 @@ function showToast(message, type = 'info') {
 
 
 
+// ── دوال تحديد ونطاق تفعيل المعايير حسب الدرجة العلميـة (ماجستير / دكتوراه) ──
+
+function getCriterionTargetDegree(criterion) {
+  if (!criterion) return 'none';
+  if (criterion.targetDegree) return criterion.targetDegree;
+  return criterion.enabled === false ? 'none' : 'all';
+}
+
+function isCriterionActiveForDegree(criterion, degree) {
+  if (!criterion) return false;
+  const target = getCriterionTargetDegree(criterion);
+  if (target === 'none') return false;
+  if (target === 'all') return true;
+  const normDegree = (degree || '').trim();
+  const isPhd = (normDegree === 'دكتوراه' || normDegree === 'phd');
+  if (isPhd) return target === 'phd';
+  return target === 'master';
+}
+
+function updateCriterionTargetDegree(idOrKey, scope) {
+  if (checkSystemLockGuard()) return;
+  const isCore = ['seniority', 'age', 'specialization', 'grade'].includes(idOrKey);
+  if (isCore) {
+    if (state.criteria && state.criteria[idOrKey]) {
+      state.criteria[idOrKey].targetDegree = scope;
+      state.criteria[idOrKey].enabled = (scope !== 'none');
+    }
+  } else {
+    const custom = (state.criteria.customCriteria || []).find(c => c.id === idOrKey);
+    if (custom) {
+      custom.targetDegree = scope;
+      custom.enabled = (scope !== 'none');
+    }
+  }
+  saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+  refreshAllViews();
+}
+
+function renderScopeBadge(scope) {
+  if (scope === 'all') {
+    return `<span class="badge-status" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981;">مُفعّل للكل</span>`;
+  } else if (scope === 'master') {
+    return `<span class="badge-status" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6;">ماجستير فقط</span>`;
+  } else if (scope === 'phd') {
+    return `<span class="badge-status" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7;">دكتوراه فقط</span>`;
+  } else {
+    return `<span class="badge-status badge-reserve">معطّل</span>`;
+  }
+}
+
 // محرك احتساب النقاط والمفاضلة (Scoring Engine)
 function calculateCandidateScore(candidate) {
   let seniorityScore = 0;
@@ -460,9 +523,11 @@ function calculateCandidateScore(candidate) {
   let customTotal = 0;
 
   const currentYear = state.settings.referenceYear || 2026;
+  const candDegree = candidate ? (candidate.degree || 'ماجستير') : 'ماجستير';
+  const isPhd = (candDegree.trim() === 'دكتوراه' || candDegree.trim() === 'phd');
 
   // 1. احتساب الأقدمية (سنوات الخدمة / التعيين)
-  if (state.criteria.seniority && state.criteria.seniority.enabled) {
+  if (isCriterionActiveForDegree(state.criteria.seniority, candDegree)) {
     let hiringYear = parseInt(candidate.hiring_univ) || parseInt(candidate.hiring_service);
     if (!hiringYear && candidate.hiring_univ) {
       const m = candidate.hiring_univ.match(/(\d{4})/);
@@ -474,8 +539,10 @@ function calculateCandidateScore(candidate) {
     }
 
     if (hiringYear) {
-      // البحث عن الشريحة المناسبة
-      for (let b of state.criteria.seniority.brackets) {
+      const brackets = (isPhd && state.criteria.seniority.phdBrackets && state.criteria.seniority.phdBrackets.length > 0)
+        ? state.criteria.seniority.phdBrackets
+        : state.criteria.seniority.brackets;
+      for (let b of brackets) {
         if (hiringYear >= b.minYear && hiringYear <= b.maxYear) {
           seniorityScore = b.points;
           break;
@@ -485,7 +552,7 @@ function calculateCandidateScore(candidate) {
   }
 
   // 2. احتساب العمر
-  if (state.criteria.age && state.criteria.age.enabled) {
+  if (isCriterionActiveForDegree(state.criteria.age, candDegree)) {
     let birthYear = parseInt(candidate.birth_date);
     if (!birthYear && candidate.birth_date) {
       const m = candidate.birth_date.match(/(\d{4})/);
@@ -494,7 +561,10 @@ function calculateCandidateScore(candidate) {
 
     if (birthYear) {
       const age = currentYear - birthYear;
-      for (let b of state.criteria.age.brackets) {
+      const brackets = (isPhd && state.criteria.age.phdBrackets && state.criteria.age.phdBrackets.length > 0)
+        ? state.criteria.age.phdBrackets
+        : state.criteria.age.brackets;
+      for (let b of brackets) {
         if (age >= b.minAge && age <= b.maxAge) {
           ageScore = b.points;
           break;
@@ -504,10 +574,13 @@ function calculateCandidateScore(candidate) {
   }
 
   // 3. احتساب التخصص
-  if (state.criteria.specialization && state.criteria.specialization.enabled) {
+  if (isCriterionActiveForDegree(state.criteria.specialization, candDegree)) {
     const specNameNorm = normalizeArabicString(candidate.specialization);
     let found = false;
-    for (let item of state.criteria.specialization.items) {
+    const items = (isPhd && state.criteria.specialization.phdItems && state.criteria.specialization.phdItems.length > 0)
+      ? state.criteria.specialization.phdItems
+      : state.criteria.specialization.items;
+    for (let item of items) {
       const itemNorm = normalizeArabicString(item.name);
       if (specNameNorm && itemNorm && (specNameNorm.includes(itemNorm) || itemNorm.includes(specNameNorm))) {
         specScore = item.points;
@@ -516,15 +589,18 @@ function calculateCandidateScore(candidate) {
       }
     }
     if (!found) {
-      const otherItem = state.criteria.specialization.items.find(i => i.name === 'أخرى');
-      specScore = otherItem ? otherItem.points : 10;
+      const otherItem = items.find(i => i.name === 'أخرى');
+      specScore = otherItem ? otherItem.points : 2;
     }
   }
 
   // 4. احتساب التقدير العلمي
-  if (state.criteria.grade && state.criteria.grade.enabled) {
+  if (isCriterionActiveForDegree(state.criteria.grade, candDegree)) {
     const gradeName = candidate.grade ? candidate.grade.trim() : '';
-    for (let item of state.criteria.grade.items) {
+    const items = (isPhd && state.criteria.grade.phdItems && state.criteria.grade.phdItems.length > 0)
+      ? state.criteria.grade.phdItems
+      : state.criteria.grade.items;
+    for (let item of items) {
       if (gradeName.includes(item.name)) {
         gradeScore = item.points;
         break;
@@ -535,7 +611,10 @@ function calculateCandidateScore(candidate) {
   // 5. احتساب المعايير المخصصة (يدعم 4 أنواع من المؤشرات)
   if (state.criteria.customCriteria) {
     for (let custom of state.criteria.customCriteria) {
-      if (!custom.enabled) continue;
+      if (!isCriterionActiveForDegree(custom, candDegree)) {
+        customScores[custom.id] = 0;
+        continue;
+      }
       const rawVal = (candidate.customValues && candidate.customValues[custom.id] !== undefined)
         ? candidate.customValues[custom.id]
         : null;
@@ -543,17 +622,14 @@ function calculateCandidateScore(candidate) {
       const itype = custom.indicatorType || 'binary';
 
       if (itype === 'binary') {
-        // ثنائي: القيمة المخزنة هي نقاط الخيار المختار مباشرةً (حرة التسمية والوزن)
         pts = parseFloat(rawVal) || 0;
         pts = Math.min(pts, custom.maxPoints || 0);
 
       } else if (itype === 'grade') {
-        // تقديري: القيمة المخزنة هي النقاط المرتبطة بالتصنيف
         pts = parseFloat(rawVal) || 0;
         pts = Math.min(pts, custom.maxPoints || 0);
 
       } else if (itype === 'bracket') {
-        // شريحي: القيمة المخزنة هي رقم (مثل عدد السنوات) نحتسب منه النقطة
         const numVal = parseFloat(rawVal) || 0;
         pts = 0;
         if (custom.config && custom.config.brackets) {
@@ -566,7 +642,6 @@ function calculateCandidateScore(candidate) {
         }
 
       } else if (itype === 'numeric') {
-        // كمي مباشر: القيمة المخزنة هي العدد × معامل بحد أقصى
         const numVal = parseFloat(rawVal) || 0;
         const multiplier = (custom.config && custom.config.pointsPerUnit) ? custom.config.pointsPerUnit : 1;
         pts = Math.min(numVal * multiplier, custom.maxPoints || 0);
@@ -717,10 +792,74 @@ function renderDashboard() {
   const masters = rankedAll.filter(c => c.degree === 'ماجستير');
   const phds = rankedAll.filter(c => c.degree === 'دكتوراه');
 
-  document.getElementById('stat-total-candidates').innerText = rankedAll.length;
-  document.getElementById('stat-masters-count').innerText = masters.length;
-  document.getElementById('stat-phd-count').innerText = phds.length;
-  document.getElementById('stat-accepted-total').innerText = (state.settings.masterGrantsCount || 3) + (state.settings.phdGrantsCount || 3);
+  if (document.getElementById('stat-total-candidates')) document.getElementById('stat-total-candidates').innerText = rankedAll.length;
+  if (document.getElementById('stat-masters-count')) document.getElementById('stat-masters-count').innerText = masters.length;
+  if (document.getElementById('stat-phd-count')) document.getElementById('stat-phd-count').innerText = phds.length;
+  if (document.getElementById('stat-accepted-total')) document.getElementById('stat-accepted-total').innerText = (state.settings.masterGrantsCount || 3) + (state.settings.phdGrantsCount || 3);
+
+  // ── احتساب وتجميع إحصائيات الجاهزية والتوافق ديناميكياً ──
+  const targetCandidates = state.candidates || [];
+  const totalCandidates = targetCandidates.length;
+  const deficientCandidates = targetCandidates.filter(c => {
+    const hiring = c.hiring_univ || c.hiring_service;
+    const isHiringValid = !isInvalidHiringValue(hiring);
+    const isBirthValid = !isInvalidBirthValue(c.birth_date);
+    const isGradeValid = !isInvalidGradeValue(c.grade);
+    const isGradYearValid = c.grad_year && c.grad_year !== '-' && c.grad_year !== 'ـــــــــــــ' && parseInt(c.grad_year) > 0;
+    const isSpecValid = !isInvalidSpecializationValue(c.specialization);
+    return !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
+  });
+
+  const deficientCount = deficientCandidates.length;
+  const completeCount = Math.max(0, totalCandidates - deficientCount);
+
+  const fieldsPerCand = 5;
+  const totalFields = totalCandidates * fieldsPerCand;
+
+  let missingFieldsCount = 0;
+  targetCandidates.forEach(c => {
+    const hiring = c.hiring_univ || c.hiring_service;
+    if (typeof isInvalidHiringValue === 'function' && isInvalidHiringValue(hiring)) missingFieldsCount++;
+    if (typeof isInvalidBirthValue === 'function' && isInvalidBirthValue(c.birth_date)) missingFieldsCount++;
+    if (typeof isInvalidGradeValue === 'function' && isInvalidGradeValue(c.grade)) missingFieldsCount++;
+    if (!c.grad_year || c.grad_year === '-' || c.grad_year === 'ـــــــــــــ' || parseInt(c.grad_year) <= 0) missingFieldsCount++;
+    if (typeof isInvalidSpecializationValue === 'function' && isInvalidSpecializationValue(c.specialization)) missingFieldsCount++;
+  });
+
+  const completeFieldsCount = Math.max(0, totalFields - missingFieldsCount);
+  const readinessPercent = totalFields > 0 ? ((completeFieldsCount / totalFields) * 100).toFixed(1) : '100.0';
+  const completeCandPercent = totalCandidates > 0 ? ((completeCount / totalCandidates) * 100).toFixed(1) : '100.0';
+  const deficientCandPercent = totalCandidates > 0 ? ((deficientCount / totalCandidates) * 100).toFixed(1) : '0.0';
+
+  const summaryEl = document.getElementById('readiness-checked-summary');
+  if (summaryEl) summaryEl.innerText = `(إجمالي عناصر المفاضلة المفحوصة ${totalFields} عنصر: ${totalCandidates} متنافس × ${fieldsPerCand} حقول)`;
+
+  const percentEl = document.getElementById('kpi-readiness-percent');
+  if (percentEl) percentEl.innerText = `${readinessPercent}%`;
+
+  const readinessSubEl = document.getElementById('kpi-readiness-sub');
+  if (readinessSubEl) readinessSubEl.innerHTML = `${readinessPercent === '100.0' ? 'جاهزية متكاملة' : 'جاهزية جزئية'}<br>${readinessPercent}%`;
+
+  const barEl = document.getElementById('kpi-readiness-bar');
+  if (barEl) barEl.style.width = `${readinessPercent}%`;
+
+  const completeCountValEl = document.getElementById('kpi-complete-count-val');
+  if (completeCountValEl) completeCountValEl.innerText = completeFieldsCount;
+
+  const completeElemEl = document.getElementById('kpi-complete-elements');
+  if (completeElemEl) completeElemEl.innerHTML = `${completeFieldsCount} من أصل ${totalFields}<br>(${totalFields > 0 ? ((completeFieldsCount / totalFields) * 100).toFixed(1) : '100.0'}%)`;
+
+  const deficientCountValEl = document.getElementById('kpi-deficient-count-val');
+  if (deficientCountValEl) deficientCountValEl.innerText = missingFieldsCount;
+
+  const deficientElemEl = document.getElementById('kpi-deficient-elements');
+  if (deficientElemEl) deficientElemEl.innerHTML = `${missingFieldsCount} من أصل ${totalFields}<br>(${totalFields > 0 ? ((missingFieldsCount / totalFields) * 100).toFixed(1) : '0.0'}%)`;
+
+  const completeCandEl = document.getElementById('kpi-complete-candidates-count');
+  if (completeCandEl) completeCandEl.innerText = totalCandidates;
+
+  const completeCandSubEl = document.getElementById('kpi-complete-candidates-sub');
+  if (completeCandSubEl) completeCandSubEl.innerHTML = `${completeCandPercent}%<br>${deficientCount === 0 ? 'مستوفي بالكامل' : `يحتاج استكمال (${deficientCount})`}`;
 
   // جدول ملخص المقبولين
   const tbody = document.getElementById('dashboard-top-candidates');
@@ -746,6 +885,40 @@ function renderDashboard() {
       <td><span class="badge-status badge-accepted"> مرشح مقبول</span></td>
     </tr>
   `).join('');
+}
+
+function resetTestRecords() {
+  if (checkSystemLockGuard()) return;
+  const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
+  if (!isSuperAdmin) {
+    alert('تنبيه: إجراء تصفير سجلات التجربة متاح فقط للمدير الأعلى / رئيس اللجنة.');
+    return;
+  }
+
+  if (confirm('⚠️ تنبيه هام: هل أنت متأكد من رغبتك في تصفير مسح سجلات التجربة وإعادة تهيئة القائمة بالكامل؟')) {
+    state.candidates = [];
+    state.hasRunDeficient = false;
+    saveStore();
+    if (typeof syncCandidatesFromSupabase === 'function') {
+      // Sync empty array if applicable
+    }
+    refreshAllViews();
+    if (typeof showToast === 'function') {
+      showToast('✅ تم تصفير سجلات التجربة بنجاح', 'success');
+    } else {
+      alert('✅ تم تصفير سجلات التجربة بنجاح');
+    }
+  }
+}
+
+function openLockModal() {
+  if (checkSystemLockGuard()) return;
+  const modal = document.getElementById('modal-lock-session');
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    openModal('modal-lock-session');
+  }
 }
 
 // 2. شاشة المتنافسين (Candidates View)
@@ -1942,17 +2115,26 @@ function renderCriteriaSettings() {
           <div style="background: rgba(245,158,11,0.06); border: 1.5px solid rgba(245,158,11,0.35); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
             <h4 style="color: #f59e0b; margin-bottom: 14px; font-size: 0.95rem; font-weight: 900;">🛠️ تصميم وإنشاء معيار تنافسي مخصص جديد</h4>
 
-            <!-- السطر الأول: الاسم + الوزن + النوع -->
+            <!-- السطر الأول: الاسم + الوزن + النوع + نطاق التطبيق -->
             <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px;">
-              <div style="flex: 2; min-width: 220px;">
+              <div style="flex: 2; min-width: 200px;">
                 <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">اسم المعيار الجديد:</label>
                 <input type="text" id="new-custom-criterion-name" class="form-control" placeholder="مثال: الممارسة الفعلية، تقييم الأداء...">
               </div>
-              <div style="flex: 1; min-width: 110px;">
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">الوزن الأقصى (نقطة):</label>
+              <div style="flex: 1.5; min-width: 150px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">نطاق التفعيل:</label>
+                <select id="new-custom-criterion-scope" class="form-control" style="font-weight:700;">
+                  <option value="all">مُفعّل للماجستير والدكتوراه</option>
+                  <option value="master">مُفعّل للماجستير فقط</option>
+                  <option value="phd">مُفعّل للدكتوراه فقط</option>
+                  <option value="none">معطّل كلياً</option>
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 100px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">الوزن الأقصى:</label>
                 <input type="number" id="new-custom-criterion-points" class="form-control" placeholder="مثال: 5" value="5" min="1">
               </div>
-              <div style="flex: 1.5; min-width: 190px;">
+              <div style="flex: 1.5; min-width: 180px;">
                 <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">نوع مؤشر الاحتساب:</label>
                 <select id="new-custom-criterion-type" class="form-control" onchange="renderCustomCriterionTypeConfig()" style="font-weight:700;">
                   <option value="binary">🔵 ثنائي (مستمر / منقطع)</option>
@@ -2009,13 +2191,16 @@ function renderCriteriaSettings() {
                   <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.seniority ? (cData.seniority.maxPoints || 10) : 10}" onchange="updateCoreCriterionMaxPoints('seniority', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                 </td>
                 <td style="text-align: center;">
-                  <span class="badge-status ${cData.seniority && cData.seniority.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                    ${cData.seniority && cData.seniority.enabled ? 'مُفعّل' : 'معطّل'}
-                  </span>
+                  ${renderScopeBadge(getCriterionTargetDegree(cData.seniority))}
                 </td>
                 <td style="text-align: center;">
                   ${isSuperAdmin ? `
-                    <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('seniority')">${cData.seniority && cData.seniority.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <select class="form-control form-control-sm" style="width: 130px; display: inline-block; font-size: 0.78rem; font-weight: 700; background: rgba(15, 23, 42, 0.6); color: #f8fafc; border-color: rgba(255,255,255,0.2);" onchange="updateCriterionTargetDegree('seniority', this.value)">
+                      <option value="all" ${getCriterionTargetDegree(cData.seniority) === 'all' ? 'selected' : ''}>مُفعّل للكل</option>
+                      <option value="master" ${getCriterionTargetDegree(cData.seniority) === 'master' ? 'selected' : ''}>ماجستير فقط</option>
+                      <option value="phd" ${getCriterionTargetDegree(cData.seniority) === 'phd' ? 'selected' : ''}>دكتوراه فقط</option>
+                      <option value="none" ${getCriterionTargetDegree(cData.seniority) === 'none' ? 'selected' : ''}>معطّل كلياً</option>
+                    </select>
                     <button class="btn btn-warning btn-sm" onclick="editCriterion('seniority')">تعديل</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteCriterion('seniority')">حذف</button>
                   ` : '-'}
@@ -2031,13 +2216,16 @@ function renderCriteriaSettings() {
                   <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.age ? (cData.age.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('age', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                 </td>
                 <td style="text-align: center;">
-                  <span class="badge-status ${cData.age && cData.age.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                    ${cData.age && cData.age.enabled ? 'مُفعّل' : 'معطّل'}
-                  </span>
+                  ${renderScopeBadge(getCriterionTargetDegree(cData.age))}
                 </td>
                 <td style="text-align: center;">
                   ${isSuperAdmin ? `
-                    <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('age')">${cData.age && cData.age.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <select class="form-control form-control-sm" style="width: 130px; display: inline-block; font-size: 0.78rem; font-weight: 700; background: rgba(15, 23, 42, 0.6); color: #f8fafc; border-color: rgba(255,255,255,0.2);" onchange="updateCriterionTargetDegree('age', this.value)">
+                      <option value="all" ${getCriterionTargetDegree(cData.age) === 'all' ? 'selected' : ''}>مُفعّل للكل</option>
+                      <option value="master" ${getCriterionTargetDegree(cData.age) === 'master' ? 'selected' : ''}>ماجستير فقط</option>
+                      <option value="phd" ${getCriterionTargetDegree(cData.age) === 'phd' ? 'selected' : ''}>دكتوراه فقط</option>
+                      <option value="none" ${getCriterionTargetDegree(cData.age) === 'none' ? 'selected' : ''}>معطّل كلياً</option>
+                    </select>
                     <button class="btn btn-warning btn-sm" onclick="editCriterion('age')">تعديل</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteCriterion('age')">حذف</button>
                   ` : '-'}
@@ -2053,13 +2241,16 @@ function renderCriteriaSettings() {
                 <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.specialization ? (cData.specialization.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('specialization', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
               </td>
               <td style="text-align: center;">
-                <span class="badge-status ${cData.specialization && cData.specialization.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                  ${cData.specialization && cData.specialization.enabled ? 'مُفعّل' : 'معطّل'}
-                </span>
+                ${renderScopeBadge(getCriterionTargetDegree(cData.specialization))}
               </td>
               <td style="text-align: center;">
                 ${isSuperAdmin ? `
-                  <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('specialization')">${cData.specialization && cData.specialization.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                  <select class="form-control form-control-sm" style="width: 130px; display: inline-block; font-size: 0.78rem; font-weight: 700; background: rgba(15, 23, 42, 0.6); color: #f8fafc; border-color: rgba(255,255,255,0.2);" onchange="updateCriterionTargetDegree('specialization', this.value)">
+                    <option value="all" ${getCriterionTargetDegree(cData.specialization) === 'all' ? 'selected' : ''}>مُفعّل للكل</option>
+                    <option value="master" ${getCriterionTargetDegree(cData.specialization) === 'master' ? 'selected' : ''}>ماجستير فقط</option>
+                    <option value="phd" ${getCriterionTargetDegree(cData.specialization) === 'phd' ? 'selected' : ''}>دكتوراه فقط</option>
+                    <option value="none" ${getCriterionTargetDegree(cData.specialization) === 'none' ? 'selected' : ''}>معطّل كلياً</option>
+                  </select>
                   <button class="btn btn-warning btn-sm" onclick="editCriterion('specialization')">تعديل</button>
                   <button class="btn btn-danger btn-sm" onclick="deleteCriterion('specialization')">حذف</button>
                 ` : '-'}
@@ -2075,13 +2266,16 @@ function renderCriteriaSettings() {
                 <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${cData.grade ? (cData.grade.maxPoints || 5) : 5}" onchange="updateCoreCriterionMaxPoints('grade', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
               </td>
               <td style="text-align: center;">
-                <span class="badge-status ${cData.grade && cData.grade.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                  ${cData.grade && cData.grade.enabled ? 'مُفعّل' : 'معطّل'}
-                </span>
+                ${renderScopeBadge(getCriterionTargetDegree(cData.grade))}
               </td>
               <td style="text-align: center;">
                 ${isSuperAdmin ? `
-                  <button class="btn btn-outline btn-sm" onclick="toggleCoreCriterion('grade')">${cData.grade && cData.grade.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                  <select class="form-control form-control-sm" style="width: 130px; display: inline-block; font-size: 0.78rem; font-weight: 700; background: rgba(15, 23, 42, 0.6); color: #f8fafc; border-color: rgba(255,255,255,0.2);" onchange="updateCriterionTargetDegree('grade', this.value)">
+                    <option value="all" ${getCriterionTargetDegree(cData.grade) === 'all' ? 'selected' : ''}>مُفعّل للكل</option>
+                    <option value="master" ${getCriterionTargetDegree(cData.grade) === 'master' ? 'selected' : ''}>ماجستير فقط</option>
+                    <option value="phd" ${getCriterionTargetDegree(cData.grade) === 'phd' ? 'selected' : ''}>دكتوراه فقط</option>
+                    <option value="none" ${getCriterionTargetDegree(cData.grade) === 'none' ? 'selected' : ''}>معطّل كلياً</option>
+                  </select>
                   <button class="btn btn-warning btn-sm" onclick="editCriterion('grade')">تعديل</button>
                   <button class="btn btn-danger btn-sm" onclick="deleteCriterion('grade')">حذف</button>
                 ` : '-'}
@@ -2097,6 +2291,7 @@ function renderCriteriaSettings() {
                 numeric: '🟣 كمي مباشر'
               };
               const typeLabel = typeLabels[c.indicatorType || 'binary'] || '🔵 ثنائي';
+              const cScope = getCriterionTargetDegree(c);
               return `
               <tr>
                 <td style="text-align: center; font-weight: bold;">${idx + 5}</td>
@@ -2109,13 +2304,16 @@ function renderCriteriaSettings() {
                   <input type="number" class="form-control" style="width: 90px; text-align: center; margin: 0 auto;" value="${c.maxPoints}" onchange="updateCustomCriterionPoints('${c.id}', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                 </td>
                 <td style="text-align: center;">
-                  <span class="badge-status ${c.enabled ? 'badge-accepted' : 'badge-reserve'}">
-                    ${c.enabled ? 'مُفعّل' : 'معطّل'}
-                  </span>
+                  ${renderScopeBadge(cScope)}
                 </td>
                 <td style="text-align: center;">
                   ${isSuperAdmin ? `
-                    <button class="btn btn-outline btn-sm" onclick="toggleCustomCriterion('${c.id}')">${c.enabled ? 'إيقاف' : 'تفعيل'}</button>
+                    <select class="form-control form-control-sm" style="width: 130px; display: inline-block; font-size: 0.78rem; font-weight: 700; background: rgba(15, 23, 42, 0.6); color: #f8fafc; border-color: rgba(255,255,255,0.2);" onchange="updateCriterionTargetDegree('${c.id}', this.value)">
+                      <option value="all" ${cScope === 'all' ? 'selected' : ''}>مُفعّل للكل</option>
+                      <option value="master" ${cScope === 'master' ? 'selected' : ''}>ماجستير فقط</option>
+                      <option value="phd" ${cScope === 'phd' ? 'selected' : ''}>دكتوراه فقط</option>
+                      <option value="none" ${cScope === 'none' ? 'selected' : ''}>معطّل كلياً</option>
+                    </select>
                     <button class="btn btn-warning btn-sm" onclick="editCriterion('${c.id}')">تعديل</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteCustomCriterion('${c.id}')">حذف</button>
                   ` : '-'}
@@ -3312,12 +3510,16 @@ function addCustomCriterion() {
 
   if (!state.criteria.customCriteria) state.criteria.customCriteria = [];
 
+  const scopeEl = document.getElementById('new-custom-criterion-scope');
+  const targetDegree = scopeEl ? scopeEl.value : 'all';
+
   const newId = 'c_' + Date.now();
   state.criteria.customCriteria.push({
     id: newId,
     name,
     maxPoints,
-    enabled: true,
+    targetDegree,
+    enabled: targetDegree !== 'none',
     indicatorType: itype,
     config
   });
@@ -3331,7 +3533,7 @@ function addCustomCriterion() {
   saveStore();
   if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
-  alert(`✅ تم إضافة المعيار (${name}) - نوع المؤشر: ${itype} - بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
+  alert(`✅ تم إضافة المعيار (${name}) - نطاق التفعيل: ${targetDegree === 'all' ? 'مفعل للكل' : (targetDegree === 'master' ? 'ماجستير فقط' : (targetDegree === 'phd' ? 'دكتوراه فقط' : 'معطل'))} - نوع المؤشر: ${itype} - بوزن أقصى (${maxPoints} نقطة) بنجاح!`);
 }
 
 function toggleCoreCriterion(key) {
@@ -3415,12 +3617,14 @@ function editCriterion(idOrKey) {
     };
     if (nameEl) nameEl.value = c.weightName || c.name || defaultNames[idOrKey] || idOrKey;
     if (ptsEl)  ptsEl.value  = c.maxPoints || 5;
+    const scopeEl = document.getElementById('edit-criterion-scope');
+    if (scopeEl) scopeEl.value = getCriterionTargetDegree(c);
     if (typeEl) typeEl.value = 'binary';
     if (wrapper) wrapper.style.display = 'none';
     const configEl = document.getElementById('edit-criterion-type-config');
     if (configEl) configEl.innerHTML = `
       <div style="background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.3); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; color: #93c5fd;">
-        <strong>معيار أساسي:</strong> يمكنك تعديل اسم المعيار والوزن الأقصى المستحق له. الحسابات الداخلية والشرائح لهذا المعيار مدمجة بالنظام.
+        <strong>معيار أساسي:</strong> يمكنك تعديل اسم المعيار ونطاق تفعيله والوزن الأقصى المستحق له. الحسابات الداخلية والشرائح لهذا المعيار مدمجة بالنظام.
       </div>`;
   } else {
     if (wrapper) wrapper.style.display = 'block';
@@ -3429,6 +3633,8 @@ function editCriterion(idOrKey) {
 
     if (nameEl) nameEl.value = c.name || '';
     if (ptsEl)  ptsEl.value  = c.maxPoints || 5;
+    const scopeEl = document.getElementById('edit-criterion-scope');
+    if (scopeEl) scopeEl.value = getCriterionTargetDegree(c);
     const itype = c.indicatorType || 'binary';
     if (typeEl) typeEl.value = itype;
 
@@ -3554,10 +3760,12 @@ function saveEditedCriterion() {
   const nameEl  = document.getElementById('edit-criterion-name');
   const ptsEl   = document.getElementById('edit-criterion-points');
   const typeEl  = document.getElementById('edit-criterion-type');
+  const scopeEl = document.getElementById('edit-criterion-scope');
 
   if (!idOrKey) return;
   const name      = nameEl ? nameEl.value.trim() : '';
   const maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 5) : 5;
+  const scope     = scopeEl ? scopeEl.value : 'all';
 
   if (!name) { alert('يرجى إدخال اسم المعيار'); return; }
 
@@ -3568,6 +3776,8 @@ function saveEditedCriterion() {
     state.criteria[idOrKey].weightName = name;
     state.criteria[idOrKey].name = name;
     state.criteria[idOrKey].maxPoints = maxPoints;
+    state.criteria[idOrKey].targetDegree = scope;
+    state.criteria[idOrKey].enabled = (scope !== 'none');
   } else {
     // Custom criterion
     const cIndex = (state.criteria.customCriteria || []).findIndex(item => item.id === idOrKey);
@@ -3625,6 +3835,8 @@ function saveEditedCriterion() {
     state.criteria.customCriteria[cIndex].maxPoints = maxPoints;
     state.criteria.customCriteria[cIndex].indicatorType = itype;
     state.criteria.customCriteria[cIndex].config = config;
+    state.criteria.customCriteria[cIndex].targetDegree = scope;
+    state.criteria.customCriteria[cIndex].enabled = (scope !== 'none');
   }
 
   saveStore();

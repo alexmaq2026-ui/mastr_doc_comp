@@ -36,6 +36,7 @@ const DEFAULT_COMMITTEE_MEMBERS = [
 const DEFAULT_CRITERIA = {
   seniority: {
     enabled: true,
+    targetDegree: 'all',
     weightName: 'تاريخ التعيين (الأقدمية)',
     maxPoints: 10,
     startYear: 1990,
@@ -53,6 +54,7 @@ const DEFAULT_CRITERIA = {
   },
   age: {
     enabled: true,
+    targetDegree: 'all',
     weightName: 'الفئة العمرية (العمر)',
     maxPoints: 5,
     minAge: 25,
@@ -64,10 +66,18 @@ const DEFAULT_CRITERIA = {
       { label: '40 - 44 سنة', minAge: 40, maxAge: 44, points: 3 },
       { label: '35 - 39 سنة', minAge: 35, maxAge: 39, points: 2 },
       { label: 'أقل من 35 سنة', minAge: 0, maxAge: 34, points: 1 }
+    ],
+    phdBrackets: [
+      { label: '55 سنة فما فوق', minAge: 55, maxAge: 120, points: 5 },
+      { label: '50 - 54 سنة', minAge: 50, maxAge: 54, points: 4 },
+      { label: '45 - 49 سنة', minAge: 45, maxAge: 49, points: 3 },
+      { label: '40 - 44 سنة', minAge: 40, maxAge: 44, points: 2 },
+      { label: 'أقل من 40 سنة', minAge: 0, maxAge: 39, points: 1 }
     ]
   },
   specialization: {
     enabled: true,
+    targetDegree: 'all',
     weightName: 'الاحتياج للتخصص',
     maxPoints: 5,
     items: [
@@ -81,6 +91,7 @@ const DEFAULT_CRITERIA = {
   },
   grade: {
     enabled: true,
+    targetDegree: 'all',
     weightName: 'تقدير المؤهل (البكالوريوس/المؤهل)',
     maxPoints: 5,
     items: [
@@ -91,10 +102,9 @@ const DEFAULT_CRITERIA = {
     ]
   },
   customCriteria: [
-    { id: 'c1', name: 'تقييم الأداء السنوي', maxPoints: 5, enabled: false },
-    { id: 'c2', name: 'الأبحاث والإنتاج العلمي', maxPoints: 5, enabled: false }
+    { id: 'c1', name: 'تقييم الأداء السنوي', maxPoints: 5, enabled: false, targetDegree: 'none' },
+    { id: 'c2', name: 'الأبحاث والإنتاج العلمي', maxPoints: 5, enabled: true, targetDegree: 'phd' }
   ]
 };
 
 const PRESEEDED_CANDIDATES = [];
-
