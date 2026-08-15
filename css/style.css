@@ -796,8 +796,8 @@ body {
     max-width: 1440px;
     width: 100%;
     margin: 0 auto;
-    overflow-x: hidden;
     box-sizing: border-box;
+    /* لا overflow هنا - نتركه للـ table-responsive */
 }
 
 .tab-content {
@@ -921,7 +921,33 @@ body {
     gap: 10px;
 }
 
-/* الجداول */
+/* الجداول - شريط تمرير أفقي علوي وسفلي */
+.table-scroll-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    /* شريط التمرير يظهر دائماً */
+    overflow-y: visible;
+}
+
+/* مرآة التمرير العلوية */
+.table-scroll-mirror {
+    width: 100%;
+    overflow-x: auto;
+    height: 14px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    /* نفس عرض محتوى الجدول */
+    overflow-y: hidden;
+}
+
+.table-scroll-mirror-inner {
+    height: 1px;
+}
+
 .table-responsive {
     width: 100%;
     max-width: 100%;
@@ -931,11 +957,33 @@ body {
     display: block;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+    /* شريط التمرير يظهر دائماً */
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #0f172a;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.8);
+    border-radius: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 6px;
+    border: 2px solid rgba(15, 23, 42, 0.5);
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #475569;
 }
 
 .data-table {
-    width: 100%;
-    min-width: max-content;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 0.84rem;
     text-align: right;
@@ -944,24 +992,76 @@ body {
 .data-table th {
     background: #1e293b;
     color: #f8fafc;
-    padding: 10px 10px;
+    padding: 10px 12px;
     font-weight: 700;
     border-bottom: 2px solid var(--border);
     white-space: nowrap;
     font-size: 0.82rem;
+    text-align: center;
+}
+
+/* رأس الجدول ثنائي الصفوف */
+.data-table thead tr:first-child th {
+    border-bottom: none;
+}
+
+.data-table thead tr:last-child th {
+    border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 .data-table td {
-    padding: 10px 10px;
+    padding: 9px 12px;
     border-bottom: 1px solid var(--border);
     color: var(--text-light);
     vertical-align: middle;
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* الخلايا النصية الطويلة (الاسم، التخصص) */
+.data-table td:nth-child(2) {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.data-table td.wrap-cell {
     white-space: normal;
     word-break: break-word;
+    min-width: 120px;
 }
 
 .data-table tbody tr:hover {
     background: var(--bg-card-hover);
+}
+
+/* شريط التمرير العلوي المرآة */
+.scroll-mirror-bar {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #1e293b;
+    border-radius: 6px;
+}
+
+.scroll-mirror-bar::-webkit-scrollbar {
+    height: 10px;
+}
+
+.scroll-mirror-bar::-webkit-scrollbar-track {
+    background: #1e293b;
+    border-radius: 6px;
+}
+
+.scroll-mirror-bar::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 6px;
+}
+
+.scroll-mirror-bar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
 }
 
 /* الشارات (Badges) */

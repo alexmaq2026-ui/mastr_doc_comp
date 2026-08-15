@@ -1133,20 +1133,24 @@ function renderScoringTable() {
   // ── 1. تحديث رأس الجدول (thead) ديناميكياً لإضافة أعمدة المعايير المخصصة المفعلة ──
   const thead = document.querySelector('#scoring-table thead');
   if (thead) {
+    const scoreColCount = 4 + activeCustom.length; // أقدمية + عمر + تخصص + تقدير + مخصصة
     thead.innerHTML = `
       <tr>
-        <th style="width: 45px;">الترتيب</th>
-        <th>اسم المتنافس</th>
-        <th>التخصص</th>
-        <th>نقاط الأقدمية</th>
-        <th>نقاط العمر</th>
-        <th>نقاط التخصص</th>
-        <th>نقاط التقدير</th>
-        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 900;">${c.name} (${c.maxPoints}ن)</th>`).join('')}
-        <th>المجموع الكلي</th>
-        <th>النتيجة والاعتماد</th>
-        <th>ملاحظات المفاضلة</th>
-        <th>التفاصيل</th>
+        <th rowspan="2" style="width: 42px; vertical-align: middle;">م</th>
+        <th rowspan="2" style="min-width: 140px; vertical-align: middle;">المتنافس</th>
+        <th rowspan="2" style="vertical-align: middle;">التخصص</th>
+        <th colspan="${scoreColCount}" style="text-align: center; background: rgba(37,99,235,0.22); color: #93c5fd; font-size: 0.8rem; letter-spacing: 0.5px; border-bottom: 1px solid rgba(37,99,235,0.3);">نقاط المفاضلة</th>
+        <th rowspan="2" style="vertical-align: middle;">الإجمالي</th>
+        <th rowspan="2" style="vertical-align: middle;">النتيجة</th>
+        <th rowspan="2" style="vertical-align: middle;">الملاحظة</th>
+        <th rowspan="2" style="vertical-align: middle;">التفاصيل</th>
+      </tr>
+      <tr>
+        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">الأقدمية</th>
+        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">العمر</th>
+        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التخصص</th>
+        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التقدير</th>
+        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${c.name.length > 6 ? c.name.substring(0,6) + '…' : c.name}<br><span style="font-weight:500; font-size:0.7rem;">(${c.maxPoints}ن)</span></th>`).join('')}
       </tr>
     `;
   }
@@ -1250,6 +1254,55 @@ function renderScoringTable() {
       </td>
     </tr>`;
   }).join('');
+
+  // ── إضافة شريط التمرير العلوي المرتبط ──
+  setupDualScrollbar('scoring-table');
+}
+
+// ── شريط التمرير المزدوج: يُنشئ شريط تمرير علوي مرتبط بـ table-responsive ──
+function setupDualScrollbar(tableId) {
+  const table   = document.getElementById(tableId);
+  if (!table) return;
+  const wrapper = table.closest('.table-responsive');
+  if (!wrapper) return;
+
+  // احذف الشريط العلوي القديم إن وجد
+  const existingMirror = wrapper.previousElementSibling;
+  if (existingMirror && existingMirror.classList.contains('scroll-mirror-bar')) {
+    existingMirror.remove();
+  }
+
+  // أنشئ شريط التمرير العلوي
+  const mirror = document.createElement('div');
+  mirror.className = 'scroll-mirror-bar';
+  mirror.style.cssText = `
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #1e293b;
+  `;
+  const inner = document.createElement('div');
+  inner.style.cssText = `height: 1px; width: ${table.scrollWidth}px;`;
+  mirror.appendChild(inner);
+  wrapper.parentNode.insertBefore(mirror, wrapper);
+
+  // تزامن التمرير بين الشريطين
+  let syncing = false;
+  mirror.addEventListener('scroll', () => {
+    if (!syncing) { syncing = true; wrapper.scrollLeft = mirror.scrollLeft; syncing = false; }
+  });
+  wrapper.addEventListener('scroll', () => {
+    if (!syncing) { syncing = true; mirror.scrollLeft = wrapper.scrollLeft; syncing = false; }
+  });
+
+  // تحديث عرض الشريط العلوي عند تغيير حجم الجدول
+  const ro = new ResizeObserver(() => {
+    inner.style.width = table.scrollWidth + 'px';
+  });
+  ro.observe(table);
 }
 
 // عرض بطاقة تقييم وتفاصيل المتنافس الشاملة (Candidate Details View)
