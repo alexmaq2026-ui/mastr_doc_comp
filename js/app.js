@@ -4389,36 +4389,36 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                   <!-- 1. أقدمية التعيين -->
                   <td>
                     ${sen1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.seniorityScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.seniorityScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
                     `}
                   </td>
 
                   <!-- 2. الفئة العمرية -->
                   <td>
                     ${age1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.ageScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.ageScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
                     `}
                   </td>
 
                   <!-- 3. احتياج التخصص -->
                   <td>
                     ${spec1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.specScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.specScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
                     `}
                   </td>
 
                   <!-- 4. التقدير العلمي -->
                   <td>
                     ${grade1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.gradeScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.gradeScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
                     `}
                   </td>
 
@@ -4426,9 +4426,9 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                   ${customBinaryResults.map(res => `
                     <td>
                       ${res.isStrength === 1 ? `
-                        <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${res.pts}ن)</span>
+                        <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                       ` : `
-                        <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${res.pts}ن)</span>
+                        <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
                       `}
                     </td>
                   `).join('')}
