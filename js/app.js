@@ -1183,9 +1183,14 @@ function renderScoringTable() {
 
     // بناء خلية الملاحظة
     const tieBreakerCell = c.tieBreaker
-      ? `<td style="font-size:0.78rem; color: ${c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706'}; font-weight:700;">
-           ⚖️ مفاضلة استثنائية<br><span style="font-size:0.72rem;">معيار: ${c.tieBreaker}</span>
-         </td>`
+      ? (() => {
+          const color = c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706';
+          // أول كلمة من معيار الحسم للسطر الثاني
+          const firstWord = c.tieBreaker.trim().split(/\s+/)[0];
+          return `<td style="font-size:0.82rem; color:${color}; font-weight:800; text-align:center; line-height:1.4;">
+            استثنائية<br><span style="font-size:0.76rem; font-weight:600;">بالـ${firstWord}</span>
+          </td>`;
+        })()
       : `<td style="color: var(--text-muted); font-size:0.8rem;">—</td>`;
 
     return `
