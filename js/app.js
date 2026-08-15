@@ -4259,31 +4259,45 @@ function calculateCandidateStrengthsAndWeaknesses(c) {
 
   // 1. تحليل الأقدمية (الوزن الأعلى 10)
   if (c.scores.seniorityScore >= 8) {
-    strengths.push(`🎖️ أقدمية تعيين ممتازة (${c.scores.seniorityScore}/10 نقاط)`);
+    strengths.push(`أقدمية تعيين ممتازة (${c.scores.seniorityScore}/10 نقاط)`);
   } else if (c.scores.seniorityScore <= 3) {
-    weaknesses.push(`⏳ أقدمية تعيين حديثة نسبياً (${c.scores.seniorityScore}/10 نقاط)`);
+    weaknesses.push(`أقدمية تعيين حديثة نسبياً (${c.scores.seniorityScore}/10 نقاط)`);
   }
 
   // 2. تحليل الفئة العمرية (الوزن الأعلى 5)
   if (c.scores.ageScore >= 4) {
-    strengths.push(`🎂 سن متقدم ورصيد خبرة ممتد (${c.scores.ageScore}/5 نقاط)`);
+    strengths.push(`سن متقدم ورصيد خبرة ممتد (${c.scores.ageScore}/5 نقاط)`);
   } else if (c.scores.ageScore <= 2) {
-    weaknesses.push(`👶 فئة عمرية حديثة السن (${c.scores.ageScore}/5 نقاط)`);
+    weaknesses.push(`فئة عمرية حديثة السن (${c.scores.ageScore}/5 نقاط)`);
   }
 
   // 3. تحليل الاحتياج والتخصص (الوزن الأعلى 5)
   if (c.scores.specScore >= 5) {
-    strengths.push(`🎯 تخصص عالي الاحتياج والأولوية (${c.scores.specScore}/5 نقاط)`);
+    strengths.push(`تخصص عالي الاحتياج والأولوية (${c.scores.specScore}/5 نقاط)`);
   } else if (c.scores.specScore <= 2) {
-    weaknesses.push(`📌 تخصص عام الاحتياج (${c.scores.specScore}/5 نقاط)`);
+    weaknesses.push(`تخصص عام الاحتياج (${c.scores.specScore}/5 نقاط)`);
   }
 
   // 4. تحليل التقدير العلمي (الوزن الأعلى 5)
   if (c.scores.gradeScore >= 4) {
-    strengths.push(`📜 مؤهل علمي بدرجة (${c.grade || 'ممتاز/جيد جداً'})`);
+    strengths.push(`مؤهل علمي بدرجة (${c.grade || 'ممتاز/جيد جداً'})`);
   } else if (c.scores.gradeScore <= 2) {
-    weaknesses.push(`⚠️ تقدير المؤهل العلمي (${c.grade || 'مقبول'})`);
+    weaknesses.push(`تقدير المؤهل العلمي (${c.grade || 'مقبول'})`);
   }
+
+  // 5. المعايير الإضافية المخصصة المفعلة (ديناميكياً)
+  const activeCustom = (state.criteria.customCriteria || []).filter(item => item.enabled);
+  activeCustom.forEach(custom => {
+    const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+      ? c.scores.customScores[custom.id] : 0;
+    const maxPts = custom.maxPoints || 5;
+    const dName = getDisplayName(custom.name);
+    if (computedPts >= (maxPts / 2) && computedPts > 0) {
+      strengths.push(`${dName} (${computedPts}/${maxPts} نقاط)`);
+    } else {
+      weaknesses.push(`${dName} (${computedPts}/${maxPts} نقاط)`);
+    }
+  });
 
   if (strengths.length === 0) strengths.push('متوسط التقييم العام بالمعايير');
   if (weaknesses.length === 0) weaknesses.push('لا توجد نقاط ضعف بارزة');
@@ -4294,6 +4308,7 @@ function calculateCandidateStrengthsAndWeaknesses(c) {
 // 1. تقرير نقاط القوة والضعف للمتنافسين (جدول مصفوفة إحصائية ثنائية 1 / 0)
 function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل') {
   const allCandidates = getRankedCandidates(selectedDegree);
+  const activeCustom = (state.criteria.customCriteria || []).filter(c => c.enabled);
 
   container.innerHTML = `
     <div class="card" dir="rtl">
@@ -4315,19 +4330,20 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
             <tr>
               <th style="width: 3%;">#</th>
               <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
-              <th style="width: 11%;">الأقدمية</th>
-              <th style="width: 10%;">العمر</th>
-              <th style="width: 11%;">التخصص</th>
-              <th style="width: 11%;">التقدير</th>
-              <th style="width: 11%;">قوة</th>
-              <th style="width: 11%;">ضعف</th>
-              <th style="width: 14%;">مؤشرات</th>
+              <th style="width: 10%;">الأقدمية</th>
+              <th style="width: 9%;">العمر</th>
+              <th style="width: 10%;">التخصص</th>
+              <th style="width: 9%;">التقدير</th>
+              ${activeCustom.map(c => `<th style="width: 10%;">${getDisplayName(c.name)}</th>`).join('')}
+              <th style="width: 8%;">قوة</th>
+              <th style="width: 8%;">ضعف</th>
+              <th style="width: 13%;">مؤشرات</th>
             </tr>
           </thead>
           <tbody>
             ${allCandidates.length === 0 ? `
               <tr>
-                <td colspan="9" style="padding: 30px; text-align: center; color: var(--text-muted);">لا يوجد متنافسون في هذه الفئة</td>
+                <td colspan="${7 + activeCustom.length}" style="padding: 30px; text-align: center; color: var(--text-muted);">لا يوجد متنافسون في هذه الفئة</td>
               </tr>
             ` : allCandidates.map((c, idx) => {
               const sen1 = c.scores.seniorityScore >= 6 ? 1 : 0;
@@ -4335,16 +4351,31 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
               const spec1 = c.scores.specScore >= 3.5 ? 1 : 0;
               const grade1 = c.scores.gradeScore >= 4 ? 1 : 0;
 
-              const totalStrengths = sen1 + age1 + spec1 + grade1;
-              const totalWeaknesses = 4 - totalStrengths;
+              // تقييم المعايير المخصصة المفعلة (1 = قوة، 0 = ضعف)
+              const customBinaryResults = activeCustom.map(custom => {
+                const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+                  ? c.scores.customScores[custom.id] : 0;
+                const maxPts = custom.maxPoints || 5;
+                const isStrength = (computedPts >= (maxPts / 2) && computedPts > 0) ? 1 : 0;
+                return {
+                  custom,
+                  pts: computedPts,
+                  isStrength
+                };
+              });
+
+              const totalCriteriaCount = 4 + activeCustom.length;
+              const totalStrengths = sen1 + age1 + spec1 + grade1 + customBinaryResults.reduce((sum, r) => sum + r.isStrength, 0);
+              const totalWeaknesses = totalCriteriaCount - totalStrengths;
+              const strengthPercent = totalCriteriaCount > 0 ? (totalStrengths / totalCriteriaCount * 100) : 0;
 
               let statusBadge = '';
-              if (totalStrengths >= 3) {
-                statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ممتاز (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
-              } else if (totalStrengths === 2) {
-                statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">متوازن (50%)</span>`;
+              if (strengthPercent >= 75) {
+                statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ممتاز (${strengthPercent.toFixed(0)}%)</span>`;
+              } else if (strengthPercent >= 45) {
+                statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">متوازن (${strengthPercent.toFixed(0)}%)</span>`;
               } else {
-                statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ضعيف (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
+                statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ضعيف (${strengthPercent.toFixed(0)}%)</span>`;
               }
 
               return `
@@ -4391,6 +4422,17 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                     `}
                   </td>
 
+                  <!-- 5. المعايير المخصصة المفعلة تلقائياً -->
+                  ${customBinaryResults.map(res => `
+                    <td>
+                      ${res.isStrength === 1 ? `
+                        <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${res.pts}ن)</span>
+                      ` : `
+                        <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${res.pts}ن)</span>
+                      `}
+                    </td>
+                  `).join('')}
+
                   <!-- إجمالي نقاط القوة -->
                   <td>
                     <span style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap;">
@@ -4416,6 +4458,7 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
     </div>
   `;
 }
+
 
 
 // دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
