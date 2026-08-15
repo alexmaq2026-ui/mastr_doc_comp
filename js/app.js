@@ -56,6 +56,15 @@ function initStore() {
             if (!c.targetDegree) {
               c.targetDegree = c.enabled === false ? 'none' : 'all';
             }
+            if (c.config) {
+              if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
+                c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
+              } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
+                c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
+              } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
+                c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+              }
+            }
           });
         }
         if (state.criteria.seniority && state.criteria.seniority.maxPoints === 30) state.criteria.seniority.maxPoints = 10;
@@ -5792,15 +5801,22 @@ function renderCriteriaDoc() {
   const activeCustom = custom.filter(c => c.enabled && (c.targetDegree === 'all' || c.targetDegree === 'master' || c.targetDegree === 'phd'));
   
   const arabicNumbers = ['⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  let totalCustomPoints = 0;
+
   const customSection = activeCustom.map((c, idx) => {
     const itype = c.indicatorType || 'binary';
     let detailRows = '';
+    let cEffectiveMax = parseFloat(c.maxPoints) || 0;
 
     if (itype === 'binary') {
       const opts = (c.config && c.config.options && c.config.options.length > 0) ? c.config.options : [
         { label: 'مستمر', points: c.maxPoints || 5 },
         { label: 'منقطع', points: 0 }
       ];
+      const optMax = Math.max(...opts.map(o => parseFloat(o.points) || 0), 0);
+      if (optMax > 0) cEffectiveMax = optMax;
+      c.maxPoints = cEffectiveMax;
+
       detailRows = opts.map(o => `
         <tr style="border-bottom: 1px solid #fcd34d;">
           <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">حالة (${o.label})</td>
@@ -5809,6 +5825,10 @@ function renderCriteriaDoc() {
       `).join('');
     } else if (itype === 'grade') {
       const grades = (c.config && c.config.grades && c.config.grades.length > 0) ? c.config.grades : [];
+      const gMax = Math.max(...grades.map(g => parseFloat(g.points) || 0), 0);
+      if (gMax > 0) cEffectiveMax = gMax;
+      c.maxPoints = cEffectiveMax;
+
       detailRows = grades.map(g => `
         <tr style="border-bottom: 1px solid #fcd34d;">
           <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تصنيف (${g.label})</td>
@@ -5817,6 +5837,10 @@ function renderCriteriaDoc() {
       `).join('');
     } else if (itype === 'bracket') {
       const brackets = (c.config && c.config.brackets && c.config.brackets.length > 0) ? c.config.brackets : [];
+      const bMax = Math.max(...brackets.map(b => parseFloat(b.points) || 0), 0);
+      if (bMax > 0) cEffectiveMax = bMax;
+      c.maxPoints = cEffectiveMax;
+
       detailRows = brackets.map(b => `
         <tr style="border-bottom: 1px solid #fcd34d;">
           <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">المجال (${b.label || (b.min + ' - ' + b.max)})</td>
@@ -5825,13 +5849,17 @@ function renderCriteriaDoc() {
       `).join('');
     } else if (itype === 'numeric') {
       const ppu = (c.config && c.config.pointsPerUnit) ? c.config.pointsPerUnit : 1;
+      if (cEffectiveMax <= 0) cEffectiveMax = 5;
       detailRows = `
         <tr style="border-bottom: 1px solid #fcd34d;">
           <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">احتساب كمي مباشر (لكل وحدة منجزة)</td>
-          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${ppu} نقطة / وحدة (الحد الأقصى: ${c.maxPoints || 5} نقاط)</td>
+          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${ppu} نقطة / وحدة (الحد الأقصى: ${cEffectiveMax} نقاط)</td>
         </tr>
       `;
     }
+
+    if (cEffectiveMax <= 0) cEffectiveMax = 5;
+    totalCustomPoints += cEffectiveMax;
 
     const ordSymbol = arabicNumbers[idx] || `(${idx + 5})`;
 
@@ -5839,7 +5867,7 @@ function renderCriteriaDoc() {
       <div style="margin-bottom: 10px;">
         <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
           <span>${ordSymbol} معيار ${c.name}</span>
-          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${c.maxPoints || 5} نقاط</span>
+          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${cEffectiveMax} نقاط</span>
         </h3>
         <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
           <thead>
@@ -5861,8 +5889,7 @@ function renderCriteriaDoc() {
   const maxAge = (age && age.enabled !== false) ? (age.maxPoints || 5) : 0;
   const maxSpec = (spec && spec.enabled !== false) ? (spec.maxPoints || 5) : 0;
   const maxGrade = (gr && gr.enabled !== false) ? (gr.maxPoints || 5) : 0;
-  let totalMax = maxSeniority + maxAge + maxSpec + maxGrade;
-  activeCustom.forEach(c => { totalMax += (parseInt(c.maxPoints) || 0); });
+  const totalMax = maxSeniority + maxAge + maxSpec + maxGrade + totalCustomPoints;
 
   container.innerHTML = `
     <div id="criteria-doc-printable-area" style="
