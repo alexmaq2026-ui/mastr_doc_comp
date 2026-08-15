@@ -921,6 +921,12 @@ function openLockModal() {
   }
 }
 
+// دالة توحيد اسم المعيار للعرض
+function getDisplayName(name) {
+  if (name && name.includes('الممارسة')) return 'الاستمرارية';
+  return name || '';
+}
+
 // 2. شاشة المتنافسين (Candidates View)
 function renderCandidatesTable() {
   const tbody = document.getElementById('candidates-tbody');
@@ -955,7 +961,7 @@ function renderCandidatesTable() {
           <th style="width: 10%;">تاريخ الميلاد</th>
           <th style="width: 9%;">سنة التخرج</th>
           <th style="width: 9%;">التقدير</th>
-          ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;">${c.name}</th>`).join('')}
+          ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;">${getDisplayName(c.name)}</th>`).join('')}
           <th class="col-action no-print" style="width: 11%;">الإجراءات</th>
         </tr>
       `;
@@ -1049,18 +1055,18 @@ function renderCandidatesTable() {
             ? custom.config.options
             : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
           const matched = bOpts.find(o => o.points === computedPts);
-          dispLabel = matched ? `🔵 ${matched.label}` : `${computedPts}ن`;
+          dispLabel = matched ? matched.label : (computedPts > 0 ? 'مستمر' : 'منقطع');
         } else if (itype === 'grade') {
           const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
           const matched = grades.find(g => g.points === computedPts);
-          dispLabel = matched ? `🟡 ${matched.label}` : `🟡 ${computedPts}ن`;
+          dispLabel = matched ? matched.label : `${computedPts}`;
         } else if (itype === 'bracket') {
           const brackets = (custom.config && custom.config.brackets) ? custom.config.brackets : [];
           const numVal = rawVal !== null ? parseFloat(rawVal) : null;
           const matched = numVal !== null ? brackets.find(b => numVal >= b.min && numVal <= b.max) : null;
-          dispLabel = matched ? `🟠 ${matched.label}` : `🟠 ${computedPts}ن`;
+          dispLabel = matched ? matched.label : `${computedPts}`;
         } else if (itype === 'numeric') {
-          dispLabel = `🟣 ${rawVal !== null ? parseFloat(rawVal) : 0} وحدة`;
+          dispLabel = `${rawVal !== null ? parseFloat(rawVal) : 0}`;
         }
 
         const maxPossible = itype === 'binary'
@@ -1069,8 +1075,8 @@ function renderCandidatesTable() {
         const isTopColor = computedPts >= maxPossible && maxPossible > 0;
         return `
           <td style="font-weight: 800; text-align: center;">
-            <span style="display:inline-block; padding:2px 6px; border-radius:4px; font-size:0.74rem; background:${isTopColor ? 'rgba(16,185,129,0.15)' : computedPts > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color:${isTopColor ? '#10b981' : computedPts > 0 ? '#f59e0b' : '#ef4444'}; border:1px solid ${isTopColor ? 'rgba(16,185,129,0.3)' : computedPts > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'};">
-              ${dispLabel} (${computedPts}ن)
+            <span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:0.8rem; background:${isTopColor ? 'rgba(16,185,129,0.15)' : computedPts > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)'}; color:${isTopColor ? '#10b981' : computedPts > 0 ? '#f59e0b' : '#ef4444'}; border:1px solid ${isTopColor ? 'rgba(16,185,129,0.3)' : computedPts > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(239,68,68,0.3)'};">
+              ${dispLabel}
             </span>
           </td>
         `;
@@ -1083,6 +1089,7 @@ function renderCandidatesTable() {
       </td>
     </tr>
     ${annotationsPanel}`;
+
   }).join('');
 }
 
@@ -4292,7 +4299,7 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
     <div class="card" dir="rtl">
       <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
         <div>
-          <h3 class="card-title">🎯 المصفوفة الإحصائية لنقاط القوة ونقاط الضعف التنافسية لكل متقدم</h3>
+          <h3 class="card-title">المصفوفة الإحصائية لنقاط القوة ونقاط الضعف التنافسية لكل متقدم</h3>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
             تقييم رقمي ثنائي حاسم لمعايير المفاضلة (تُرمز نقطة القوة بالرمز 1 ونقطة الضعف بالرمز 0) لتسهيل اتخاذ القرار الرقابي.
           </p>
@@ -4308,13 +4315,13 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
             <tr>
               <th style="width: 3%;">#</th>
               <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
-              <th style="width: 11%;">أقدمية التعيين (10ن)</th>
-              <th style="width: 10%;">الفئة العمرية (5ن)</th>
-              <th style="width: 11%;">احتياج التخصص (5ن)</th>
-              <th style="width: 11%;">التقدير العلمي (5ن)</th>
-              <th style="width: 11%;">إجمالي القوة (1)</th>
-              <th style="width: 11%;">إجمالي الضعف (0)</th>
-              <th style="width: 14%;">المؤشر التنافسي العام</th>
+              <th style="width: 11%;">الأقدمية</th>
+              <th style="width: 10%;">العمر</th>
+              <th style="width: 11%;">التخصص</th>
+              <th style="width: 11%;">التقدير</th>
+              <th style="width: 11%;">قوة</th>
+              <th style="width: 11%;">ضعف</th>
+              <th style="width: 14%;">مؤشرات</th>
             </tr>
           </thead>
           <tbody>
@@ -4333,11 +4340,11 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
 
               let statusBadge = '';
               if (totalStrengths >= 3) {
-                statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🟢 ممتاز (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
+                statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ممتاز (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
               } else if (totalStrengths === 2) {
-                statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🟡 متوازن (50%)</span>`;
+                statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">متوازن (50%)</span>`;
               } else {
-                statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">🔴 ضعيف (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
+                statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ضعيف (${(totalStrengths/4*100).toFixed(0)}%)</span>`;
               }
 
               return `
@@ -4351,50 +4358,50 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                   <!-- 1. أقدمية التعيين -->
                   <td>
                     ${sen1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.seniorityScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.seniorityScore}ن)</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.seniorityScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.seniorityScore}ن)</span>
                     `}
                   </td>
 
                   <!-- 2. الفئة العمرية -->
                   <td>
                     ${age1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.ageScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.ageScore}ن)</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.ageScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.ageScore}ن)</span>
                     `}
                   </td>
 
                   <!-- 3. احتياج التخصص -->
                   <td>
                     ${spec1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.specScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.specScore}ن)</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.specScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.specScore}ن)</span>
                     `}
                   </td>
 
                   <!-- 4. التقدير العلمي -->
                   <td>
                     ${grade1 === 1 ? `
-                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">🟢 1 (${c.scores.gradeScore}ن)</span>
+                      <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 2px 6px; font-size: 0.8rem;">1 (${c.scores.gradeScore}ن)</span>
                     ` : `
-                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">🔴 0 (${c.scores.gradeScore}ن)</span>
+                      <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 2px 6px; font-size: 0.8rem;">0 (${c.scores.gradeScore}ن)</span>
                     `}
                   </td>
 
                   <!-- إجمالي نقاط القوة -->
                   <td>
                     <span style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap;">
-                      ${totalStrengths} قوة
+                      ${totalStrengths}
                     </span>
                   </td>
 
                   <!-- إجمالي نقاط الضعف -->
                   <td>
                     <span style="background: rgba(239, 68, 68, 0.25); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap;">
-                      ${totalWeaknesses} ضعف
+                      ${totalWeaknesses}
                     </span>
                   </td>
 
@@ -4409,6 +4416,7 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
     </div>
   `;
 }
+
 
 // دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
 function normalizeArabicString(str) {
