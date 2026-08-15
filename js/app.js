@@ -26,18 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // تهيئة المخزن المحلي (LocalStorage Engine)
 function initStore() {
-  // ── تنظيف candidates القديمة: إذا كان الـ state المحفوظ يحتوي بيانات قديمة، نُفرّغها ──
-  try {
-    const existingRaw = localStorage.getItem('sanaa_univ_competition_state');
-    if (existingRaw) {
-      const existingState = JSON.parse(existingRaw);
-      if (existingState && Array.isArray(existingState.candidates) && existingState.candidates.length > 0) {
-        existingState.candidates = [];
-        localStorage.setItem('sanaa_univ_competition_state', JSON.stringify(existingState));
-      }
-    }
-  } catch(e) { /* تجاهل أي خطأ في التنظيف */ }
-
   const savedState = localStorage.getItem('sanaa_univ_competition_state');
   if (savedState) {
     try {
@@ -45,8 +33,10 @@ function initStore() {
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
-      if (!state.candidates) {
-        state.candidates = [];
+      if (!state.candidates || !Array.isArray(state.candidates) || state.candidates.length === 0) {
+        state.candidates = (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0)
+          ? JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES))
+          : [];
       }
       if (!state.criteria) {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
@@ -79,6 +69,9 @@ function initStore() {
       if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
         state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
       }
+      if (!state.settings) {
+        state.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+      }
     } catch (e) {
       console.error('Error loading saved state:', e);
       loadDefaults();
@@ -92,7 +85,9 @@ function loadDefaults() {
   state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
   state.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
-  state.candidates = []; // تبدأ القائمة فارغة - البيانات تأتي من Supabase أو من رفع Excel
+  state.candidates = (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0)
+    ? JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES))
+    : [];
   state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
   state.currentUser = null; // البدء بشاشة تسجيل الدخول
   saveStore();
@@ -2558,6 +2553,7 @@ function saveSettings() {
   state.settings.applicationTitle = appTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)';
 
   saveStore();
+  if (typeof syncSettingsToSupabase === 'function') syncSettingsToSupabase(state.settings);
   refreshAllViews();
   alert('✅ تم حفظ إعدادات المفاضلة والرئاسة ونوع التطبيق بنجاح!');
 }
@@ -2945,6 +2941,7 @@ function deleteUser(id) {
   if (confirm(`هل أنت تأكد من رغبتك في حذف المستخدم (${user.name})؟`)) {
     state.users = state.users.filter(u => u.id !== id);
     saveStore();
+    if (typeof syncUsersToSupabase === 'function') syncUsersToSupabase(state.users);
     refreshAllViews();
     alert('تم حذف المستخدم بنجاح');
   }
@@ -2995,6 +2992,7 @@ function saveUserForm() {
   }
 
   saveStore();
+  if (typeof syncUsersToSupabase === 'function') syncUsersToSupabase(state.users);
   closeModal('modal-user');
   document.getElementById('user-fullname').value = '';
   document.getElementById('user-username').value = '';
@@ -3909,8 +3907,10 @@ function deleteCriterion(idOrKey) {
 
 function saveAllCriteriaAndSettings() {
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+  if (typeof syncSettingsToSupabase === 'function') syncSettingsToSupabase(state.settings);
   refreshAllViews();
-  alert(' تم حفظ جميع الأوزان والتعديلات والمعايير في كود النظام بنجاح وتحديث كافة المصفوفات التنافسية!');
+  alert('✅ تم حفظ جميع الأوزان والتعديلات والمعايير في كود النظام بنجاح وتحديث كافة المصفوفات التنافسية!');
 }
 
 // نافذة ودالة تنفيذ المفاضلة وبدء الدورة التنافسية الرسمية

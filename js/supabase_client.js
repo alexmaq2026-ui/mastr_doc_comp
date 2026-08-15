@@ -25,10 +25,23 @@ async function syncCandidatesFromSupabase() {
         const { data: cData, error: cErr } = await supabaseClient.from('candidates').select('*');
         if (cErr) console.warn('خطأ استجلاب المتنافسين من Supabase:', cErr);
         if (cData && cData.length > 0) {
-            state.candidates = [...cData].sort((a, b) => a.id - b.id);
-        } else {
-            // قاعدة البيانات فارغة — نُفرّغ القائمة المحلية أيضاً
-            state.candidates = [];
+            state.candidates = cData.map(c => ({
+                id: parseInt(c.id) || c.id,
+                name: c.name,
+                degree: c.degree,
+                specialization: c.specialization || 'غير محدد',
+                hiring_univ: c.hiring_univ || '',
+                hiring_service: c.hiring_service || '',
+                birth_date: c.birth_date || '',
+                grad_year: c.grad_year || '',
+                grade: c.grade || 'جيد',
+                customValues: c.custom_values || c.customValues || {}
+            })).sort((a, b) => Number(a.id) - Number(b.id));
+        } else if (!state.candidates || state.candidates.length === 0) {
+            // فقط إذا كانت الذاكرة المحلية فارغة أيضاً
+            if (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0) {
+                state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
+            }
         }
 
         // 2. استجلاب إعدادات المعايير والمستخدمين
@@ -48,7 +61,7 @@ async function syncCandidatesFromSupabase() {
                 state.criteria.customCriteria = Object.values(mergedCustomMap);
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
-            if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value)) {
+            if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value) && usersSetting.value.length > 0) {
                 state.users = usersSetting.value;
             }
             const globalSetting = sData.find(s => s.key === 'global_settings');
@@ -66,18 +79,19 @@ async function syncCandidatesFromSupabase() {
     return false;
 }
 
-// دالة تنقية بيانات المتنافس لإرسال الأعمدة القياسية فقط المطابقة لجدول Supabase
+// دالة تنقية بيانات المتنافس لإرسال الأعمدة القياسية فقط المطابقة لجدول Supabase مع حفظ المعايير المخصصة
 function sanitizeCandidateForSupabase(c) {
     return {
-        id: c.id,
+        id: parseInt(c.id) || c.id,
         name: c.name,
         degree: c.degree,
-        specialization: c.specialization,
+        specialization: c.specialization || 'غير محدد',
         hiring_univ: c.hiring_univ || null,
         hiring_service: c.hiring_service || null,
         grad_year: c.grad_year || null,
         grade: c.grade || null,
-        birth_date: c.birth_date || null
+        birth_date: c.birth_date || null,
+        custom_values: c.customValues || c.custom_values || {}
     };
 }
 
@@ -112,7 +126,7 @@ async function uploadAllDataToSupabase() {
     }
 
     try {
-        // 1. تنقية ورفع المتنافسين (تجنب الأعمدة الزائدة مثل source_sheet)
+        // 1. تنقية ورفع المتنافسين
         if (state.candidates && state.candidates.length > 0) {
             const sanitizedCandidates = state.candidates.map(sanitizeCandidateForSupabase);
             const { error: cErr } = await supabaseClient.from('candidates').upsert(sanitizedCandidates);
@@ -169,3 +183,34 @@ async function syncCriteriaToSupabase(criteria) {
         return false;
     }
 }
+
+// مزامنة المستخدمين والصلاحيات أونلاين على Supabase
+async function syncUsersToSupabase(users) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_users', value: users }
+        ]);
+        console.log('✅ تم مزامنة المستخدمين أونلاين على Supabase بنجاح.');
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: تعذر مزامنة المستخدمين أونلاين على Supabase:', e);
+        return false;
+    }
+}
+
+// مزامنة الإعدادات العامة أونلاين على Supabase
+async function syncSettingsToSupabase(settings) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_settings', value: settings }
+        ]);
+        console.log('✅ تم مزامنة الإعدادات العامة أونلاين على Supabase بنجاح.');
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: تعذر مزامنة الإعدادات أونلاين على Supabase:', e);
+        return false;
+    }
+}
+
