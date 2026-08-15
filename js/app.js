@@ -3641,15 +3641,15 @@ function renderCustomCriterionTypeConfig() {
           <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px;">الخيار الأول</span>
             <input type="text" class="form-control binary-label" placeholder="مثال: مستمر، نعم، طويل، أسود..." style="flex: 2; border: 1px solid rgba(59,130,246,0.5);">
-            <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
+            <input type="number" class="form-control binary-pts" oninput="autoUpdateNewCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
           </div>
           <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
             <input type="text" class="form-control binary-label" placeholder="مثال: منقطع، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
-            <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="number" class="form-control binary-pts" oninput="autoUpdateNewCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
           </div>
         </div>
-        <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يمكن لأي خيار أن يحمل أي وزن — لست مقيداً بـ "كامل الوزن / صفر"</div>
+        <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يتحدد سقف المعيار تلقائياً بأعلى درجة تضعها في الخيارات.</div>
       </div>`;
   } else if (type === 'grade') {
     configEl.innerHTML = `
@@ -3658,8 +3658,8 @@ function renderCustomCriterionTypeConfig() {
         <div id="grade-options-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
           <div class="grade-option-row" style="display: flex; gap: 8px; align-items: center;">
             <input type="text" class="form-control grade-label" placeholder="مثال: ممتاز" style="flex: 2;">
-            <input type="number" class="form-control grade-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
-            <button onclick="this.closest('.grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+            <input type="number" class="form-control grade-pts" oninput="autoUpdateNewCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+            <button onclick="this.closest('.grade-option-row').remove(); autoUpdateNewCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
           </div>
         </div>
         <button onclick="addGradeOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة تصنيف آخر</button>
@@ -3674,8 +3674,8 @@ function renderCustomCriterionTypeConfig() {
             <input type="text" class="form-control bracket-label" placeholder="مسمى الفئة (مثال: أقل من 3 سنوات)" style="flex: 2; min-width: 160px;">
             <input type="number" class="form-control bracket-min" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
             <input type="number" class="form-control bracket-max" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
-            <input type="number" class="form-control bracket-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
-            <button onclick="this.closest('.bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+            <input type="number" class="form-control bracket-pts" oninput="autoUpdateNewCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+            <button onclick="this.closest('.bracket-option-row').remove(); autoUpdateNewCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
           </div>
         </div>
         <button onclick="addBracketOptionRow()" class="btn btn-outline btn-sm" style="font-size:0.78rem;">➕ إضافة مجال آخر</button>
@@ -3691,6 +3691,33 @@ function renderCustomCriterionTypeConfig() {
           مثال: إذا كانت النقاط لكل وحدة = 2، والوزن الأقصى = 10، فالمتنافس الذي له 3 أبحاث يحصل على 6 نقاط.
         </div>
       </div>`;
+  }
+}
+
+function autoUpdateNewCriterionMaxPoints() {
+  const typeEl = document.getElementById('new-custom-criterion-type');
+  const ptsEl = document.getElementById('new-custom-criterion-points');
+  if (!typeEl || !ptsEl) return;
+  const type = typeEl.value;
+  let maxPts = 0;
+  if (type === 'binary') {
+    document.querySelectorAll('.binary-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  } else if (type === 'grade') {
+    document.querySelectorAll('.grade-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  } else if (type === 'bracket') {
+    document.querySelectorAll('.bracket-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  }
+  if (maxPts > 0) {
+    ptsEl.value = maxPts;
   }
 }
 
@@ -3732,7 +3759,7 @@ function addCustomCriterion() {
   const typeEl = document.getElementById('new-custom-criterion-type');
 
   const name      = nameEl ? nameEl.value.trim() : '';
-  const maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 5)  : 5;
+  let maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 0)  : 0;
   const itype     = typeEl ? typeEl.value : 'binary';
 
   if (!name) { alert('يرجى كتابة اسم المعيار الجديد'); return; }
@@ -3745,15 +3772,17 @@ function addCustomCriterion() {
     rows.forEach(row => {
       const label = row.querySelector('.binary-label')?.value.trim();
       const pts   = parseFloat(row.querySelector('.binary-pts')?.value);
-      if (label) options.push({ label, points: isNaN(pts) ? maxPoints : pts });
+      if (label) options.push({ label, points: isNaN(pts) ? 0 : pts });
     });
     // إن لم يقم المشرف بإدخال مسميات مخصصة، نعتمد التسمية الافتراضية الذكية
     if (options.length === 0) {
-      options.push({ label: 'مستمر', points: maxPoints });
+      options.push({ label: 'مستمر', points: maxPoints || 5 });
       options.push({ label: 'منقطع', points: 0 });
     } else if (options.length === 1) {
       options.push({ label: 'منقطع', points: 0 });
     }
+    const optMax = Math.max(...options.map(o => o.points || 0), 0);
+    if (optMax > 0) maxPoints = optMax;
     config = { options };
 
   } else if (itype === 'grade') {
@@ -3765,6 +3794,8 @@ function addCustomCriterion() {
       if (label) grades.push({ label, points: pts });
     });
     if (grades.length === 0) { alert('يرجى إضافة تصنيف واحد على الأقل للمعيار التقديري'); return; }
+    const gMax = Math.max(...grades.map(g => g.points || 0), 0);
+    if (gMax > 0) maxPoints = gMax;
     config = { grades };
 
   } else if (itype === 'bracket') {
@@ -3778,12 +3809,16 @@ function addCustomCriterion() {
       if (label && !isNaN(min) && !isNaN(max)) brackets.push({ label, min, max, points: pts });
     });
     if (brackets.length === 0) { alert('يرجى إضافة مجال رقمي واحد على الأقل للمعيار الشريحي'); return; }
+    const bMax = Math.max(...brackets.map(b => b.points || 0), 0);
+    if (bMax > 0) maxPoints = bMax;
     config = { brackets };
 
   } else if (itype === 'numeric') {
     const ppu = parseFloat(document.getElementById('numeric-points-per-unit')?.value) || 1;
     config = { pointsPerUnit: ppu };
   }
+
+  if (maxPoints <= 0) maxPoints = 5;
 
   if (!state.criteria.customCriteria) state.criteria.customCriteria = [];
 
@@ -3943,22 +3978,23 @@ function renderEditCriterionTypeConfig(existingCriterion = null) {
           <div class="edit-binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px;">الخيار الأول</span>
             <input type="text" class="form-control edit-binary-label" value="${bOptions[0]?.label || ''}" placeholder="مثال: مستمر، نعم، طويل..." style="flex: 2; border: 1px solid rgba(59,130,246,0.5);">
-            <input type="number" class="form-control edit-binary-pts" value="${bOptions[0]?.points !== undefined ? bOptions[0].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
+            <input type="number" class="form-control edit-binary-pts" oninput="autoUpdateEditCriterionMaxPoints()" value="${bOptions[0]?.points !== undefined ? bOptions[0].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(59,130,246,0.5);">
           </div>
           <div class="edit-binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
             <input type="text" class="form-control edit-binary-label" value="${bOptions[1]?.label || ''}" placeholder="مثال: منقطع، لا، قصير..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
-            <input type="number" class="form-control edit-binary-pts" value="${bOptions[1]?.points !== undefined ? bOptions[1].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="number" class="form-control edit-binary-pts" oninput="autoUpdateEditCriterionMaxPoints()" value="${bOptions[1]?.points !== undefined ? bOptions[1].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
           </div>
         </div>
+        <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يتحدد سقف المعيار تلقائياً بأعلى درجة تضعها في الخيارات.</div>
       </div>`;
   } else if (type === 'grade') {
     const grades = (c && c.config && c.config.grades && c.config.grades.length > 0) ? c.config.grades : [{ label: 'ممتاز', points: 5 }, { label: 'جيد', points: 3 }];
     const gradeRows = grades.map(g => `
       <div class="edit-grade-option-row" style="display: flex; gap: 8px; align-items: center;">
         <input type="text" class="form-control edit-grade-label" value="${g.label}" placeholder="مثال: ممتاز" style="flex: 2;">
-        <input type="number" class="form-control edit-grade-pts" value="${g.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
-        <button onclick="this.closest('.edit-grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+        <input type="number" class="form-control edit-grade-pts" oninput="autoUpdateEditCriterionMaxPoints()" value="${g.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+        <button onclick="this.closest('.edit-grade-option-row').remove(); autoUpdateEditCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
       </div>
     `).join('');
 
@@ -3977,8 +4013,8 @@ function renderEditCriterionTypeConfig(existingCriterion = null) {
         <input type="text" class="form-control edit-bracket-label" value="${b.label}" placeholder="الفئة" style="flex: 2; min-width: 160px;">
         <input type="number" class="form-control edit-bracket-min" value="${b.min}" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
         <input type="number" class="form-control edit-bracket-max" value="${b.max}" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
-        <input type="number" class="form-control edit-bracket-pts" value="${b.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
-        <button onclick="this.closest('.edit-bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+        <input type="number" class="form-control edit-bracket-pts" oninput="autoUpdateEditCriterionMaxPoints()" value="${b.points}" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+        <button onclick="this.closest('.edit-bracket-option-row').remove(); autoUpdateEditCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
       </div>
     `).join('');
 
@@ -4000,6 +4036,33 @@ function renderEditCriterionTypeConfig(existingCriterion = null) {
   }
 }
 
+function autoUpdateEditCriterionMaxPoints() {
+  const typeEl = document.getElementById('edit-criterion-type');
+  const ptsEl = document.getElementById('edit-criterion-points');
+  if (!typeEl || !ptsEl) return;
+  const type = typeEl.value;
+  let maxPts = 0;
+  if (type === 'binary') {
+    document.querySelectorAll('.edit-binary-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  } else if (type === 'grade') {
+    document.querySelectorAll('.edit-grade-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  } else if (type === 'bracket') {
+    document.querySelectorAll('.edit-bracket-pts').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > maxPts) maxPts = v;
+    });
+  }
+  if (maxPts > 0) {
+    ptsEl.value = maxPts;
+  }
+}
+
 function addEditGradeOptionRow() {
   const list = document.getElementById('edit-grade-options-list');
   if (!list) return;
@@ -4008,8 +4071,8 @@ function addEditGradeOptionRow() {
   row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
   row.innerHTML = `
     <input type="text" class="form-control edit-grade-label" placeholder="مثال: ممتاز" style="flex: 2;">
-    <input type="number" class="form-control edit-grade-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
-    <button onclick="this.closest('.edit-grade-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+    <input type="number" class="form-control edit-grade-pts" oninput="autoUpdateEditCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 80px;">
+    <button onclick="this.closest('.edit-grade-option-row').remove(); autoUpdateEditCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
   `;
   list.appendChild(row);
 }
@@ -4024,8 +4087,8 @@ function addEditBracketOptionRow() {
     <input type="text" class="form-control edit-bracket-label" placeholder="الفئة" style="flex: 2; min-width: 160px;">
     <input type="number" class="form-control edit-bracket-min" placeholder="من" min="0" style="flex: 1; max-width: 70px;">
     <input type="number" class="form-control edit-bracket-max" placeholder="إلى" min="0" style="flex: 1; max-width: 70px;">
-    <input type="number" class="form-control edit-bracket-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
-    <button onclick="this.closest('.edit-bracket-option-row').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
+    <input type="number" class="form-control edit-bracket-pts" oninput="autoUpdateEditCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 70px;">
+    <button onclick="this.closest('.edit-bracket-option-row').remove(); autoUpdateEditCriterionMaxPoints();" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">✕</button>
   `;
   list.appendChild(row);
 }
@@ -4041,7 +4104,7 @@ function saveEditedCriterion() {
 
   if (!idOrKey) return;
   const name      = nameEl ? nameEl.value.trim() : '';
-  const maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 5) : 5;
+  let maxPoints = ptsEl  ? (parseFloat(ptsEl.value) || 0) : 0;
   const scope     = scopeEl ? scopeEl.value : 'all';
 
   if (!name) { alert('يرجى إدخال اسم المعيار'); return; }
@@ -4052,7 +4115,7 @@ function saveEditedCriterion() {
     if (!state.criteria[idOrKey]) state.criteria[idOrKey] = { enabled: true };
     state.criteria[idOrKey].weightName = name;
     state.criteria[idOrKey].name = name;
-    state.criteria[idOrKey].maxPoints = maxPoints;
+    state.criteria[idOrKey].maxPoints = maxPoints || 5;
     state.criteria[idOrKey].targetDegree = scope;
     state.criteria[idOrKey].enabled = (scope !== 'none');
   } else {
@@ -4069,14 +4132,16 @@ function saveEditedCriterion() {
       rows.forEach(row => {
         const label = row.querySelector('.edit-binary-label')?.value.trim();
         const pts   = parseFloat(row.querySelector('.edit-binary-pts')?.value);
-        if (label) options.push({ label, points: isNaN(pts) ? maxPoints : pts });
+        if (label) options.push({ label, points: isNaN(pts) ? 0 : pts });
       });
       if (options.length === 0) {
-        options.push({ label: 'مستمر', points: maxPoints });
+        options.push({ label: 'مستمر', points: maxPoints || 5 });
         options.push({ label: 'منقطع', points: 0 });
       } else if (options.length === 1) {
         options.push({ label: 'منقطع', points: 0 });
       }
+      const optMax = Math.max(...options.map(o => o.points || 0), 0);
+      if (optMax > 0) maxPoints = optMax;
       config = { options };
 
     } else if (itype === 'grade') {
@@ -4088,6 +4153,8 @@ function saveEditedCriterion() {
         if (label) grades.push({ label, points: pts });
       });
       if (grades.length === 0) { alert('يرجى إضافة تصنيف واحد على الأقل للمعيار التقديري'); return; }
+      const gMax = Math.max(...grades.map(g => g.points || 0), 0);
+      if (gMax > 0) maxPoints = gMax;
       config = { grades };
 
     } else if (itype === 'bracket') {
@@ -4101,12 +4168,16 @@ function saveEditedCriterion() {
         if (label && !isNaN(min) && !isNaN(max)) brackets.push({ label, min, max, points: pts });
       });
       if (brackets.length === 0) { alert('يرجى إضافة مجال رقمي واحد على الأقل للمعيار الشريحي'); return; }
+      const bMax = Math.max(...brackets.map(b => b.points || 0), 0);
+      if (bMax > 0) maxPoints = bMax;
       config = { brackets };
 
     } else if (itype === 'numeric') {
       const ppu = parseFloat(document.getElementById('edit-numeric-points-per-unit')?.value) || 1;
       config = { pointsPerUnit: ppu };
     }
+
+    if (maxPoints <= 0) maxPoints = 5;
 
     state.criteria.customCriteria[cIndex].name = name;
     state.criteria.customCriteria[cIndex].maxPoints = maxPoints;
@@ -5716,31 +5787,74 @@ function renderCriteriaDoc() {
   `;
 
   // 5. المعايير المخصصة
+  // 5. المعايير المخصصة
   const custom = cData.customCriteria || [];
-  const activeCustom = custom.filter(c => c.enabled);
-  const customSection = activeCustom.length > 0 ? `
-    <div style="margin-bottom: 10px;">
-      <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0;">
-        ⑤ المعايير الإضافية المخصصة
-      </h3>
-      <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
-        <thead>
-          <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
-            <th style="padding: 6px 10px; text-align: right;">اسم المعيار المخصص</th>
-            <th style="padding: 6px 10px; text-align: center; width: 120px;">الوزن والحد الأقصى</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${activeCustom.map(c => `
-            <tr style="border-bottom: 1px solid #fcd34d;">
-              <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">${c.name}</td>
-              <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${c.maxPoints || 5} نقاط</td>
+  const activeCustom = custom.filter(c => c.enabled && (c.targetDegree === 'all' || c.targetDegree === 'master' || c.targetDegree === 'phd'));
+  
+  const arabicNumbers = ['⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  const customSection = activeCustom.map((c, idx) => {
+    const itype = c.indicatorType || 'binary';
+    let detailRows = '';
+
+    if (itype === 'binary') {
+      const opts = (c.config && c.config.options && c.config.options.length > 0) ? c.config.options : [
+        { label: 'مستمر', points: c.maxPoints || 5 },
+        { label: 'منقطع', points: 0 }
+      ];
+      detailRows = opts.map(o => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">حالة (${o.label})</td>
+          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${o.points} نقاط</td>
+        </tr>
+      `).join('');
+    } else if (itype === 'grade') {
+      const grades = (c.config && c.config.grades && c.config.grades.length > 0) ? c.config.grades : [];
+      detailRows = grades.map(g => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تصنيف (${g.label})</td>
+          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${g.points} نقاط</td>
+        </tr>
+      `).join('');
+    } else if (itype === 'bracket') {
+      const brackets = (c.config && c.config.brackets && c.config.brackets.length > 0) ? c.config.brackets : [];
+      detailRows = brackets.map(b => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">المجال (${b.label || (b.min + ' - ' + b.max)})</td>
+          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+        </tr>
+      `).join('');
+    } else if (itype === 'numeric') {
+      const ppu = (c.config && c.config.pointsPerUnit) ? c.config.pointsPerUnit : 1;
+      detailRows = `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">احتساب كمي مباشر (لكل وحدة منجزة)</td>
+          <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${ppu} نقطة / وحدة (الحد الأقصى: ${c.maxPoints || 5} نقاط)</td>
+        </tr>
+      `;
+    }
+
+    const ordSymbol = arabicNumbers[idx] || `(${idx + 5})`;
+
+    return `
+      <div style="margin-bottom: 10px;">
+        <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
+          <span>${ordSymbol} معيار ${c.name}</span>
+          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${c.maxPoints || 5} نقاط</span>
+        </h3>
+        <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
+          <thead>
+            <tr style="background: linear-gradient(135deg,#d97706,#b45309); color: #fffbeb;">
+              <th style="padding: 6px 10px; text-align: right;">مؤشر وحالة المعيار</th>
+              <th style="padding: 6px 10px; text-align: center; width: 120px;">النقاط المستحقة</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  ` : '';
+          </thead>
+          <tbody>
+            ${detailRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }).join('');
 
   // حساب مجموع سقف النقاط بدقة ومطابقة تامة للمنظومة
   const maxSeniority = (sen && sen.enabled !== false) ? (sen.maxPoints || 10) : 0;
