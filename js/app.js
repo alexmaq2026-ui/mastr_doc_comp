@@ -1156,7 +1156,7 @@ function renderScoringTable() {
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">العمر</th>
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التخصص</th>
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التقدير</th>
-        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${getDisplayName(c.name)}<br><span style="font-weight:500; font-size:0.7rem;">(${c.maxPoints}ن)</span></th>`).join('')}
+        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${getDisplayName(c.name)}</th>`).join('')}
       </tr>
     `;
   }
@@ -1214,7 +1214,7 @@ function renderScoringTable() {
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
         ${c.status === 'مقبول' ? `
-          <span class="badge-status badge-accepted">✅ مرشح مقبول</span>
+          <span class="badge-status badge-accepted">مقبول</span>
         ` : ''}
       </td>
       ${tieBreakerCell}
