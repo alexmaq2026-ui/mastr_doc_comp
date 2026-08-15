@@ -41,8 +41,10 @@ function initStore() {
       if (!state.criteria) {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
       } else {
-        if (!state.criteria.customCriteria) {
-          state.criteria.customCriteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria || []));
+        if (state.criteria.customCriteria) {
+          state.criteria.customCriteria = state.criteria.customCriteria.filter(c => c && c.id !== 'c1' && c.id !== 'c2');
+        } else {
+          state.criteria.customCriteria = [];
         }
         ['seniority', 'age', 'specialization', 'grade'].forEach(key => {
           if (state.criteria[key] && !state.criteria[key].targetDegree) {
@@ -59,6 +61,13 @@ function initStore() {
         if (state.criteria.seniority && state.criteria.seniority.maxPoints === 30) state.criteria.seniority.maxPoints = 10;
         if (state.criteria.age && state.criteria.age.maxPoints === 25) state.criteria.age.maxPoints = 5;
         if (state.criteria.specialization && state.criteria.specialization.maxPoints === 25) state.criteria.specialization.maxPoints = 5;
+        if (state.criteria.grade && state.criteria.grade.items) {
+          state.criteria.grade.items.forEach(i => {
+            if (i.name === 'جيد جداً' && i.points === 4) i.points = 5;
+            if (i.name === 'جيد' && i.points === 3) i.points = 5;
+            if (i.name === 'مقبول' && i.points === 2) i.points = 4;
+          });
+        }
       }
       if (state.criteria && state.criteria.seniority && state.criteria.seniority.brackets) {
         state.criteria.seniority.brackets.forEach(b => {
@@ -71,6 +80,18 @@ function initStore() {
       }
       if (!state.settings) {
         state.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+      } else {
+        if (state.settings.rectorName === 'أ.د. القاسم محمد عباس' || !state.settings.rectorName) {
+          state.settings.rectorName = 'أ.د. محمد أحمد البخيتي';
+        }
+        if (!state.settings.competitionLocation || state.settings.sessionLocation === 'مبنى رئاسة الجامعة - مكتب نائب رئيس الجامعة للشؤون الأكاديمية') {
+          state.settings.competitionLocation = 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
+        }
+        if (!state.settings.competitionDate || state.settings.competitionDate === 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)' || state.settings.sessionDate === 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)') {
+          state.settings.competitionDate = 'شهر اغسطس 2026';
+        }
+        state.settings.sessionLocation = state.settings.competitionLocation;
+        state.settings.sessionDate = state.settings.competitionDate;
       }
     } catch (e) {
       console.error('Error loading saved state:', e);
@@ -1736,7 +1757,7 @@ function renderDetailedReport() {
           </div>
           <div>
             <strong>🗓️ يوم وتاريخ ووقت الفرز:</strong>
-            <span>${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}</span>
+            <span>${state.settings.competitionDate || 'شهر اغسطس 2026'}</span>
           </div>
         </div>
 
@@ -1797,7 +1818,7 @@ function renderDetailedReport() {
         const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
         const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
         const regularMembers = members.filter(m => m !== chairman).reverse();
-        const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. القاسم محمد عباس';
+        const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
 
         return `
           <div class="signatures-section" style="margin-top: 20px; border-top: 2px solid #1e3a8a; padding-top: 12px; page-break-inside: avoid;">
@@ -1876,7 +1897,7 @@ function renderCriteriaSettings() {
 
   container.innerHTML = `
     <!-- شريط الفهرس والتنقل المباشر والتحكم في طي/توسيع الجداول والمعايير -->
-    <div class="card no-print" style="position: sticky; top: 70px; z-index: 99; margin-bottom: 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1.5px solid rgba(37, 99, 235, 0.4); box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+    <div class="card no-print" style="margin-bottom: 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1.5px solid rgba(37, 99, 235, 0.4); box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
       <div style="padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;">
         
         <!-- الأزرار السريعة للانتقال المباشر -->
@@ -1934,7 +1955,7 @@ function renderCriteriaSettings() {
           </div>
           <div class="form-group">
             <label style="font-weight: 700;">اسم رئيس الجامعة الحالي (الجهة المعتمدة):</label>
-            <input type="text" id="input-rector-name" class="form-control" value="${state.settings.rectorName || 'أ.د. القاسم محمد عباس'}" ${!isSuperAdmin ? 'disabled' : ''}>
+            <input type="text" id="input-rector-name" class="form-control" value="${state.settings.rectorName || 'أ.د. محمد أحمد البخيتي'}" ${!isSuperAdmin ? 'disabled' : ''}>
           </div>
         </div>
 
@@ -1945,7 +1966,7 @@ function renderCriteriaSettings() {
           </div>
           <div class="form-group">
             <label style="font-weight: 700;">تاريخ ووقت جلسة المفاضلة والفرز الرسمية:</label>
-            <input type="text" id="input-comp-date" class="form-control" value="${state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)'}" ${!isSuperAdmin ? 'disabled' : ''}>
+            <input type="text" id="input-comp-date" class="form-control" value="${state.settings.competitionDate || 'شهر اغسطس 2026'}" ${!isSuperAdmin ? 'disabled' : ''}>
           </div>
         </div>
 
@@ -2024,26 +2045,51 @@ function renderCriteriaSettings() {
           <table class="data-table">
             <thead>
               <tr>
-                <th>الشريحة الوظيفية / سنة التعيين</th>
-                <th>من سنة</th>
-                <th>إلى سنة</th>
-                <th>النقاط المخصصة</th>
+                <th>الشريحة الوظيفية / مسمى الشريحة</th>
+                <th style="width: 130px; text-align: center;">من سنة</th>
+                <th style="width: 130px; text-align: center;">إلى سنة</th>
+                <th style="width: 120px; text-align: center;">النقاط المخصصة</th>
+                ${isSuperAdmin ? '<th style="width: 90px; text-align: center;">الإجراءات</th>' : ''}
               </tr>
             </thead>
             <tbody>
-              ${state.criteria.seniority.brackets.map((b, idx) => `
+              ${(state.criteria.seniority.brackets || []).map((b, idx) => `
                 <tr>
-                  <td><strong>${b.label}</strong></td>
-                  <td>${b.minYear}</td>
-                  <td>${b.maxYear}</td>
                   <td>
-                    <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateSeniorityBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                    <input type="text" class="form-control" style="font-weight: 700; min-width: 150px;" value="${b.label || ''}" placeholder="اسم الشريحة" onchange="updateSeniorityBracketField(${idx}, 'label', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                   </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 110px; text-align: center; margin: 0 auto;" value="${b.minYear !== undefined ? b.minYear : ''}" onchange="updateSeniorityBracketField(${idx}, 'minYear', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 110px; text-align: center; margin: 0 auto;" value="${b.maxYear !== undefined ? b.maxYear : ''}" onchange="updateSeniorityBracketField(${idx}, 'maxYear', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 100px; text-align: center; margin: 0 auto; font-weight: 700; color: var(--primary);" value="${b.points}" onchange="updateSeniorityBracketField(${idx}, 'points', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  ${isSuperAdmin ? `
+                    <td style="text-align: center;">
+                      <button class="btn btn-danger btn-sm" onclick="deleteSeniorityBracket(${idx})" title="حذف هذه الشريحة">🗑️ حذف</button>
+                    </td>
+                  ` : ''}
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
+
+        ${isSuperAdmin ? `
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: 1;">
+              <input type="text" id="new-seniority-label" class="form-control" placeholder="مسمى الشريحة (اختياري)..." style="max-width: 170px;">
+              <input type="number" id="new-seniority-min" class="form-control" placeholder="من سنة (مثال: 1990)" style="max-width: 150px;">
+              <input type="number" id="new-seniority-max" class="form-control" placeholder="إلى سنة (مثال: 1994)" style="max-width: 150px;">
+              <input type="number" id="new-seniority-points" class="form-control" placeholder="النقاط" style="max-width: 90px;">
+              <button class="btn btn-secondary" onclick="addSeniorityBracket()">➕ إضافة شريحة جديدة</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="resetDefaultSeniorityBrackets()" title="استعادة الشرائح الافتراضية المعتمدة">🔄 استعادة الشرائح الأساسية</button>
+          </div>
+        ` : ''}
       </div>
     </div>
 
@@ -2084,21 +2130,50 @@ function renderCriteriaSettings() {
             <thead>
               <tr>
                 <th>الشريحة العمرية</th>
-                <th>النقاط المخصصة</th>
+                <th style="width: 130px; text-align: center;">من عمر (سنة)</th>
+                <th style="width: 130px; text-align: center;">إلى عمر (سنة)</th>
+                <th style="width: 120px; text-align: center;">النقاط المخصصة</th>
+                ${isSuperAdmin ? '<th style="width: 90px; text-align: center;">الإجراءات</th>' : ''}
               </tr>
             </thead>
             <tbody>
-              ${state.criteria.age.brackets.map((b, idx) => `
+              ${(state.criteria.age.brackets || []).map((b, idx) => `
                 <tr>
-                  <td><strong>${b.label}</strong></td>
                   <td>
-                    <input type="number" class="form-control" style="width: 100px; text-align: center;" value="${b.points}" onchange="updateAgeBracketPoints(${idx}, this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                    <input type="text" class="form-control" style="font-weight: 700; min-width: 150px;" value="${b.label || ''}" placeholder="اسم الشريحة العمرية" onchange="updateAgeBracketField(${idx}, 'label', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
                   </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 110px; text-align: center; margin: 0 auto;" value="${b.minAge !== undefined ? b.minAge : ''}" onchange="updateAgeBracketField(${idx}, 'minAge', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 110px; text-align: center; margin: 0 auto;" value="${b.maxAge !== undefined ? b.maxAge : ''}" onchange="updateAgeBracketField(${idx}, 'maxAge', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  <td style="text-align: center;">
+                    <input type="number" class="form-control" style="width: 100px; text-align: center; margin: 0 auto; font-weight: 700; color: var(--secondary);" value="${b.points}" onchange="updateAgeBracketField(${idx}, 'points', this.value)" ${!isSuperAdmin ? 'disabled' : ''}>
+                  </td>
+                  ${isSuperAdmin ? `
+                    <td style="text-align: center;">
+                      <button class="btn btn-danger btn-sm" onclick="deleteAgeBracket(${idx})" title="حذف هذه الشريحة العمرية">🗑️ حذف</button>
+                    </td>
+                  ` : ''}
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
+
+        ${isSuperAdmin ? `
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex: 1;">
+              <input type="text" id="new-age-label" class="form-control" placeholder="مسمى الشريحة (اختياري)..." style="max-width: 170px;">
+              <input type="number" id="new-age-min" class="form-control" placeholder="من عمر (مثال: 35)" style="max-width: 150px;">
+              <input type="number" id="new-age-max" class="form-control" placeholder="إلى عمر (مثال: 39)" style="max-width: 150px;">
+              <input type="number" id="new-age-points" class="form-control" placeholder="النقاط" style="max-width: 90px;">
+              <button class="btn btn-secondary" onclick="addAgeBracket()">➕ إضافة شريحة عمرية</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="resetDefaultAgeBrackets()" title="استعادة الشرائح الافتراضية المعتمدة">🔄 استعادة الشرائح الأساسية</button>
+          </div>
+        ` : ''}
       </div>
     </div>
 
@@ -2539,7 +2614,7 @@ function saveSettings() {
   const masterGrants = parseInt(document.getElementById('input-master-grants').value) || 3;
   const phdGrants = parseInt(document.getElementById('input-phd-grants').value) || 3;
   const refYear = parseInt(document.getElementById('input-ref-year').value) || 2026;
-  const rectorName = document.getElementById('input-rector-name') ? document.getElementById('input-rector-name').value.trim() : 'أ.د. القاسم محمد عباس';
+  const rectorName = document.getElementById('input-rector-name') ? document.getElementById('input-rector-name').value.trim() : 'أ.د. محمد أحمد البخيتي';
   const compLocation = document.getElementById('input-comp-location') ? document.getElementById('input-comp-location').value.trim() : '';
   const compDate = document.getElementById('input-comp-date') ? document.getElementById('input-comp-date').value.trim() : '';
   const appTitle = document.getElementById('input-app-title') ? document.getElementById('input-app-title').value.trim() : '';
@@ -2547,9 +2622,11 @@ function saveSettings() {
   state.settings.masterGrantsCount = masterGrants;
   state.settings.phdGrantsCount = phdGrants;
   state.settings.referenceYear = refYear;
-  state.settings.rectorName = rectorName || 'أ.د. القاسم محمد عباس';
+  state.settings.rectorName = rectorName || 'أ.د. محمد أحمد البخيتي';
   state.settings.competitionLocation = compLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
-  state.settings.competitionDate = compDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)';
+  state.settings.sessionLocation = state.settings.competitionLocation;
+  state.settings.competitionDate = compDate || 'شهر اغسطس 2026';
+  state.settings.sessionDate = state.settings.competitionDate;
   state.settings.applicationTitle = appTitle || 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)';
 
   saveStore();
@@ -2605,16 +2682,182 @@ function resetDefaultSpecializations() {
   }
 }
 
-function updateSeniorityBracketPoints(index, points) {
-  state.criteria.seniority.brackets[index].points = parseFloat(points) || 0;
+// --- دوال إدارة وتعديل شرائح الأقدمية وتاريخ التعيين ---
+function updateSeniorityBracketField(index, field, value) {
+  if (!state.criteria || !state.criteria.seniority || !state.criteria.seniority.brackets || !state.criteria.seniority.brackets[index]) return;
+  if (field === 'points' || field === 'minYear' || field === 'maxYear') {
+    state.criteria.seniority.brackets[index][field] = parseFloat(value) || 0;
+  } else {
+    state.criteria.seniority.brackets[index][field] = value;
+  }
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+  refreshAllViews();
+}
+
+function updateSeniorityBracketPoints(index, points) {
+  updateSeniorityBracketField(index, 'points', points);
+}
+
+function deleteSeniorityBracket(index) {
+  if (!state.criteria || !state.criteria.seniority || !state.criteria.seniority.brackets || !state.criteria.seniority.brackets[index]) return;
+  const b = state.criteria.seniority.brackets[index];
+  const label = b.label || `${b.minYear} - ${b.maxYear}م`;
+  if (confirm(`هل أنت متأكد من رغبتك في حذف شريحة الأقدمية (${label})؟`)) {
+    state.criteria.seniority.brackets.splice(index, 1);
+    saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+    refreshAllViews();
+  }
+}
+
+function addSeniorityBracket() {
+  const minYearInput = document.getElementById('new-seniority-min');
+  const maxYearInput = document.getElementById('new-seniority-max');
+  const pointsInput = document.getElementById('new-seniority-points');
+  const labelInput = document.getElementById('new-seniority-label');
+
+  const minYear = parseInt(minYearInput ? minYearInput.value : '');
+  const maxYear = parseInt(maxYearInput ? maxYearInput.value : '');
+  const points = parseFloat(pointsInput ? pointsInput.value : 0) || 0;
+  let label = labelInput ? labelInput.value.trim() : '';
+
+  if (isNaN(minYear) || isNaN(maxYear)) {
+    alert('يرجى تحديد سنة البداية وسنة النهاية للشريحة.');
+    return;
+  }
+  if (minYear > maxYear) {
+    alert('سنة البداية يجب أن تكون أقل من أو تساوي سنة النهاية.');
+    return;
+  }
+  if (!label) {
+    label = (minYear === maxYear) ? `${minYear}م` : `${minYear} - ${maxYear}م`;
+  }
+
+  if (!state.criteria) state.criteria = {};
+  if (!state.criteria.seniority) state.criteria.seniority = {};
+  if (!state.criteria.seniority.brackets) state.criteria.seniority.brackets = [];
+
+  state.criteria.seniority.brackets.push({
+    label,
+    minYear,
+    maxYear,
+    points
+  });
+
+  // فرز تصاعدي حسب سنة البداية
+  state.criteria.seniority.brackets.sort((a, b) => a.minYear - b.minYear);
+
+  // مسح المدخلات
+  if (minYearInput) minYearInput.value = '';
+  if (maxYearInput) maxYearInput.value = '';
+  if (pointsInput) pointsInput.value = '';
+  if (labelInput) labelInput.value = '';
+
+  saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+  refreshAllViews();
+  alert(`تم إضافة الشريحة الوظيفية (${label}) بنجاح!`);
+}
+
+function resetDefaultSeniorityBrackets() {
+  if (confirm('هل ترغب في استعادة شرائح الأقدمية الافتراضية المعتمدة؟')) {
+    if (typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.seniority && DEFAULT_CRITERIA.seniority.brackets) {
+      state.criteria.seniority.brackets = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.seniority.brackets));
+    }
+    saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+    refreshAllViews();
+  }
+}
+
+// --- دوال إدارة وتعديل الشرائح العمرية ---
+function updateAgeBracketField(index, field, value) {
+  if (!state.criteria || !state.criteria.age || !state.criteria.age.brackets || !state.criteria.age.brackets[index]) return;
+  if (field === 'points' || field === 'minAge' || field === 'maxAge') {
+    state.criteria.age.brackets[index][field] = parseFloat(value) || 0;
+  } else {
+    state.criteria.age.brackets[index][field] = value;
+  }
+  saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
 }
 
 function updateAgeBracketPoints(index, points) {
-  state.criteria.age.brackets[index].points = parseFloat(points) || 0;
+  updateAgeBracketField(index, 'points', points);
+}
+
+function deleteAgeBracket(index) {
+  if (!state.criteria || !state.criteria.age || !state.criteria.age.brackets || !state.criteria.age.brackets[index]) return;
+  const b = state.criteria.age.brackets[index];
+  const label = b.label || `${b.minAge} - ${b.maxAge} سنة`;
+  if (confirm(`هل أنت متأكد من رغبتك في حذف الشريحة العمرية (${label})؟`)) {
+    state.criteria.age.brackets.splice(index, 1);
+    saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+    refreshAllViews();
+  }
+}
+
+function addAgeBracket() {
+  const minAgeInput = document.getElementById('new-age-min');
+  const maxAgeInput = document.getElementById('new-age-max');
+  const pointsInput = document.getElementById('new-age-points');
+  const labelInput = document.getElementById('new-age-label');
+
+  const minAge = parseInt(minAgeInput ? minAgeInput.value : '');
+  const maxAge = parseInt(maxAgeInput ? maxAgeInput.value : '');
+  const points = parseFloat(pointsInput ? pointsInput.value : 0) || 0;
+  let label = labelInput ? labelInput.value.trim() : '';
+
+  if (isNaN(minAge) || isNaN(maxAge)) {
+    alert('يرجى تحديد عمر البداية وعمر النهاية للشريحة.');
+    return;
+  }
+  if (minAge > maxAge) {
+    alert('عمر البداية يجب أن يكون أقل من أو يساوي عمر النهاية.');
+    return;
+  }
+  if (!label) {
+    label = (minAge === maxAge) ? `${minAge} سنة` : `${minAge} - ${maxAge} سنة`;
+  }
+
+  if (!state.criteria) state.criteria = {};
+  if (!state.criteria.age) state.criteria.age = {};
+  if (!state.criteria.age.brackets) state.criteria.age.brackets = [];
+
+  state.criteria.age.brackets.push({
+    label,
+    minAge,
+    maxAge,
+    points
+  });
+
+  // فرز تنازلي حسب الحد الأعلى للعمر
+  state.criteria.age.brackets.sort((a, b) => b.maxAge - a.maxAge);
+
+  // مسح المدخلات
+  if (minAgeInput) minAgeInput.value = '';
+  if (maxAgeInput) maxAgeInput.value = '';
+  if (pointsInput) pointsInput.value = '';
+  if (labelInput) labelInput.value = '';
+
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
+  alert(`تم إضافة الشريحة العمرية (${label}) بنجاح!`);
+}
+
+function resetDefaultAgeBrackets() {
+  if (confirm('هل ترغب في استعادة الشرائح العمرية الافتراضية المعتمدة؟')) {
+    if (typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.age && DEFAULT_CRITERIA.age.brackets) {
+      state.criteria.age.brackets = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.age.brackets));
+    }
+    saveStore();
+    if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
+    refreshAllViews();
+  }
 }
 
 // إدارة المتنافسين
@@ -3081,6 +3324,7 @@ function autoGenerateSeniorityBrackets() {
 
   state.criteria.seniority.brackets = brackets;
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
   alert(`تم توليد ${brackets.length} شريحة للأقدمية بنجاح بناءً على خطوة (${stepYears}) سنوات! يمكنك الآن تعديل نقاط كل شريحة حسب الرغبة.`);
 }
@@ -3132,6 +3376,7 @@ function autoGenerateAgeBrackets() {
 
   state.criteria.age.brackets = brackets;
   saveStore();
+  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
   refreshAllViews();
   alert(`تم توليد ${brackets.length} شريحة عمرية بنجاح بناءً على خطوة (${stepYears}) سنوات! يمكنك الآن تعديل نقاط كل شريحة حسب الرغبة.`);
 }
@@ -3327,7 +3572,7 @@ function confirmUnlockSessionSubmit() {
     state.settings.sessionHistory = [
       {
         sessionNum: 1,
-        dateStr: state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+        dateStr: state.settings.competitionDate || 'شهر اغسطس 2026',
         reason: 'جلسة الفرز والتنافس الرئيسية المعلنة'
       }
     ];
@@ -5105,11 +5350,11 @@ function renderMinutes() {
   const settings      = state.settings || {};
   const refYear       = parseInt(settings.referenceYear) || 2026;
   const academicYear  = `${refYear - 1}/${refYear}م`;
-  const location      = settings.competitionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
-  const dateStr       = settings.competitionDate || 'الخميس، 30 يوليو 2026م';
+  const location      = settings.competitionLocation || settings.sessionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
+  const dateStr       = settings.competitionDate || settings.sessionDate || 'شهر اغسطس 2026';
   const masterLimit   = parseInt(settings.masterGrantsCount) || 3;
   const phdLimit      = parseInt(settings.phdGrantsCount)    || 3;
-  const rectorName    = settings.rectorName || 'أ.د. القاسم محمد عباس';
+  const rectorName    = settings.rectorName || 'أ.د. محمد أحمد البخيتي';
   const univName      = settings.universityName || 'جامعة صنعاء';
 
   // -- المترشحون والفائزون --
@@ -5152,7 +5397,7 @@ function renderMinutes() {
       : [
           {
             sessionNum: 1,
-            dateStr: state.settings.competitionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+            dateStr: state.settings.competitionDate || 'شهر اغسطس 2026',
             reason: 'جلسة الفرز والتنافس الرئيسية المعلنة'
           }
         ];
@@ -5408,9 +5653,9 @@ function renderCriteriaDoc() {
   const univName = state.settings.universityName || 'جامعة صنعاء';
   const refYear = parseInt(state.settings.referenceYear) || 2026;
   const academicYear = `${refYear - 1}/${refYear}م`;
-  const location = state.settings.sessionLocation || 'مبنى رئاسة الجامعة - مكتب نائب رئيس الجامعة للشؤون الأكاديمية';
-  const dateStr = state.settings.sessionDate || 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)';
-  const rectorName = state.settings.rectorName || 'أ.د. القاسم محمد عباس';
+  const location = state.settings.competitionLocation || state.settings.sessionLocation || 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء';
+  const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
+  const rectorName = state.settings.rectorName || 'أ.د. محمد أحمد البخيتي';
 
   const committee = state.committeeMembers || [];
   const chairman = committee.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committee[0] || { name: 'أ.د. ابراهيم المطاع', committeeRole: 'رئيس اللجنة', adminTitle: 'نائب رئيس الجامعة للشؤون الأكاديمية' };
@@ -5497,12 +5742,13 @@ function renderCriteriaDoc() {
     </div>
   ` : '';
 
-  // حساب مجموع سقف النقاط
-  const maxSeniority = sen.maxPoints || 10;
-  const maxAge = age.maxPoints || 5;
-  const maxSpec = spec.maxPoints || 5;
-  const maxGrade = gr.maxPoints || 5;
-  const totalMax = maxSeniority + maxAge + maxSpec + maxGrade + activeCustom.reduce((sum, c) => sum + (c.maxPoints || 5), 0);
+  // حساب مجموع سقف النقاط بدقة ومطابقة تامة للمنظومة
+  const maxSeniority = (sen && sen.enabled !== false) ? (sen.maxPoints || 10) : 0;
+  const maxAge = (age && age.enabled !== false) ? (age.maxPoints || 5) : 0;
+  const maxSpec = (spec && spec.enabled !== false) ? (spec.maxPoints || 5) : 0;
+  const maxGrade = (gr && gr.enabled !== false) ? (gr.maxPoints || 5) : 0;
+  let totalMax = maxSeniority + maxAge + maxSpec + maxGrade;
+  activeCustom.forEach(c => { totalMax += (parseInt(c.maxPoints) || 0); });
 
   container.innerHTML = `
     <div id="criteria-doc-printable-area" style="

@@ -12,9 +12,9 @@ const DEFAULT_SETTINGS = {
   referenceYear: 2026,
   universityName: 'جامعة صنعاء',
   councilName: 'مجلس الجامعة - لجنة المفاضلة والتنافس',
-  rectorName: 'أ.د. القاسم محمد عباس',
+  rectorName: 'أ.د. محمد أحمد البخيتي',
   competitionLocation: 'مقر الأمانة العامة / قاعة اجتماعات مجلس الجامعة الرئيسي - جامعة صنعاء',
-  competitionDate: 'الخميس، 30 يوليو 2026م (الساعة 10:00 صباحاً)',
+  competitionDate: 'شهر اغسطس 2026',
   applicationTitle: 'نظام المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري لجامعة صنعاء (ماجستير ودكتوراه)',
   supabaseUrl: 'https://wpnujibmxrxxaqriadez.supabase.co',
   supabaseKey: 'sb_publishable_PudkaqYYnpEc8JrQfNUyCw_BWSzZElC',
@@ -96,15 +96,12 @@ const DEFAULT_CRITERIA = {
     maxPoints: 5,
     items: [
       { name: 'ممتاز', points: 5 },
-      { name: 'جيد جداً', points: 4 },
-      { name: 'جيد', points: 3 },
-      { name: 'مقبول', points: 2 }
+      { name: 'جيد جداً', points: 5 },
+      { name: 'جيد', points: 5 },
+      { name: 'مقبول', points: 4 }
     ]
   },
-  customCriteria: [
-    { id: 'c1', name: 'تقييم الأداء السنوي', maxPoints: 5, enabled: false, targetDegree: 'none' },
-    { id: 'c2', name: 'الأبحاث والإنتاج العلمي', maxPoints: 5, enabled: true, targetDegree: 'phd' }
-  ]
+  customCriteria: []
 };
 
 const PRESEEDED_CANDIDATES = [

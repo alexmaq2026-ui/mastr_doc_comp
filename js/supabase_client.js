@@ -54,8 +54,8 @@ async function syncCandidatesFromSupabase() {
                 const remoteCustom = (remoteCriteria && remoteCriteria.customCriteria) ? remoteCriteria.customCriteria : [];
 
                 const mergedCustomMap = {};
-                remoteCustom.forEach(c => { if (c && c.id) mergedCustomMap[c.id] = c; });
-                localCustom.forEach(c => { if (c && c.id) mergedCustomMap[c.id] = c; });
+                remoteCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
+                localCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
 
                 state.criteria = remoteCriteria;
                 state.criteria.customCriteria = Object.values(mergedCustomMap);
