@@ -1130,6 +1130,12 @@ function renderScoringTable() {
 
   const activeCustom = (state.criteria.customCriteria || []).filter(c => c.enabled);
 
+  // ── دالة تحويل اسم المعيار للعرض ──
+  function getDisplayName(name) {
+    if (name && name.includes('الممارسة')) return 'الاستمرارية';
+    return name || '';
+  }
+
   // ── 1. تحديث رأس الجدول (thead) ديناميكياً لإضافة أعمدة المعايير المخصصة المفعلة ──
   const thead = document.querySelector('#scoring-table thead');
   if (thead) {
@@ -1150,7 +1156,7 @@ function renderScoringTable() {
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">العمر</th>
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التخصص</th>
         <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التقدير</th>
-        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${c.name.length > 6 ? c.name.substring(0,6) + '…' : c.name}<br><span style="font-weight:500; font-size:0.7rem;">(${c.maxPoints}ن)</span></th>`).join('')}
+        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${getDisplayName(c.name)}<br><span style="font-weight:500; font-size:0.7rem;">(${c.maxPoints}ن)</span></th>`).join('')}
       </tr>
     `;
   }
@@ -1194,53 +1200,16 @@ function renderScoringTable() {
       ${activeCustom.map(custom => {
         const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
           ? c.scores.customScores[custom.id] : 0;
-        const rawVal = (c.customValues && c.customValues[custom.id] !== undefined)
-          ? c.customValues[custom.id] : null;
-        const itype = custom.indicatorType || 'binary';
 
+        // ── عرض الرقم فقط: صفر بالأحمر، قيمة موجبة بالأخضر ──
         let cellContent = '';
-        if (itype === 'binary') {
-          // عرض الاسم المخصص للخيار المختار
-          const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
-            ? custom.config.options
-            : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
-          const matchedBOpt = bOpts.find(o => o.points === computedPts);
-          const bLabel = matchedBOpt ? matchedBOpt.label : `${computedPts}ن`;
-          const maxPossible = Math.max(...bOpts.map(o => o.points));
-          const isHighest = computedPts >= maxPossible;
-          const bgColor = isHighest ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
-          const txtColor = isHighest ? '#10b981' : '#ef4444';
-          const bdColor  = isHighest ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)';
-          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:${bgColor}; color:${txtColor}; border:1px solid ${bdColor};">🔵 ${bLabel} (${computedPts}ن)</span>`;
-
-        } else if (itype === 'grade') {
-          const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
-          const matchedGrade = grades.find(g => g.points === computedPts);
-          const gradeLabel = matchedGrade ? matchedGrade.label : (computedPts > 0 ? `${computedPts}ن` : '—');
-          const isOk = computedPts > 0;
-          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(234,179,8,0.15); color:#fde68a; border:1px solid rgba(234,179,8,0.4);">
-            ${isOk ? `🟡 ${gradeLabel} (${computedPts}ن)` : '—'}
-          </span>`;
-
-        } else if (itype === 'bracket') {
-          const brackets = (custom.config && custom.config.brackets) ? custom.config.brackets : [];
-          const numVal = rawVal !== null ? parseFloat(rawVal) : null;
-          const matchedBracket = (numVal !== null && brackets.length)
-            ? brackets.find(b => numVal >= b.min && numVal <= b.max)
-            : null;
-          const bLabel = matchedBracket ? matchedBracket.label : (numVal !== null ? `${numVal}` : '—');
-          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(249,115,22,0.15); color:#fdba74; border:1px solid rgba(249,115,22,0.4);">
-            🟠 ${bLabel} (${computedPts}ن)
-          </span>`;
-
-        } else if (itype === 'numeric') {
-          const numVal = rawVal !== null ? parseFloat(rawVal) : 0;
-          cellContent = `<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.76rem; background:rgba(139,92,246,0.15); color:#c4b5fd; border:1px solid rgba(139,92,246,0.4);">
-            🟣 ${numVal} وحدة (${computedPts}ن)
-          </span>`;
+        if (computedPts === 0) {
+          cellContent = `<span style="font-weight:900; font-size:1rem; color:#ef4444;">0</span>`;
+        } else {
+          cellContent = `<span style="font-weight:900; font-size:1rem; color:#10b981;">${computedPts}</span>`;
         }
 
-        return `<td style="font-weight:800; text-align:center; background:rgba(245,158,11,0.04);">${cellContent}</td>`;
+        return `<td style="text-align:center; background:rgba(245,158,11,0.04);">${cellContent}</td>`;
       }).join('')}
       <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
       <td>
