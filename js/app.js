@@ -1271,10 +1271,8 @@ function printCandidatesRegisterPDF() {
       <!-- الترويسة الرسمية -->
       <div style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
         <div style="text-align: right;">
-          <h4 style="margin: 0; font-size: 0.8rem; color: #475569; font-weight: 800;">الجمهورية اليمنية</h4>
-          <h4 style="margin: 2px 0 0 0; font-size: 0.8rem; color: #475569; font-weight: 800;">وزارة التعليم العالي والبحث العلمي</h4>
-          <h3 style="margin: 2px 0 0 0; font-size: 0.92rem; color: #0f172a; font-weight: 900;">جامعـة صنعـاء - الأمانـة العامـة</h3>
-          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">الإدارة العامة للشؤون الإدارية - إدارة شؤون الموظفين</span>
+          <h3 style="margin: 0; font-size: 1rem; color: #0f172a; font-weight: 900;">جامعة صنعاء - مجلس الجامعة</h3>
+          <h4 style="margin: 3px 0 0 0; font-size: 0.85rem; color: #1e3a8a; font-weight: 800;">لجنة المفاضلة لمنح الماجستير والدكتوراه - الكادر الإداري</h4>
         </div>
         <div style="text-align: center;">
           <div style="font-size: 1.1rem; font-weight: 900; color: #1e3a8a; margin-bottom: 2px; background: #eff6ff; padding: 4px 14px; border-radius: 6px; border: 1.5px solid #bfdbfe;">

@@ -2097,13 +2097,24 @@ body {
         padding: 0 !important;
         margin: 0 !important;
     }
-    body.is-candidates-register-print header.navbar,
-    body.is-candidates-register-print nav.tabs-nav,
-    body.is-candidates-register-print main.main-container,
+    body.is-candidates-register-print header,
+    body.is-candidates-register-print .navbar,
+    body.is-candidates-register-print nav,
+    body.is-candidates-register-print .tabs-nav,
+    body.is-candidates-register-print main,
+    body.is-candidates-register-print .main-container,
+    body.is-candidates-register-print .tab-content,
+    body.is-candidates-register-print .card,
+    body.is-candidates-register-print .card-header,
+    body.is-candidates-register-print .filter-bar,
+    body.is-candidates-register-print .table-responsive,
     body.is-candidates-register-print .no-print,
     body.is-candidates-register-print .btn,
     body.is-candidates-register-print .modal-backdrop,
-    body.is-candidates-register-print .modal-overlay {
+    body.is-candidates-register-print .modal-overlay,
+    body.is-candidates-register-print #batch-cards-print-area,
+    body.is-candidates-register-print #modal-lock-session,
+    body.is-candidates-register-print #modal-candidate-details {
         display: none !important;
     }
     body.is-candidates-register-print #candidates-register-print-area {
