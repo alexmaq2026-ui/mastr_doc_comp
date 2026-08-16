@@ -1201,10 +1201,10 @@ function printCandidatesRegisterPDF() {
 
   const signaturesHTML = `
     <div style="margin-top: 25px; page-break-inside: avoid; break-inside: avoid; border-top: 1.5px solid #cbd5e1; padding-top: 14px;">
-      <!-- السطر الأول: مدير إدارة الموظفين + مدير عام الشؤون الإدارية -->
+      <!-- السطر الأول: مدير إدارة شؤون الموظفين + مدير عام الشؤون الإدارية -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; padding: 0 40px;">
         <div style="text-align: center; min-width: 250px;">
-          <h4 style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 900;">مدير إدارة الموظفين</h4>
+          <h4 style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 900;">مدير إدارة شؤون الموظفين</h4>
           <div style="font-size: 0.85rem; color: #1e293b; margin-bottom: 12px; font-weight: 600;">الاسم: ................................................................</div>
           <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">التوقيع: ............................................................</div>
         </div>
@@ -1274,7 +1274,7 @@ function printCandidatesRegisterPDF() {
           <h4 style="margin: 0; font-size: 0.8rem; color: #475569; font-weight: 800;">الجمهورية اليمنية</h4>
           <h4 style="margin: 2px 0 0 0; font-size: 0.8rem; color: #475569; font-weight: 800;">وزارة التعليم العالي والبحث العلمي</h4>
           <h3 style="margin: 2px 0 0 0; font-size: 0.92rem; color: #0f172a; font-weight: 900;">جامعـة صنعـاء - الأمانـة العامـة</h3>
-          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">الإدارة العامة للشؤون الإدارية - إدارة الموظفين</span>
+          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">الإدارة العامة للشؤون الإدارية - إدارة شؤون الموظفين</span>
         </div>
         <div style="text-align: center;">
           <div style="font-size: 1.1rem; font-weight: 900; color: #1e3a8a; margin-bottom: 2px; background: #eff6ff; padding: 4px 14px; border-radius: 6px; border: 1.5px solid #bfdbfe;">
