@@ -101,7 +101,22 @@ const DEFAULT_CRITERIA = {
       { name: 'مقبول', points: 4 }
     ]
   },
-  customCriteria: []
+  customCriteria: [
+    {
+      id: 'work_practice',
+      name: 'الممارسة الفعلية للوظيفة',
+      maxPoints: 5,
+      enabled: true,
+      targetDegree: 'all',
+      indicatorType: 'binary',
+      config: {
+        options: [
+          { label: 'مستمر', points: 5 },
+          { label: 'منقطع', points: 3 }
+        ]
+      }
+    }
+  ]
 };
 
 const PRESEEDED_CANDIDATES = [

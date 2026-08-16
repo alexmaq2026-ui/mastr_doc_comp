@@ -57,8 +57,34 @@ async function syncCandidatesFromSupabase() {
                 remoteCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
                 localCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
 
+                const rawCustom = Object.values(mergedCustomMap);
+                const cleanCustom = rawCustom.map(c => {
+                    if (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('العمل') || c.id === 'work_practice')) {
+                        c.name = 'الممارسة الفعلية للوظيفة';
+                        c.maxPoints = 5;
+                        c.indicatorType = 'binary';
+                        c.targetDegree = c.targetDegree || 'all';
+                        c.enabled = c.enabled !== false;
+                        c.config = {
+                            options: [
+                                { label: 'مستمر', points: 5 },
+                                { label: 'منقطع', points: 3 }
+                            ]
+                        };
+                    } else if (c.config) {
+                        if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
+                            c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
+                        } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
+                            c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
+                        } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
+                            c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+                        }
+                    }
+                    return c;
+                });
+
                 state.criteria = remoteCriteria;
-                state.criteria.customCriteria = Object.values(mergedCustomMap);
+                state.criteria.customCriteria = cleanCustom;
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
             if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value) && usersSetting.value.length > 0) {

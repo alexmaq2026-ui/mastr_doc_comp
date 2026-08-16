@@ -43,8 +43,11 @@ function initStore() {
       } else {
         if (state.criteria.customCriteria) {
           state.criteria.customCriteria = state.criteria.customCriteria.filter(c => c && c.id !== 'c1' && c.id !== 'c2');
+          if (state.criteria.customCriteria.length === 0 && typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.customCriteria && DEFAULT_CRITERIA.customCriteria.length > 0) {
+            state.criteria.customCriteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria));
+          }
         } else {
-          state.criteria.customCriteria = [];
+          state.criteria.customCriteria = (typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.customCriteria) ? JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria)) : [];
         }
         ['seniority', 'age', 'specialization', 'grade'].forEach(key => {
           if (state.criteria[key] && !state.criteria[key].targetDegree) {
@@ -53,16 +56,30 @@ function initStore() {
         });
         if (state.criteria.customCriteria) {
           state.criteria.customCriteria.forEach(c => {
-            if (!c.targetDegree) {
-              c.targetDegree = c.enabled === false ? 'none' : 'all';
-            }
-            if (c.config) {
-              if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
-                c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
-              } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
-                c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
-              } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
-                c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+            if (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('العمل') || c.id === 'work_practice')) {
+              c.name = 'الممارسة الفعلية للوظيفة';
+              c.maxPoints = 5;
+              c.indicatorType = 'binary';
+              c.targetDegree = c.targetDegree || 'all';
+              c.enabled = c.enabled !== false;
+              c.config = {
+                options: [
+                  { label: 'مستمر', points: 5 },
+                  { label: 'منقطع', points: 3 }
+                ]
+              };
+            } else {
+              if (!c.targetDegree) {
+                c.targetDegree = c.enabled === false ? 'none' : 'all';
+              }
+              if (c.config) {
+                if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
+                  c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
+                } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
+                  c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
+                } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
+                  c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+                }
               }
             }
           });
