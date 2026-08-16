@@ -1199,31 +1199,33 @@ function printCandidatesRegisterPDF() {
       ? 'كشف الموظفين المتنافسين على منح الدكتوراه'
       : 'السجل العام للموظفين المتنافسين على منح الدراسات العليا (ماجستير ودكتوراه)';
 
-  const committeeList = state.committeeMembers || [];
-  const chairman = committeeList.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committeeList[0];
-  const regularMembers = committeeList.filter(m => m !== chairman).reverse();
-  const orderedCommittee = chairman ? [...regularMembers, chairman] : committeeList.slice().reverse();
+  const signaturesHTML = `
+    <div style="margin-top: 25px; page-break-inside: avoid; break-inside: avoid; border-top: 1.5px solid #cbd5e1; padding-top: 14px;">
+      <!-- السطر الأول: مدير إدارة الموظفين + مدير عام الشؤون الإدارية -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; padding: 0 40px;">
+        <div style="text-align: center; min-width: 250px;">
+          <h4 style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 900;">مدير إدارة الموظفين</h4>
+          <div style="font-size: 0.85rem; color: #1e293b; margin-bottom: 12px; font-weight: 600;">الاسم: ................................................................</div>
+          <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">التوقيع: ............................................................</div>
+        </div>
 
-  const signaturesHTML = orderedCommittee.length > 0 ? `
-    <div style="margin-top: 20px; page-break-inside: avoid; break-inside: avoid;">
-      <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 900; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 3px;">
-        ✍️ توقيعات واعتمادات لجنة المفاضلة والتنافس الإلكتروني:
-      </h4>
-      <div style="display: grid; grid-template-columns: repeat(${orderedCommittee.length}, 1fr); gap: 8px; margin-top: 6px;">
-        ${orderedCommittee.map((m) => {
-          const isChairman = (m.committeeRole || '').includes('رئيس اللجنة');
-          return `
-          <div style="background: ${isChairman ? '#eff6ff' : '#ffffff'}; border: ${isChairman ? '1.5px solid #1e3a8a' : '1px solid #cbd5e1'}; border-radius: 6px; padding: 6px 8px; text-align: center; font-size: 0.76rem;">
-            <div style="font-weight: 900; color: #0f172a; margin-bottom: 2px;">${m.name}</div>
-            <div style="color: #1e3a8a; font-weight: 700; font-size: 0.7rem; margin-bottom: 8px;">${m.committeeRole || m.role || 'عضو اللجنة'}</div>
-            <div style="border-top: 1px dashed #94a3b8; padding-top: 3px; color: #64748b; font-size: 0.68rem;">
-              ${m.signature ? `<img src="${m.signature}" style="max-height: 26px; max-width: 90px; object-fit: contain;">` : 'التوقيع: .....................'}
-            </div>
-          </div>
-        `}).join('')}
+        <div style="text-align: center; min-width: 250px;">
+          <h4 style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 900;">مدير عام الشؤون الإدارية</h4>
+          <div style="font-size: 0.85rem; color: #1e293b; margin-bottom: 12px; font-weight: 600;">الاسم: ................................................................</div>
+          <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">التوقيع: ............................................................</div>
+        </div>
+      </div>
+
+      <!-- السطر اللاحق: يعتمد / أمين عام الجامعة -->
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <div style="text-align: center; min-width: 320px; border: 1.5px solid #1e3a8a; border-radius: 8px; padding: 10px 24px; background: #f8fafc;">
+          <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1rem; font-weight: 900;">يعتمد / أمين عام الجامعة</h4>
+          <div style="font-size: 0.85rem; color: #1e293b; margin-bottom: 12px; font-weight: 600;">الاسم: ................................................................</div>
+          <div style="font-size: 0.85rem; color: #1e293b; font-weight: 600;">التوقيع: ............................................................</div>
+        </div>
       </div>
     </div>
-  ` : '';
+  `;
 
   const rowsHTML = list.map((c, idx) => {
     const rawHiring = (c.hiring_univ || c.hiring_service || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
@@ -1271,8 +1273,8 @@ function printCandidatesRegisterPDF() {
         <div style="text-align: right;">
           <h4 style="margin: 0; font-size: 0.8rem; color: #475569; font-weight: 800;">الجمهورية اليمنية</h4>
           <h4 style="margin: 2px 0 0 0; font-size: 0.8rem; color: #475569; font-weight: 800;">وزارة التعليم العالي والبحث العلمي</h4>
-          <h3 style="margin: 2px 0 0 0; font-size: 0.92rem; color: #0f172a; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h3>
-          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">لجنة المفاضلة والتنافس الإلكتروني</span>
+          <h3 style="margin: 2px 0 0 0; font-size: 0.92rem; color: #0f172a; font-weight: 900;">جامعـة صنعـاء - الأمانـة العامـة</h3>
+          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">الإدارة العامة للشؤون الإدارية - إدارة الموظفين</span>
         </div>
         <div style="text-align: center;">
           <div style="font-size: 1.1rem; font-weight: 900; color: #1e3a8a; margin-bottom: 2px; background: #eff6ff; padding: 4px 14px; border-radius: 6px; border: 1.5px solid #bfdbfe;">
