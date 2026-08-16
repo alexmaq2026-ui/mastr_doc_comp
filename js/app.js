@@ -43,44 +43,82 @@ function initStore() {
       } else {
         if (state.criteria.customCriteria) {
           state.criteria.customCriteria = state.criteria.customCriteria.filter(c => c && c.id !== 'c1' && c.id !== 'c2');
-          if (state.criteria.customCriteria.length === 0 && typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.customCriteria && DEFAULT_CRITERIA.customCriteria.length > 0) {
-            state.criteria.customCriteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria));
+          
+          // دمج وتوحيد معايير الممارسة الفعلية ومنع أي تكرار
+          const uniqueMap = {};
+          let foundWorkPractice = false;
+
+          state.criteria.customCriteria.forEach(c => {
+            const isWorkPractice = (c.id === 'work_practice' || (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('الاستمرارية') || c.name.includes('العمل'))));
+            if (isWorkPractice) {
+              if (!foundWorkPractice) {
+                foundWorkPractice = true;
+                uniqueMap['work_practice'] = {
+                  id: 'work_practice',
+                  name: 'الممارسة الفعلية للوظيفة',
+                  maxPoints: 5,
+                  indicatorType: 'binary',
+                  targetDegree: c.targetDegree || 'all',
+                  enabled: c.enabled !== false,
+                  config: {
+                    options: [
+                      { label: 'مستمر', points: 5 },
+                      { label: 'متاح', points: 3 }
+                    ]
+                  }
+                };
+              }
+            } else if (c.id) {
+              if (!uniqueMap[c.id]) {
+                if (!c.targetDegree) c.targetDegree = c.enabled === false ? 'none' : 'all';
+                if (c.config) {
+                  if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
+                    c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
+                  } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
+                    c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
+                  } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
+                    c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+                  }
+                }
+                uniqueMap[c.id] = c;
+              }
+            }
+          });
+
+          if (!foundWorkPractice) {
+            uniqueMap['work_practice'] = {
+              id: 'work_practice',
+              name: 'الممارسة الفعلية للوظيفة',
+              maxPoints: 5,
+              indicatorType: 'binary',
+              targetDegree: 'all',
+              enabled: true,
+              config: {
+                options: [
+                  { label: 'مستمر', points: 5 },
+                  { label: 'متاح', points: 3 }
+                ]
+              }
+            };
           }
+
+          state.criteria.customCriteria = Object.values(uniqueMap);
         } else {
           state.criteria.customCriteria = (typeof DEFAULT_CRITERIA !== 'undefined' && DEFAULT_CRITERIA.customCriteria) ? JSON.parse(JSON.stringify(DEFAULT_CRITERIA.customCriteria)) : [];
         }
-        ['seniority', 'age', 'specialization', 'grade'].forEach(key => {
-          if (state.criteria[key] && !state.criteria[key].targetDegree) {
-            state.criteria[key].targetDegree = state.criteria[key].enabled === false ? 'none' : 'all';
-          }
-        });
-        if (state.criteria.customCriteria) {
-          state.criteria.customCriteria.forEach(c => {
-            if (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('العمل') || c.id === 'work_practice')) {
-              c.name = 'الممارسة الفعلية للوظيفة';
-              c.maxPoints = 5;
-              c.indicatorType = 'binary';
-              c.targetDegree = c.targetDegree || 'all';
-              c.enabled = c.enabled !== false;
-              c.config = {
-                options: [
-                  { label: 'مستمر', points: 5 },
-                  { label: 'منقطع', points: 3 }
-                ]
-              };
-            } else {
-              if (!c.targetDegree) {
-                c.targetDegree = c.enabled === false ? 'none' : 'all';
-              }
-              if (c.config) {
-                if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
-                  c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
-                } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
-                  c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
-                } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
-                  c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+
+        // تنظيف ودمج قيم المتنافسين المرتبطة بمعيار الممارسة الفعلية
+        if (state.candidates && Array.isArray(state.candidates)) {
+          state.candidates.forEach(cand => {
+            if (cand.customValues) {
+              Object.keys(cand.customValues).forEach(k => {
+                if (k !== 'work_practice' && (k.startsWith('c_') || k === 'c1' || k === 'c2')) {
+                  if (cand.customValues['work_practice'] === undefined) {
+                    cand.customValues['work_practice'] = cand.customValues[k];
+                  }
+                  delete cand.customValues[k];
                 }
-              }
+              });
             }
           });
         }
@@ -1084,9 +1122,9 @@ function renderCandidatesTable() {
         if (itype === 'binary') {
           const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
             ? custom.config.options
-            : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
+            : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
           const matched = bOpts.find(o => o.points === computedPts);
-          dispLabel = matched ? matched.label : (computedPts > 0 ? 'مستمر' : 'منقطع');
+          dispLabel = matched ? matched.label : (computedPts >= 5 ? 'مستمر' : 'متاح');
         } else if (itype === 'grade') {
           const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
           const matched = grades.find(g => g.points === computedPts);
@@ -1441,7 +1479,7 @@ function generateCandidateCardHTML(candidate) {
             if (itype === 'binary') {
               const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
                 ? custom.config.options
-                : [{ label: 'مستمر', points: custom.maxPoints }, { label: 'منقطع', points: 0 }];
+                : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
               const matchedBOpt = bOpts.find(o => o.points === computedPts);
               displayLabel = matchedBOpt ? `🔵 ${matchedBOpt.label}` : `🔵 ${computedPts}ن`;
 
@@ -2256,7 +2294,7 @@ function renderCriteriaSettings() {
               <div style="flex: 1.5; min-width: 180px;">
                 <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">نوع مؤشر الاحتساب:</label>
                 <select id="new-custom-criterion-type" class="form-control" onchange="renderCustomCriterionTypeConfig()" style="font-weight:700;">
-                  <option value="binary">🔵 ثنائي (مستمر / منقطع)</option>
+                  <option value="binary">🔵 ثنائي (مستمر / متاح)</option>
                   <option value="grade">🟡 تقديري (ممتاز / جيد / ...)</option>
                   <option value="bracket">🟠 شريحي (مجالات رقمية)</option>
                   <option value="numeric">🟣 كمي مباشر (عدد × معامل)</option>
@@ -2276,11 +2314,11 @@ function renderCriteriaSettings() {
                   </div>
                   <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
                     <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
-                    <input type="text" class="form-control binary-label" placeholder="مثال: منقطع، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+                    <input type="text" class="form-control binary-label" placeholder="مثال: متاح، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
                     <input type="number" class="form-control binary-pts" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
                   </div>
                 </div>
-                <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يمكنك ترك الحقول فارغة وسيتم اعتماد التسمية الافتراضية (مستمر / منقطع) تلقائياً</div>
+                <div style="font-size: 0.72rem; color: #64748b; margin-top: 8px;">💡 يمكنك ترك الحقول فارغة وسيتم اعتماد التسمية الافتراضية (مستمر / متاح) تلقائياً</div>
               </div>
             </div>
 
@@ -2898,7 +2936,7 @@ function renderCustomCriteriaFormFields(candidate = null) {
       // استخدام الخيارات المعرَّفة بحرية، مع الرجوع للقيم الافتراضية للمعايير القديمة
       const bOptions = (c.config && c.config.options && c.config.options.length >= 2)
         ? c.config.options
-        : [{ label: 'مستمر', points: c.maxPoints }, { label: 'منقطع', points: 0 }];
+        : [{ label: 'مستمر', points: c.maxPoints || 5 }, { label: 'متاح', points: 3 }];
 
       const bOpts = bOptions.map((opt, idx) => {
         let isSel = false;
@@ -3663,7 +3701,7 @@ function renderCustomCriterionTypeConfig() {
           </div>
           <div class="binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
-            <input type="text" class="form-control binary-label" placeholder="مثال: منقطع، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="text" class="form-control binary-label" placeholder="مثال: متاح، لا، قصير، أبيض..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
             <input type="number" class="form-control binary-pts" oninput="autoUpdateNewCriterionMaxPoints()" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
           </div>
         </div>
@@ -3795,9 +3833,9 @@ function addCustomCriterion() {
     // إن لم يقم المشرف بإدخال مسميات مخصصة، نعتمد التسمية الافتراضية الذكية
     if (options.length === 0) {
       options.push({ label: 'مستمر', points: maxPoints || 5 });
-      options.push({ label: 'منقطع', points: 0 });
+      options.push({ label: 'متاح', points: 3 });
     } else if (options.length === 1) {
-      options.push({ label: 'منقطع', points: 0 });
+      options.push({ label: 'متاح', points: 3 });
     }
     const optMax = Math.max(...options.map(o => o.points || 0), 0);
     if (optMax > 0) maxPoints = optMax;
@@ -3987,7 +4025,7 @@ function renderEditCriterionTypeConfig(existingCriterion = null) {
   if (type === 'binary') {
     const bOptions = (c && c.config && c.config.options && c.config.options.length >= 2)
       ? c.config.options
-      : [{ label: 'مستمر', points: c ? c.maxPoints : 5 }, { label: 'منقطع', points: 0 }];
+      : [{ label: 'مستمر', points: c ? c.maxPoints : 5 }, { label: 'متاح', points: 3 }];
 
     configEl.innerHTML = `
       <div style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); padding: 12px; border-radius: 8px;">
@@ -4000,7 +4038,7 @@ function renderEditCriterionTypeConfig(existingCriterion = null) {
           </div>
           <div class="edit-binary-option-row" style="display: flex; gap: 8px; align-items: center;">
             <span style="color: #64748b; font-size: 0.75rem; min-width: 72px; text-align: center; background: rgba(239,68,68,0.1); padding: 3px 6px; border-radius: 4px;">الخيار الثاني</span>
-            <input type="text" class="form-control edit-binary-label" value="${bOptions[1]?.label || ''}" placeholder="مثال: منقطع، لا، قصير..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
+            <input type="text" class="form-control edit-binary-label" value="${bOptions[1]?.label || ''}" placeholder="مثال: متاح، لا، قصير..." style="flex: 2; border: 1px solid rgba(239,68,68,0.4);">
             <input type="number" class="form-control edit-binary-pts" oninput="autoUpdateEditCriterionMaxPoints()" value="${bOptions[1]?.points !== undefined ? bOptions[1].points : ''}" placeholder="نقاط" min="0" style="flex: 1; max-width: 85px; border: 1px solid rgba(239,68,68,0.4);">
           </div>
         </div>
@@ -4154,9 +4192,9 @@ function saveEditedCriterion() {
       });
       if (options.length === 0) {
         options.push({ label: 'مستمر', points: maxPoints || 5 });
-        options.push({ label: 'منقطع', points: 0 });
+        options.push({ label: 'متاح', points: 3 });
       } else if (options.length === 1) {
-        options.push({ label: 'منقطع', points: 0 });
+        options.push({ label: 'متاح', points: 3 });
       }
       const optMax = Math.max(...options.map(o => o.points || 0), 0);
       if (optMax > 0) maxPoints = optMax;
@@ -5820,7 +5858,7 @@ function renderCriteriaDoc() {
     if (itype === 'binary') {
       const opts = (c.config && c.config.options && c.config.options.length > 0) ? c.config.options : [
         { label: 'مستمر', points: c.maxPoints || 5 },
-        { label: 'منقطع', points: 0 }
+        { label: 'متاح', points: 3 }
       ];
       const optMax = Math.max(...opts.map(o => parseFloat(o.points) || 0), 0);
       if (optMax > 0) cEffectiveMax = optMax;

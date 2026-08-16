@@ -112,7 +112,7 @@ const DEFAULT_CRITERIA = {
       config: {
         options: [
           { label: 'مستمر', points: 5 },
-          { label: 'منقطع', points: 3 }
+          { label: 'متاح', points: 3 }
         ]
       }
     }

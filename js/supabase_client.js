@@ -53,38 +53,63 @@ async function syncCandidatesFromSupabase() {
                 const localCustom = (state.criteria && state.criteria.customCriteria) ? state.criteria.customCriteria : [];
                 const remoteCustom = (remoteCriteria && remoteCriteria.customCriteria) ? remoteCriteria.customCriteria : [];
 
-                const mergedCustomMap = {};
-                remoteCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
-                localCustom.forEach(c => { if (c && c.id && c.id !== 'c1' && c.id !== 'c2') mergedCustomMap[c.id] = c; });
+                const allItems = [...remoteCustom, ...localCustom].filter(c => c && c.id && c.id !== 'c1' && c.id !== 'c2');
+                const uniqueMap = {};
+                let foundWorkPractice = false;
 
-                const rawCustom = Object.values(mergedCustomMap);
-                const cleanCustom = rawCustom.map(c => {
-                    if (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('العمل') || c.id === 'work_practice')) {
-                        c.name = 'الممارسة الفعلية للوظيفة';
-                        c.maxPoints = 5;
-                        c.indicatorType = 'binary';
-                        c.targetDegree = c.targetDegree || 'all';
-                        c.enabled = c.enabled !== false;
-                        c.config = {
-                            options: [
-                                { label: 'مستمر', points: 5 },
-                                { label: 'منقطع', points: 3 }
-                            ]
-                        };
-                    } else if (c.config) {
-                        if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
-                            c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
-                        } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
-                            c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
-                        } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
-                            c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+                allItems.forEach(c => {
+                    const isWork = (c.id === 'work_practice' || (c.name && (c.name.includes('الممارسة الفعلية') || c.name.includes('الاستمرارية') || c.name.includes('العمل'))));
+                    if (isWork) {
+                        if (!foundWorkPractice) {
+                            foundWorkPractice = true;
+                            uniqueMap['work_practice'] = {
+                                id: 'work_practice',
+                                name: 'الممارسة الفعلية للوظيفة',
+                                maxPoints: 5,
+                                indicatorType: 'binary',
+                                targetDegree: c.targetDegree || 'all',
+                                enabled: c.enabled !== false,
+                                config: {
+                                    options: [
+                                        { label: 'مستمر', points: 5 },
+                                        { label: 'متاح', points: 3 }
+                                    ]
+                                }
+                            };
                         }
+                    } else if (c.id && !uniqueMap[c.id]) {
+                        if (c.config) {
+                            if (c.indicatorType === 'binary' && c.config.options && c.config.options.length > 0) {
+                                c.maxPoints = Math.max(...c.config.options.map(o => parseFloat(o.points) || 0), 0);
+                            } else if (c.indicatorType === 'grade' && c.config.grades && c.config.grades.length > 0) {
+                                c.maxPoints = Math.max(...c.config.grades.map(g => parseFloat(g.points) || 0), 0);
+                            } else if (c.indicatorType === 'bracket' && c.config.brackets && c.config.brackets.length > 0) {
+                                c.maxPoints = Math.max(...c.config.brackets.map(b => parseFloat(b.points) || 0), 0);
+                            }
+                        }
+                        uniqueMap[c.id] = c;
                     }
-                    return c;
                 });
 
+                if (!foundWorkPractice) {
+                    uniqueMap['work_practice'] = {
+                        id: 'work_practice',
+                        name: 'الممارسة الفعلية للوظيفة',
+                        maxPoints: 5,
+                        indicatorType: 'binary',
+                        targetDegree: 'all',
+                        enabled: true,
+                        config: {
+                            options: [
+                                { label: 'مستمر', points: 5 },
+                                { label: 'متاح', points: 3 }
+                            ]
+                        }
+                    };
+                }
+
                 state.criteria = remoteCriteria;
-                state.criteria.customCriteria = cleanCustom;
+                state.criteria.customCriteria = Object.values(uniqueMap);
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
             if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value) && usersSetting.value.length > 0) {
