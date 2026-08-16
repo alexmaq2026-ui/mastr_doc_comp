@@ -4448,12 +4448,79 @@ function deleteCriterion(idOrKey) {
   }
 }
 
-function saveAllCriteriaAndSettings() {
+async function saveAllCriteriaAndSettings() {
+  if (checkSystemLockGuard()) return;
+
+  // 1. مسح وتثبيت خيارات المعايير الأساسية من واجهة المستخدم مباشرة
+  const coreKeys = ['seniority', 'age', 'specialization', 'grade'];
+  coreKeys.forEach(k => {
+    if (!state.criteria[k]) state.criteria[k] = {};
+    const ptsInput = document.querySelector(`input[onchange*="updateCoreCriterionMaxPoints('${k}'"]`);
+    if (ptsInput) {
+      const v = parseFloat(ptsInput.value);
+      if (!isNaN(v) && v > 0) state.criteria[k].maxPoints = v;
+    }
+    const scopeSelect = document.querySelector(`select[onchange*="updateCriterionTargetDegree('${k}'"]`);
+    if (scopeSelect && scopeSelect.value) {
+      state.criteria[k].targetDegree = scopeSelect.value;
+      state.criteria[k].enabled = (scopeSelect.value !== 'none');
+    }
+  });
+
+  // 2. مسح وتثبيت خيارات المعايير المخصصة
+  (state.criteria.customCriteria || []).forEach(c => {
+    const ptsInput = document.querySelector(`input[onchange*="updateCustomCriterionPoints('${c.id}'"]`);
+    if (ptsInput) {
+      const v = parseFloat(ptsInput.value);
+      if (!isNaN(v) && v > 0) c.maxPoints = v;
+    }
+    const scopeSelect = document.querySelector(`select[onchange*="updateCriterionTargetDegree('${c.id}'"]`);
+    if (scopeSelect && scopeSelect.value) {
+      c.targetDegree = scopeSelect.value;
+      c.enabled = (scopeSelect.value !== 'none');
+    }
+  });
+
+  // 3. مسح وتثبيت إعدادات الجلسة ورئاسة الجامعة
+  if (document.getElementById('input-master-grants')) {
+    state.settings.masterGrantsCount = parseInt(document.getElementById('input-master-grants').value) || 3;
+  }
+  if (document.getElementById('input-phd-grants')) {
+    state.settings.phdGrantsCount = parseInt(document.getElementById('input-phd-grants').value) || 3;
+  }
+  if (document.getElementById('input-ref-year')) {
+    state.settings.referenceYear = parseInt(document.getElementById('input-ref-year').value) || 2026;
+  }
+  if (document.getElementById('input-rector-name')) {
+    state.settings.rectorName = document.getElementById('input-rector-name').value.trim();
+  }
+  if (document.getElementById('input-comp-location')) {
+    state.settings.competitionLocation = document.getElementById('input-comp-location').value.trim();
+  }
+  if (document.getElementById('input-comp-date')) {
+    state.settings.competitionDate = document.getElementById('input-comp-date').value.trim();
+  }
+  if (document.getElementById('input-app-title')) {
+    state.settings.applicationTitle = document.getElementById('input-app-title').value.trim();
+  }
+
+  // 4. الحفظ في LocalStorage
   saveStore();
-  if (typeof syncCriteriaToSupabase === 'function') syncCriteriaToSupabase(state.criteria);
-  if (typeof syncSettingsToSupabase === 'function') syncSettingsToSupabase(state.settings);
+
+  // 5. المزامنة السحابية المؤكدة مع Supabase
+  try {
+    if (typeof syncCriteriaToSupabase === 'function') {
+      await syncCriteriaToSupabase(state.criteria);
+    }
+    if (typeof syncSettingsToSupabase === 'function') {
+      await syncSettingsToSupabase(state.settings);
+    }
+  } catch (e) {
+    console.warn('Sync warning:', e);
+  }
+
   refreshAllViews();
-  alert('✅ تم حفظ جميع الأوزان والتعديلات والمعايير في كود النظام بنجاح وتحديث كافة المصفوفات التنافسية!');
+  alert('✅ تم حفظ وتثبيت كافة التعديلات والأوزان والمعايير بنجاح وتحديث كافة المصفوفات التنافسية!');
 }
 
 // نافذة ودالة تنفيذ المفاضلة وبدء الدورة التنافسية الرسمية
@@ -6131,52 +6198,168 @@ function renderCriteriaDoc() {
 
   // 1. الأقدمية
   const sen = cData.seniority || {};
+  const senScope = getCriterionTargetDegree(sen);
   const senRows = (sen.brackets || []).map(b => `
-    <tr style="border-bottom: 1px solid #fcd34d;">
-      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">الشريحة الزمانية للتعيين (${b.label || (b.minYear + ' - ' + b.maxYear + 'م')})</td>
+    <tr style="border-bottom: 1px solid #86efac;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #14532d;">الشريحة الزمانية للتعيين (${b.label || (b.minYear + ' - ' + b.maxYear + 'م')})</td>
       <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
     </tr>
   `).join('');
 
   // 2. العمر
   const age = cData.age || {};
-  const ageRows = (age.brackets || []).map(b => `
-    <tr style="border-bottom: 1px solid #fcd34d;">
-      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">الفئة العمرية (${b.label})</td>
-      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
-    </tr>
-  `).join('');
+  const ageScope = getCriterionTargetDegree(age);
+  let ageRows = '';
+  if (age.phdBrackets && age.phdBrackets.length > 0 && ageScope === 'all') {
+    ageRows = `
+      <tr style="background: #f0fdf4;">
+        <td colspan="2" style="padding: 5px 10px; font-weight: 900; color: #166534;">👤 أ- الفئات العمرية المعتمدة لمتنافسي الماجستير:</td>
+      </tr>
+      ${(age.brackets || []).map(b => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">الفئة العمرية (${b.label})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+        </tr>
+      `).join('')}
+      <tr style="background: #faf5ff;">
+        <td colspan="2" style="padding: 5px 10px; font-weight: 900; color: #7e22ce;">👤 ب- الفئات العمرية المعتمدة لمتنافسي الدكتوراه:</td>
+      </tr>
+      ${(age.phdBrackets || []).map(b => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">الفئة العمرية (${b.label})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+        </tr>
+      `).join('')}
+    `;
+  } else {
+    ageRows = (age.brackets || []).map(b => `
+      <tr style="border-bottom: 1px solid #fcd34d;">
+        <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">الفئة العمرية (${b.label})</td>
+        <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${b.points} نقاط</td>
+      </tr>
+    `).join('');
+  }
 
   // 3. التخصص
   const spec = cData.specialization || {};
+  const specScope = getCriterionTargetDegree(spec);
   const specRows = (spec.items || []).map(i => `
-    <tr style="border-bottom: 1px solid #fcd34d;">
-      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تخصص (${i.name})</td>
+    <tr style="border-bottom: 1px solid #86efac;">
+      <td style="padding: 6px 10px; font-weight: 700; color: #14532d;">تخصص (${i.name})</td>
       <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
     </tr>
   `).join('');
 
-  // 4. التقدير
+  // 4. التقدير العلمي وتفصيله القانوني الدقيق للماجستير والدكتوراه
   const gr = cData.grade || {};
-  const gradeRows = (gr.items || []).map(i => `
-    <tr style="border-bottom: 1px solid #fcd34d;">
-      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">تقدير مؤهل (${i.name})</td>
-      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
-    </tr>
-  `).join('') + `
-    <tr style="border-bottom: 1px solid #fcd34d;">
-      <td style="padding: 6px 10px; font-weight: 700; color: #78350f;">مؤهل (بدون معدل)</td>
-      <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
-    </tr>
-  `;
+  const grScope = getCriterionTargetDegree(gr);
+  let grScopeBadge = '';
+  if (grScope === 'master') {
+    grScopeBadge = `<span style="background: #1e40af; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">مخصص لمنح الماجستير فقط</span>`;
+  } else if (grScope === 'phd') {
+    grScopeBadge = `<span style="background: #7e22ce; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">مخصص لمنح الدكتوراه فقط</span>`;
+  } else if (grScope === 'none') {
+    grScopeBadge = `<span style="background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">معيار معطّل كلياً</span>`;
+  } else {
+    grScopeBadge = `<span style="background: #059669; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">مُفعّل لكافة الدرجات</span>`;
+  }
+
+  let gradeRows = '';
+  if (grScope === 'master') {
+    gradeRows = `
+      <tr style="background: #eff6ff;">
+        <td colspan="2" style="padding: 6px 10px; font-weight: 900; color: #1e40af; border-bottom: 2px solid #bfdbfe;">
+          🎓 تقدير المؤهل الأكاديمي السابق لمتنافسي الماجستير (شهادة البكالوريوس):
+        </td>
+      </tr>
+      ${(gr.items || []).map(i => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">تقدير بكالوريوس (${i.name})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+        </tr>
+      `).join('')}
+      <tr style="border-bottom: 1px solid #fcd34d;">
+        <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">مؤهل بكالوريوس (بدون معدل / بدون تقدير)</td>
+        <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
+      </tr>
+      <tr style="background: #f8fafc; border-top: 1.5px dashed #cbd5e1;">
+        <td colspan="2" style="padding: 6px 10px; font-size: 0.76rem; color: #64748b; font-weight: 700;">
+          📌 <strong>ملاحظة تنظيمية معتمدة:</strong> يُطبّق هذا المعيار حصرياً على متنافسي منح الماجستير بناءً على تقدير شهادة البكالوريوس، ولا يُحتسب لمتنافسي منح الدكتوراه بقرار اللجنة.
+        </td>
+      </tr>
+    `;
+  } else if (grScope === 'phd') {
+    gradeRows = `
+      <tr style="background: #faf5ff;">
+        <td colspan="2" style="padding: 6px 10px; font-weight: 900; color: #7e22ce; border-bottom: 2px solid #e9d5ff;">
+          🎓 تقدير المؤهل الأكاديمي السابق لمتنافسي الدكتوراه (شهادة الماجستير):
+        </td>
+      </tr>
+      ${(gr.items || []).map(i => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">تقدير ماجستير (${i.name})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+        </tr>
+      `).join('')}
+      <tr style="border-bottom: 1px solid #fcd34d;">
+        <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">مؤهل ماجستير (بدون معدل / بدون تقدير)</td>
+        <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
+      </tr>
+      <tr style="background: #f8fafc; border-top: 1.5px dashed #cbd5e1;">
+        <td colspan="2" style="padding: 6px 10px; font-size: 0.76rem; color: #64748b; font-weight: 700;">
+          📌 <strong>ملاحظة تنظيمية معتمدة:</strong> يُطبّق هذا المعيار حصرياً على متنافسي منح الدكتوراه بناءً على تقدير شهادة الماجستير.
+        </td>
+      </tr>
+    `;
+  } else if (grScope === 'none') {
+    gradeRows = `
+      <tr>
+        <td colspan="2" style="padding: 10px; text-align: center; color: #991b1b; font-weight: 800; background: #fef2f2;">
+          تم تعطيل احتساب معيار التقدير الأكاديمي لكافة المتقدمين بقرار من اللجنة.
+        </td>
+      </tr>
+    `;
+  } else {
+    // all
+    gradeRows = `
+      <tr style="background: #f0fdf4;">
+        <td colspan="2" style="padding: 6px 10px; font-weight: 900; color: #166534; border-bottom: 1.5px solid #bbf7d0;">
+          🎓 أ- متنافسو منح الماجستير (المؤهل السابق المحتسب: شهادة البكالوريوس):
+        </td>
+      </tr>
+      ${(gr.items || []).map(i => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">تقدير مؤهل البكالوريوس (${i.name})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+        </tr>
+      `).join('')}
+      <tr style="border-bottom: 1px solid #fcd34d;">
+        <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">مؤهل بكالوريوس (بدون معدل / بدون تقدير)</td>
+        <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
+      </tr>
+      <tr style="background: #faf5ff;">
+        <td colspan="2" style="padding: 6px 10px; font-weight: 900; color: #7e22ce; border-bottom: 1.5px solid #e9d5ff;">
+          🎓 ب- متنافسو منح الدكتوراه (المؤهل السابق المحتسب: شهادة الماجستير):
+        </td>
+      </tr>
+      ${(gr.items || []).map(i => `
+        <tr style="border-bottom: 1px solid #fcd34d;">
+          <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">تقدير مؤهل الماجستير (${i.name})</td>
+          <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #166534; background: #f0fdf4;">${i.points} نقاط</td>
+        </tr>
+      `).join('')}
+      <tr style="border-bottom: 1px solid #fcd34d;">
+        <td style="padding: 5px 12px; font-weight: 700; color: #78350f;">مؤهل ماجستير (بدون معدل / بدون تقدير)</td>
+        <td style="padding: 5px 10px; text-align: center; font-weight: 900; color: #991b1b; background: #fef2f2;">0 نقاط</td>
+      </tr>
+    `;
+  }
 
   // 5. المعايير المخصصة
-  // 5. المعايير المخصصة
   const custom = cData.customCriteria || [];
-  const activeCustom = custom.filter(c => c.enabled && (c.targetDegree === 'all' || c.targetDegree === 'master' || c.targetDegree === 'phd'));
+  const activeCustom = custom.filter(c => c && c.enabled && (c.targetDegree === 'all' || c.targetDegree === 'master' || c.targetDegree === 'phd'));
   
   const arabicNumbers = ['⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
-  let totalCustomPoints = 0;
 
   const customSection = activeCustom.map((c, idx) => {
     const itype = c.indicatorType || 'binary';
@@ -6234,7 +6417,6 @@ function renderCriteriaDoc() {
     }
 
     if (cEffectiveMax <= 0) cEffectiveMax = 5;
-    totalCustomPoints += cEffectiveMax;
 
     const ordSymbol = arabicNumbers[idx] || `(${idx + 5})`;
 
@@ -6259,12 +6441,37 @@ function renderCriteriaDoc() {
     `;
   }).join('');
 
-  // حساب مجموع سقف النقاط بدقة ومطابقة تامة للمنظومة
-  const maxSeniority = (sen && sen.enabled !== false) ? (sen.maxPoints || 10) : 0;
-  const maxAge = (age && age.enabled !== false) ? (age.maxPoints || 5) : 0;
-  const maxSpec = (spec && spec.enabled !== false) ? (spec.maxPoints || 5) : 0;
-  const maxGrade = (gr && gr.enabled !== false) ? (gr.maxPoints || 5) : 0;
-  const totalMax = maxSeniority + maxAge + maxSpec + maxGrade + totalCustomPoints;
+  // حساب أسقف النقاط بدقة متناهية للماجستير والدكتوراه
+  const maxSeniority = (sen && sen.enabled !== false) ? (parseFloat(sen.maxPoints) || 10) : 0;
+  const maxAge = (age && age.enabled !== false) ? (parseFloat(age.maxPoints) || 5) : 0;
+  const maxSpec = (spec && spec.enabled !== false) ? (parseFloat(spec.maxPoints) || 5) : 0;
+  const maxGrade = (gr && gr.enabled !== false) ? (parseFloat(gr.maxPoints) || 5) : 0;
+
+  let masterCeiling = 0;
+  let phdCeiling = 0;
+
+  if (isCriterionActiveForDegree(sen, 'ماجستير')) masterCeiling += maxSeniority;
+  if (isCriterionActiveForDegree(age, 'ماجستير')) masterCeiling += maxAge;
+  if (isCriterionActiveForDegree(spec, 'ماجستير')) masterCeiling += maxSpec;
+  if (isCriterionActiveForDegree(gr, 'ماجستير')) masterCeiling += maxGrade;
+
+  if (isCriterionActiveForDegree(sen, 'دكتوراه')) phdCeiling += maxSeniority;
+  if (isCriterionActiveForDegree(age, 'دكتوراه')) phdCeiling += maxAge;
+  if (isCriterionActiveForDegree(spec, 'دكتوراه')) phdCeiling += maxSpec;
+  if (isCriterionActiveForDegree(gr, 'دكتوراه')) phdCeiling += maxGrade;
+
+  activeCustom.forEach(c => {
+    const pts = parseFloat(c.maxPoints) || 5;
+    if (isCriterionActiveForDegree(c, 'ماجستير')) masterCeiling += pts;
+    if (isCriterionActiveForDegree(c, 'دكتوراه')) phdCeiling += pts;
+  });
+
+  let ceilingSummaryText = '';
+  if (masterCeiling === phdCeiling) {
+    ceilingSummaryText = `(إجمالي سقف منظومة المفاضلة: ${masterCeiling} نقطة)`;
+  } else {
+    ceilingSummaryText = `(سقف مفاضلة الماجستير: ${masterCeiling} نقطة | سقف مفاضلة الدكتوراه: ${phdCeiling} نقطة)`;
+  }
 
   container.innerHTML = `
     <div id="criteria-doc-printable-area" style="
@@ -6299,7 +6506,7 @@ function renderCriteriaDoc() {
           وثيقة دليل معايير وأوزان المفاضلة المعتمدة
         </h2>
         <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #166534;">
-          العام الجامعي ${academicYear} (إجمالي سقف منظومة المفاضلة: ${totalMax} نقطة)
+          العام الجامعي ${academicYear} ${ceilingSummaryText}
         </p>
       </div>
 
@@ -6386,7 +6593,10 @@ function renderCriteriaDoc() {
       <div style="margin-bottom: 10px;">
         <h3 style="background: linear-gradient(135deg,#fbbf24,#f59e0b); color:#451a03; padding: 5px 12px; border-radius: 5px; font-size: 0.88rem; font-weight: 900; margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center;">
           <span>④ معيار تقدير المؤهل الدراسي السابق</span>
-          <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxGrade} نقاط</span>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            ${grScopeBadge}
+            <span style="background: #b45309; color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.75rem;">الوزن الأعلى: ${maxGrade} نقاط</span>
+          </div>
         </h3>
         <table style="width:100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #fcd34d; border-radius: 6px; overflow: hidden; background: #fff;">
           <thead>

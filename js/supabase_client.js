@@ -50,7 +50,21 @@ async function syncCandidatesFromSupabase() {
             const criteriaSetting = sData.find(s => s.key === 'global_criteria');
             if (criteriaSetting && criteriaSetting.value) {
                 const remoteCriteria = criteriaSetting.value;
-                const localCustom = (state.criteria && state.criteria.customCriteria) ? state.criteria.customCriteria : [];
+                const localCriteria = state.criteria || {};
+
+                // الحفاظ على نطاقات التفعيل targetDegree والخصائص المعدلة محلياً
+                const coreKeys = ['seniority', 'age', 'specialization', 'grade'];
+                coreKeys.forEach(k => {
+                    if (localCriteria[k] && localCriteria[k].targetDegree !== undefined) {
+                        if (!remoteCriteria[k]) remoteCriteria[k] = {};
+                        // إذا كان لدى المستخدم اختيار محلي، نحافظ عليه
+                        remoteCriteria[k].targetDegree = localCriteria[k].targetDegree;
+                        remoteCriteria[k].enabled = localCriteria[k].enabled;
+                        if (localCriteria[k].maxPoints) remoteCriteria[k].maxPoints = localCriteria[k].maxPoints;
+                    }
+                });
+
+                const localCustom = (localCriteria && localCriteria.customCriteria) ? localCriteria.customCriteria : [];
                 const remoteCustom = (remoteCriteria && remoteCriteria.customCriteria) ? remoteCriteria.customCriteria : [];
 
                 const allItems = [...remoteCustom, ...localCustom].filter(c => c && c.id && c.id !== 'c1' && c.id !== 'c2');
@@ -62,12 +76,14 @@ async function syncCandidatesFromSupabase() {
                     if (isWork) {
                         if (!foundWorkPractice) {
                             foundWorkPractice = true;
+                            const localWp = localCustom.find(lc => lc.id === 'work_practice');
+                            const targetDeg = (localWp && localWp.targetDegree) ? localWp.targetDegree : (c.targetDegree || 'all');
                             uniqueMap['work_practice'] = {
                                 id: 'work_practice',
                                 name: 'الممارسة الفعلية للوظيفة',
                                 maxPoints: 5,
                                 indicatorType: 'binary',
-                                targetDegree: c.targetDegree || 'all',
+                                targetDegree: targetDeg,
                                 enabled: c.enabled !== false,
                                 config: {
                                     options: [
@@ -108,7 +124,7 @@ async function syncCandidatesFromSupabase() {
                     };
                 }
 
-                state.criteria = remoteCriteria;
+                state.criteria = { ...localCriteria, ...remoteCriteria };
                 state.criteria.customCriteria = Object.values(uniqueMap);
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
@@ -224,10 +240,15 @@ async function uploadAllDataToSupabase() {
 async function syncCriteriaToSupabase(criteria) {
     if (!supabaseClient && !initSupabase()) return false;
     try {
-        await supabaseClient.from('system_settings').upsert([
-            { key: 'global_criteria', value: criteria }
-        ]);
-        console.log('✅ تم مزامنة المعايير المخصصة أونلاين على Supabase بنجاح.');
+        const cleanCriteria = JSON.parse(JSON.stringify(criteria || state.criteria || {}));
+        const { error } = await supabaseClient.from('system_settings').upsert([
+            { key: 'global_criteria', value: cleanCriteria, updated_at: new Date().toISOString() }
+        ], { onConflict: 'key' });
+        if (error) {
+            console.warn('Supabase criteria upsert error:', error);
+            return false;
+        }
+        console.log('✅ تم مزامنة المعايير أونلاين على Supabase بنجاح.');
         return true;
     } catch (e) {
         console.warn('تنبيه: تعذر مزامنة المعايير أونلاين على Supabase:', e);
