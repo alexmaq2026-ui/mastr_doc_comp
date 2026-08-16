@@ -4738,29 +4738,175 @@ function deleteCommitteeMember(index) {
   }
 }
 
-function exportReportToExcel() {
-  const rankedList = getRankedCandidates();
-  const exportData = rankedList.map(c => ({
-    'الترتيب': c.rank,
-    'اسم الموظف/المتنافس': c.name,
-    'الدرجة المطلوب التنافس عليها': c.degree,
-    'التخصص': c.specialization,
-    'تاريخ التعيين': c.hiring_univ || c.hiring_service,
-    'سنة الميلاد': c.birth_date,
-    'التقدير': c.grade,
-    'نقاط الأقدمية': c.scores.seniorityScore,
-    'نقاط العمر': c.scores.ageScore,
-    'نقاط التخصص': c.scores.specScore,
-    'نقاط التقدير': c.scores.gradeScore,
-    'المجموع الكلي': c.scores.totalScore,
-    'نتيجة التنافس': c.status,
-    'تطوير وتمليك النظام': 'ماقتك للحلول البرمجية (MAQATECH SOFTWARE SOLUTIONS) © 2026'
-  }));
+// دوال مساعدة موحدة لتنسيق وتصدير بيانات المتنافسين إلى Excel
+function buildCandidateExportRow(c, idx) {
+  const activeCustom = (state.criteria && state.criteria.customCriteria || []).filter(item => item.enabled);
+  const rawHiring = (c.hiring_univ || c.hiring_service || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+  const rawBirth  = (c.birth_date || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+  const currentYear = (state.settings && state.settings.referenceYear) || 2026;
+  const birthYear = parseInt(c.birth_date) || (c.birth_date ? (c.birth_date.match(/(\d{4})/) || [])[1] : 0);
+  const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
 
-  const ws = XLSX.utils.json_to_sheet(exportData);
+  const row = {
+    'م': idx + 1,
+    'اسم الموظف المتنافس': c.name,
+    'الدرجة المطلوبة': c.degree,
+    'التخصص': c.specialization || '-',
+    'تاريخ التعيين بالخدمة/الجامعة': rawHiring,
+    'تاريخ الميلاد': rawBirth,
+    'العمر المحسوب (سنة)': calculatedAge,
+    'سنة التخرج': c.grad_year || '-',
+    'التقدير الأكاديمي': c.grade || '-'
+  };
+
+  activeCustom.forEach(custom => {
+    const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+      ? c.scores.customScores[custom.id]
+      : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) || 0 : 0);
+    const itype = custom.indicatorType || 'binary';
+    let dispLabel = '';
+    if (itype === 'binary') {
+      const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
+        ? custom.config.options
+        : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
+      const matched = bOpts.find(o => o.points === computedPts);
+      dispLabel = matched ? matched.label : (computedPts >= 5 ? 'مستمر' : 'متاح');
+    } else {
+      dispLabel = `${computedPts}`;
+    }
+    const colName = (custom.name && custom.name.includes('الممارسة')) ? 'الاستمرارية' : custom.name;
+    row[colName] = dispLabel;
+  });
+
+  return row;
+}
+
+function buildRankedCandidateExportRow(c) {
+  const activeCustom = (state.criteria && state.criteria.customCriteria || []).filter(item => item.enabled);
+  const rawHiring = (c.hiring_univ || c.hiring_service || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+  const rawBirth  = (c.birth_date || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+  const currentYear = (state.settings && state.settings.referenceYear) || 2026;
+  const birthYear = parseInt(c.birth_date) || (c.birth_date ? (c.birth_date.match(/(\d{4})/) || [])[1] : 0);
+  const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
+
+  const row = {
+    'الترتيب': c.rank || '-',
+    'اسم الموظف المتنافس': c.name,
+    'الدرجة': c.degree,
+    'التخصص': c.specialization || '-',
+    'تاريخ التعيين': rawHiring,
+    'تاريخ الميلاد (العمر)': `${rawBirth} (${calculatedAge} سنة)`,
+    'التقدير': c.grade || '-',
+    'نقاط الأقدمية (10)': (c.scores && c.scores.seniorityScore !== undefined) ? c.scores.seniorityScore : 0,
+    'نقاط العمر (5)': (c.scores && c.scores.ageScore !== undefined) ? c.scores.ageScore : 0,
+    'نقاط التخصص (5)': (c.scores && c.scores.specScore !== undefined) ? c.scores.specScore : 0,
+    'نقاط التقدير (5)': (c.scores && c.scores.gradeScore !== undefined) ? c.scores.gradeScore : 0
+  };
+
+  activeCustom.forEach(custom => {
+    const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+      ? c.scores.customScores[custom.id]
+      : 0;
+    const colName = (custom.name && custom.name.includes('الممارسة')) ? `نقاط الاستمرارية (${custom.maxPoints || 5})` : `نقاط ${custom.name} (${custom.maxPoints || 5})`;
+    row[colName] = computedPts;
+  });
+
+  row['المجموع الكلي'] = (c.scores && c.scores.totalScore !== undefined) ? c.scores.totalScore : 0;
+  row['نتيجة التنافس'] = c.status || (c.rank <= (c.degree === 'ماجستير' ? ((state.settings && state.settings.masterGrantsCount) || 3) : ((state.settings && state.settings.phdGrantsCount) || 3)) ? 'مقبول' : 'خارج خط المنح');
+  row['معيار الحسم والترجيح'] = c.tieBreaker || '—';
+
+  return row;
+}
+
+// 1. تصدير كشف وسجل المتنافسين الأولي (Excel)
+function exportCandidatesToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة تصدير الإكسل غير محملة');
+    return;
+  }
+  const degreeFilter = (document.getElementById('filter-degree') ? document.getElementById('filter-degree').value : '')
+    || (document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '');
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "مصفوفة المفاضلة المعتمدة");
-  XLSX.writeFile(wb, "مصفوفة_مفاضلة_جامعة_صنعاء_2026.xlsx");
+
+  if (degreeFilter === 'ماجستير') {
+    const list = (state.candidates || []).filter(c => c.degree === 'ماجستير');
+    const data = list.map((c, i) => buildCandidateExportRow(c, i));
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "سجل متنافسي الماجستير");
+    XLSX.writeFile(wb, "سجل_متنافسي_الماجستير_جامعة_صنعاء_2026.xlsx");
+  } else if (degreeFilter === 'دكتوراه') {
+    const list = (state.candidates || []).filter(c => c.degree === 'دكتوراه');
+    const data = list.map((c, i) => buildCandidateExportRow(c, i));
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "سجل متنافسي الدكتوراه");
+    XLSX.writeFile(wb, "سجل_متنافسي_الدكتوراه_جامعة_صنعاء_2026.xlsx");
+  } else {
+    const masters = (state.candidates || []).filter(c => c.degree === 'ماجستير');
+    const phds = (state.candidates || []).filter(c => c.degree === 'دكتوراه');
+    
+    const wsMaster = XLSX.utils.json_to_sheet(masters.map((c, i) => buildCandidateExportRow(c, i)));
+    const wsPhd = XLSX.utils.json_to_sheet(phds.map((c, i) => buildCandidateExportRow(c, i)));
+    const wsAll = XLSX.utils.json_to_sheet((state.candidates || []).map((c, i) => buildCandidateExportRow(c, i)));
+
+    XLSX.utils.book_append_sheet(wb, wsMaster, "متنافسو الماجستير");
+    XLSX.utils.book_append_sheet(wb, wsPhd, "متنافسو الدكتوراه");
+    XLSX.utils.book_append_sheet(wb, wsAll, "السجل الشامل العام");
+    XLSX.writeFile(wb, "سجل_المتنافسين_العام_جامعة_صنعاء_2026.xlsx");
+  }
+}
+
+// 2. تصدير مصفوفة التنافس والترتيب التلقائي (Excel)
+function exportScoringMatrixToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة تصدير الإكسل غير محملة');
+    return;
+  }
+  const degree = document.getElementById('filter-rankings-degree') ? document.getElementById('filter-rankings-degree').value : 'ماجستير';
+  const ranked = getRankedCandidates(degree);
+
+  const wb = XLSX.utils.book_new();
+  const data = ranked.map(c => buildRankedCandidateExportRow(c));
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  const sheetName = degree === 'ماجستير' ? "مصفوفة الماجستير" : "مصفوفة الدكتوراه";
+  const fileName = degree === 'ماجستير' ? "مصفوفة_مفاضلة_الماجستير_جامعة_صنعاء_2026.xlsx" : "مصفوفة_مفاضلة_الدكتوراه_جامعة_صنعاء_2026.xlsx";
+
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, fileName);
+}
+
+// 3. تصدير التقرير التفصيلي والنتائج الختامية (Excel)
+function exportReportToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة تصدير الإكسل غير محملة');
+    return;
+  }
+  const degreeFilter = document.getElementById('report-degree-filter') ? document.getElementById('report-degree-filter').value : 'الكل';
+
+  const wb = XLSX.utils.book_new();
+
+  if (degreeFilter === 'ماجستير') {
+    const ranked = getRankedCandidates('ماجستير');
+    const ws = XLSX.utils.json_to_sheet(ranked.map(c => buildRankedCandidateExportRow(c)));
+    XLSX.utils.book_append_sheet(wb, ws, "نتائج مفاضلة الماجستير");
+    XLSX.writeFile(wb, "تقرير_مفاضلة_الماجستير_جامعة_صنعاء_2026.xlsx");
+  } else if (degreeFilter === 'دكتوراه') {
+    const ranked = getRankedCandidates('دكتوراه');
+    const ws = XLSX.utils.json_to_sheet(ranked.map(c => buildRankedCandidateExportRow(c)));
+    XLSX.utils.book_append_sheet(wb, ws, "نتائج مفاضلة الدكتوراه");
+    XLSX.writeFile(wb, "تقرير_مفاضلة_الدكتوراه_جامعة_صنعاء_2026.xlsx");
+  } else {
+    const masters = getRankedCandidates('ماجستير');
+    const phds = getRankedCandidates('دكتوراه');
+
+    const wsMaster = XLSX.utils.json_to_sheet(masters.map(c => buildRankedCandidateExportRow(c)));
+    const wsPhd = XLSX.utils.json_to_sheet(phds.map(c => buildRankedCandidateExportRow(c)));
+
+    XLSX.utils.book_append_sheet(wb, wsMaster, "مفاضلة الماجستير");
+    XLSX.utils.book_append_sheet(wb, wsPhd, "مفاضلة الدكتوراه");
+    XLSX.writeFile(wb, "التقرير_التفصيلي_الشامل_لمفاضلة_جامعة_صنعاء_2026.xlsx");
+  }
 }
 
 // ==========================================
@@ -5611,22 +5757,33 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
 }
 
 function exportAnalyticsToExcel() {
-  const candidates = getRankedCandidates();
-  const exportData = candidates.map(c => {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة تصدير الإكسل غير محملة');
+    return;
+  }
+  const masters = getRankedCandidates('ماجستير');
+  const phds = getRankedCandidates('دكتوراه');
+
+  function mapAnalytics(c) {
     const analysis = calculateCandidateStrengthsAndWeaknesses(c);
     return {
-      'اسم الموظف/المتنافس': c.name,
+      'الترتيب': c.rank || '-',
+      'اسم الموظف المتنافس': c.name,
       'الدرجة': c.degree,
-      'التخصص': c.specialization,
-      'المجموع الكلي': c.scores.totalScore,
-      'نقاط القوة البارزة': analysis.strengths.join(' | '),
-      'نقاط الضعف والتحديات': analysis.weaknesses.join(' | ')
+      'التخصص': c.specialization || '-',
+      'المجموع الكلي': (c.scores && c.scores.totalScore !== undefined) ? c.scores.totalScore : 0,
+      'الحالة': c.status || 'خارج خط المنح',
+      'نقاط القوة البارزة': (analysis && analysis.strengths) ? analysis.strengths.join(' | ') : '—',
+      'نقاط الضعف والتحديات': (analysis && analysis.weaknesses) ? analysis.weaknesses.join(' | ') : '—'
     };
-  });
+  }
 
-  const ws = XLSX.utils.json_to_sheet(exportData);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "تحليل القوة والضعف");
+  const wsMaster = XLSX.utils.json_to_sheet(masters.map(c => mapAnalytics(c)));
+  const wsPhd = XLSX.utils.json_to_sheet(phds.map(c => mapAnalytics(c)));
+
+  XLSX.utils.book_append_sheet(wb, wsMaster, "تحليل متنافسي الماجستير");
+  XLSX.utils.book_append_sheet(wb, wsPhd, "تحليل متنافسي الدكتوراه");
   XLSX.writeFile(wb, "تقرير_التحليل_والرقابة_جامعة_صنعاء_2026.xlsx");
 }
 

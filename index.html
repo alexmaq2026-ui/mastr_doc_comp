@@ -311,6 +311,7 @@
               </button>
             </div>
             <button class="btn btn-outline" id="btn-print-candidates" onclick="printCandidatesRegisterPDF()" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; font-weight: 700; border: none;">🖨️ طباعة سجل المتنافسين (PDF)</button>
+            <button class="btn btn-secondary" onclick="exportCandidatesToExcel()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 700; border: none;">📊 تصدير سجل المتنافسين (Excel)</button>
             <button class="btn btn-secondary" id="btn-import-excel" onclick="document.getElementById('file-excel-import').click()">استيراد ملف إكسل</button>
             <input type="file" id="file-excel-import" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelImport(event)">
             <button class="btn btn-primary" id="btn-add-candidate" onclick="showAddCandidateModal()">إضافة متنافس جديد</button>
@@ -370,6 +371,9 @@
             </button>
             <button class="btn btn-primary" onclick="printScoringMatrixFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
               🖨️ طباعة مصفوفة نهائية
+            </button>
+            <button class="btn btn-secondary" onclick="exportScoringMatrixToExcel()" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: #ffffff; font-weight: 700; border: none;">
+              📊 تصدير Excel
             </button>
           </div>
         </div>
