@@ -1163,7 +1163,157 @@ function renderCandidatesTable() {
 }
 
 function printCandidatesRegisterPDF() {
+  const degreeFilter = (document.getElementById('filter-degree') ? document.getElementById('filter-degree').value : '')
+    || (document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '');
+  const search = (document.getElementById('search-candidates') ? document.getElementById('search-candidates').value : '').trim().toLowerCase();
+
+  let list = state.candidates || [];
+  if (degreeFilter) list = list.filter(c => c.degree === degreeFilter);
+  if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || (c.specialization && c.specialization.toLowerCase().includes(search)));
+
+  if (list.length === 0) {
+    alert('لا يوجد متنافسون مطابقون للدرجة المحددة لطباعة السجل.');
+    return;
+  }
+
+  // ترتيب المتنافسين
+  list = [...list].sort((a, b) => a.id - b.id);
+
+  const printArea = document.getElementById('candidates-register-print-area');
+  if (!printArea) {
+    window.print();
+    return;
+  }
+
+  const currentYear = state.settings.referenceYear || 2026;
+  const activeCustom = (state.criteria.customCriteria || []).filter(c => c.enabled);
+
+  function getDisplayName(name) {
+    if (name && name.includes('الممارسة')) return 'الاستمرارية';
+    return name || '';
+  }
+
+  const degreeTitle = degreeFilter === 'ماجستير'
+    ? 'كشف الموظفين المتنافسين على منح الماجستير'
+    : degreeFilter === 'دكتوراه'
+      ? 'كشف الموظفين المتنافسين على منح الدكتوراه'
+      : 'السجل العام للموظفين المتنافسين على منح الدراسات العليا (ماجستير ودكتوراه)';
+
+  const committeeList = state.committeeMembers || [];
+
+  const rowsHTML = list.map((c, idx) => {
+    const rawHiring = (c.hiring_univ || c.hiring_service || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+    const rawBirth  = (c.birth_date || '-').replace('00:00:00 ', '').replace('00:00:00', '').trim();
+    const birthYear = parseInt(c.birth_date) || (c.birth_date ? (c.birth_date.match(/(\d{4})/) || [])[1] : 0);
+    const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
+
+    const customCells = activeCustom.map(custom => {
+      const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+        ? c.scores.customScores[custom.id]
+        : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) || 0 : 0);
+      const itype = custom.indicatorType || 'binary';
+      let dispLabel = '';
+      if (itype === 'binary') {
+        const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
+          ? custom.config.options
+          : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
+        const matched = bOpts.find(o => o.points === computedPts);
+        dispLabel = matched ? matched.label : (computedPts >= 5 ? 'مستمر' : 'متاح');
+      } else {
+        dispLabel = `${computedPts}`;
+      }
+      return `<td style="text-align: center; font-weight: 700; font-size: 0.82rem; padding: 6px 4px;">${dispLabel}</td>`;
+    }).join('');
+
+    return `
+      <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+        <td style="text-align: center; font-weight: 800; font-size: 0.85rem; padding: 6px 4px;">${idx + 1}</td>
+        <td style="font-weight: 800; font-size: 0.88rem; padding: 6px 8px; color: #0f172a;">${c.name}</td>
+        <td style="text-align: center; font-weight: 800; font-size: 0.82rem; padding: 6px 4px; color: ${c.degree === 'ماجستير' ? '#1e40af' : '#7e22ce'};">${c.degree}</td>
+        <td style="font-size: 0.82rem; font-weight: 600; padding: 6px 8px;">${c.specialization || '-'}</td>
+        <td style="text-align: center; font-size: 0.82rem; padding: 6px 4px;">${rawHiring}</td>
+        <td style="text-align: center; font-size: 0.82rem; padding: 6px 4px;">${rawBirth} ${calculatedAge !== '-' ? `(${calculatedAge} سنة)` : ''}</td>
+        <td style="text-align: center; font-size: 0.82rem; padding: 6px 4px;">${c.grad_year || '-'}</td>
+        <td style="text-align: center; font-weight: 700; font-size: 0.82rem; padding: 6px 4px;">${c.grade || '-'}</td>
+        ${customCells}
+      </tr>
+    `;
+  }).join('');
+
+  const signaturesHTML = committeeList.length > 0 ? `
+    <div style="margin-top: 20px; page-break-inside: avoid; break-inside: avoid;">
+      <h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 900; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 3px;">
+        ✍️ توقيعات واعتمادات لجنة المفاضلة والتنافس الإلكتروني:
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 6px;">
+        ${committeeList.map(m => `
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; text-align: center; font-size: 0.76rem;">
+            <div style="font-weight: 900; color: #0f172a; margin-bottom: 2px;">${m.name}</div>
+            <div style="color: #1e3a8a; font-weight: 700; font-size: 0.7rem; margin-bottom: 8px;">${m.committeeRole || m.role || 'عضو اللجنة'}</div>
+            <div style="border-top: 1px dashed #94a3b8; padding-top: 3px; color: #64748b; font-size: 0.68rem;">
+              ${m.signature ? `<img src="${m.signature}" style="max-height: 26px; max-width: 90px; object-fit: contain;">` : 'التوقيع: .....................'}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  printArea.innerHTML = `
+    <div style="font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #0f172a; padding: 6px 10px; background: #ffffff;">
+      <!-- الترويسة الرسمية -->
+      <div style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="text-align: right;">
+          <h4 style="margin: 0; font-size: 0.8rem; color: #475569; font-weight: 800;">الجمهورية اليمنية</h4>
+          <h4 style="margin: 2px 0 0 0; font-size: 0.8rem; color: #475569; font-weight: 800;">وزارة التعليم العالي والبحث العلمي</h4>
+          <h3 style="margin: 2px 0 0 0; font-size: 0.92rem; color: #0f172a; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h3>
+          <span style="font-size: 0.76rem; color: #1e3a8a; font-weight: 800;">لجنة المفاضلة والتنافس الإلكتروني</span>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 1.1rem; font-weight: 900; color: #1e3a8a; margin-bottom: 2px; background: #eff6ff; padding: 4px 14px; border-radius: 6px; border: 1.5px solid #bfdbfe;">
+            ${degreeTitle}
+          </div>
+          <div style="font-size: 0.8rem; color: #059669; font-weight: 800;">
+            للعام الجامعي ${currentYear - 1}/${currentYear}م
+          </div>
+        </div>
+        <div style="text-align: left; font-size: 0.78rem; color: #475569; font-weight: 700;">
+          <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-YE')}</div>
+          <div><strong>إجمالي المقيدين:</strong> <span style="color: #1e3a8a; font-weight: 900; font-size: 0.95rem;">${list.length}</span> متنافساً</div>
+          <div><strong>الحالة:</strong> كشف رسمي معتمد</div>
+        </div>
+      </div>
+
+      <!-- جدول البيانات -->
+      <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.8rem;" border="1" bordercolor="#cbd5e1">
+        <thead>
+          <tr style="background: #1e3a8a; color: #ffffff;">
+            <th style="padding: 6px 4px; text-align: center; width: 35px;">م</th>
+            <th style="padding: 6px 8px; text-align: right;">اسم الموظف المتنافس</th>
+            <th style="padding: 6px 6px; text-align: center; width: 70px;">الدرجة</th>
+            <th style="padding: 6px 8px; text-align: right;">التخصص</th>
+            <th style="padding: 6px 6px; text-align: center; width: 85px;">تاريخ التعيين</th>
+            <th style="padding: 6px 6px; text-align: center; width: 110px;">تاريخ الميلاد</th>
+            <th style="padding: 6px 6px; text-align: center; width: 65px;">التخرج</th>
+            <th style="padding: 6px 6px; text-align: center; width: 65px;">التقدير</th>
+            ${activeCustom.map(c => `<th style="padding: 6px 6px; text-align: center; width: 75px;">${getDisplayName(c.name)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHTML}
+        </tbody>
+      </table>
+
+      <!-- التوقيعات -->
+      ${signaturesHTML}
+    </div>
+  `;
+
+  document.body.classList.add('is-candidates-register-print');
   window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-candidates-register-print');
+  }, 1000);
 }
 
 function toggleAnnotationsPanel(candidateId) {
@@ -1556,7 +1706,8 @@ function generateCandidateCardHTML(candidate) {
 
 // دالة طباعة جميع بطاقات المتنافسين دفعة واحدة (النسخة النهائية)
 function printAllCandidateCardsFinal() {
-  const degreeFilter = document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '';
+  const degreeFilter = (document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '')
+    || (document.getElementById('filter-degree') ? document.getElementById('filter-degree').value : '');
 
   let candidatesToPrint = [];
   if (degreeFilter === 'ماجستير') {
@@ -1589,7 +1740,8 @@ function printAllCandidateCardsFinal() {
 
 // دالة طباعة جميع بطاقات المتنافسين دفعة واحدة (مسودة للمراجعة)
 function printAllCandidateCardsDraft() {
-  const degreeFilter = document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '';
+  const degreeFilter = (document.getElementById('select-print-cards-degree') ? document.getElementById('select-print-cards-degree').value : '')
+    || (document.getElementById('filter-degree') ? document.getElementById('filter-degree').value : '');
 
   let candidatesToPrint = [];
   if (degreeFilter === 'ماجستير') {
@@ -2647,12 +2799,26 @@ function setupEventListeners() {
     });
   });
 
-  // البحث والفلترة
+  // البحث والفلترة ومزامنة خيارات الدرجة
   const searchInput = document.getElementById('search-candidates');
   if (searchInput) searchInput.addEventListener('input', renderCandidatesTable);
 
   const degreeFilter = document.getElementById('filter-degree');
-  if (degreeFilter) degreeFilter.addEventListener('change', renderCandidatesTable);
+  const printCardsDegree = document.getElementById('select-print-cards-degree');
+
+  if (degreeFilter) {
+    degreeFilter.addEventListener('change', () => {
+      if (printCardsDegree) printCardsDegree.value = degreeFilter.value;
+      renderCandidatesTable();
+    });
+  }
+
+  if (printCardsDegree) {
+    printCardsDegree.addEventListener('change', () => {
+      if (degreeFilter) degreeFilter.value = printCardsDegree.value;
+      renderCandidatesTable();
+    });
+  }
 
   const rankingsFilter = document.getElementById('filter-rankings-degree');
   if (rankingsFilter) rankingsFilter.addEventListener('change', renderScoringTable);

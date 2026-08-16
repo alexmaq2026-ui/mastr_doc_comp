@@ -2086,3 +2086,46 @@ body {
         margin: 6mm 8mm;
     }
 }
+
+/* ====================================================
+   CSS طباعة كشف وسجل المتنافسين الرسمي (A4 landscape)
+   ==================================================== */
+@media print {
+    body.is-candidates-register-print {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-candidates-register-print header.navbar,
+    body.is-candidates-register-print nav.tabs-nav,
+    body.is-candidates-register-print main.main-container,
+    body.is-candidates-register-print .no-print,
+    body.is-candidates-register-print .btn,
+    body.is-candidates-register-print .modal-backdrop,
+    body.is-candidates-register-print .modal-overlay {
+        display: none !important;
+    }
+    body.is-candidates-register-print #candidates-register-print-area {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+    body.is-candidates-register-print table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    body.is-candidates-register-print tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    body.is-candidates-register-print thead {
+        display: table-header-group !important;
+    }
+    @page {
+        size: A4 landscape;
+        margin: 6mm 8mm;
+    }
+}
