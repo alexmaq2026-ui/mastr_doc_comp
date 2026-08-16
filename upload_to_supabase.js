@@ -34,11 +34,10 @@ const committeeMembersToUpload = initialData.committee.map((m, idx) => ({
     sort_order: idx + 1
 }));
 
-// 3. إعدادات النظام والمعايير والمستخدمين
+// 3. إعدادات النظام والمعايير المعتمدة (دون المساس بحسابات المستخدمين وكلمات مرورهم)
 const systemSettingsToUpload = [
     { key: 'global_settings', value: initialData.settings },
-    { key: 'global_criteria', value: initialData.criteria },
-    { key: 'global_users', value: initialData.users }
+    { key: 'global_criteria', value: initialData.criteria }
 ];
 
 async function upload() {

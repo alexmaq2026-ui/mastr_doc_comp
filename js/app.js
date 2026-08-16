@@ -174,21 +174,10 @@ function handleLoginSubmit(event) {
     const password = passwordInput ? passwordInput.value.trim() : '';
 
     if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
-        state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
+        state.users = (typeof DEFAULT_USERS !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_USERS)) : [];
     }
 
-    let foundUser = state.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-
-    // خيار أمان احتياطي للحسابات الافتراضية الرئيسية
-    if (!foundUser) {
-        const defMatch = DEFAULT_USERS.find(d => d.username.toLowerCase() === username.toLowerCase() && d.password === password);
-        if (defMatch) {
-            foundUser = defMatch;
-            if (!state.users.some(u => u.username === defMatch.username)) {
-                state.users.push({ ...defMatch });
-            }
-        }
-    }
+    const foundUser = state.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
 
     if (foundUser) {
         state.currentUser = foundUser;
@@ -200,7 +189,7 @@ function handleLoginSubmit(event) {
         refreshAllViews();
     } else {
         if (errorMsg) {
-            errorMsg.innerText = 'خطأ: اسم المستخدم أو كلمة المرور غير صحيحة! (مثال: admin / admin123)';
+            errorMsg.innerText = 'خطأ: اسم المستخدم أو كلمة المرور غير صحيحة!';
             errorMsg.style.display = 'block';
         }
     }
@@ -3251,6 +3240,9 @@ function saveUserForm() {
       state.users[userIndex].password = password;
       state.users[userIndex].role = role;
       state.users[userIndex].title = getRoleTitle(role);
+      if (state.currentUser && (state.currentUser.id === editingUserId || state.currentUser.username === username)) {
+        state.currentUser = { ...state.users[userIndex] };
+      }
       alert(`✅ تم تحديث بيانات وتعديل صلاحيات المستخدم (${name}) بنجاح!`);
     }
   } else {
