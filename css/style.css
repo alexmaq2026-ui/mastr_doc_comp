@@ -2140,3 +2140,107 @@ body {
         margin: 6mm 8mm;
     }
 }
+
+/* ==========================================================================
+   TIE-BREAKER INTERACTIVE HOVER & MODAL & PRINT STYLES
+   ========================================================================== */
+.tie-breaker-interactive-cell {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.tie-breaker-interactive-cell:hover {
+    background: rgba(245, 158, 11, 0.15) !important;
+}
+
+.tie-badge-clickable {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tie-badge-clickable:hover {
+    transform: translateY(-2px) scale(1.03);
+    border-color: #f59e0b;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.15));
+}
+.tie-badge-tag {
+    font-size: 0.72rem;
+    color: #fbbf24;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+.tie-badge-reason {
+    font-size: 0.76rem;
+    color: #fef3c7;
+    font-weight: 900;
+}
+.tie-badge-hint {
+    font-size: 0.62rem;
+    color: #fcd34d;
+    opacity: 0.85;
+    margin-top: 1px;
+}
+
+/* Floating Hover Popover */
+#tie-breaker-floating-popover {
+    position: fixed;
+    z-index: 100050;
+    pointer-events: none;
+    display: none;
+    max-width: 380px;
+    background: #0f172a;
+    border: 1.5px solid #f59e0b;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.25);
+    backdrop-filter: blur(12px);
+    color: #f8fafc;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    animation: popoverFadeIn 0.18s ease-out;
+}
+@keyframes popoverFadeIn {
+    from { opacity: 0; transform: scale(0.95) translateY(4px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Print Certificate Specifics */
+body.is-tie-breaker-print * {
+    visibility: hidden !important;
+}
+body.is-tie-breaker-print #tie-breaker-print-certificate,
+body.is-tie-breaker-print #tie-breaker-print-certificate * {
+    visibility: visible !important;
+}
+body.is-tie-breaker-print #tie-breaker-print-certificate {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 15mm 20mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+@media print {
+    body.is-tie-breaker-print {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+}

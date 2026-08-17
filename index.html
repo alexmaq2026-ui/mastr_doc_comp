@@ -246,6 +246,9 @@
 
         <!-- شريط التحكم والإجراءات الرئيسية والاعتماد والتصفير في الأسفل -->
         <div class="bottom-actions-box">
+          <button class="btn-bottom-act btn-act-amber" onclick="openTieBreakingModal()">
+            ⚖️ تراتبية كسر التعادل والمفاضلة الاستثنائية
+          </button>
           <button class="btn-bottom-act btn-act-red" onclick="openLockModal()">
             🔒 اعتماد وإغلاق المفاضلة
           </button>
@@ -944,11 +947,181 @@
     </div>
   </div>
 
+  <!-- نافذة قواعد وتراتبية كسر التعادل والمفاضلة الاستثنائية -->
+  <div class="modal-backdrop" id="modal-tie-breaking-rules" style="display: none;">
+    <div class="modal-dialog" style="max-width: 720px; background: #0f172a; border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85); border-radius: 16px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(15, 23, 42, 0.95)); padding: 16px 22px; border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+        <div>
+          <h3 class="modal-title" style="color: #fbbf24; font-size: 1.15rem; font-weight: 900; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+            <span>⚖️ تراتبية كسر التعادل والمفاضلة الاستثنائية</span>
+          </h3>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; font-weight: 600;">
+            الضوابط الصارمة المعتمدة لحسم المقاعد عند تساوي مجموع النقاط على الحد الفاصل للمقاعد المتاحة
+          </p>
+        </div>
+        <button class="close-btn" onclick="closeTieBreakingModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 22px; max-height: 70vh; overflow-y: auto;">
+        
+        <div style="background: rgba(245, 158, 11, 0.08); border-right: 4px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+          <p style="margin: 0; color: #fde68a; font-size: 0.85rem; font-weight: 700; line-height: 1.6;">
+            📌 <strong>مبدأ العدالة وتكافؤ الفرص:</strong> تُطبق هذه التراتبية بشكل تلقائي وموثق إلكترونياً للفصل بين المتنافسين المتعادلين على المقعد الأخير المتاح وفق التتابع التالي:
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- الخطوة 1: التخصص -->
+          <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px; transition: transform 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #60a5fa; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>🥇 1. مدى احتياج الجامعة للتخصص الدراسي</span>
+              </strong>
+              <span style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المفاضلة الأولى</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← 3 درجات إضافية للتخصصات الأساسية المعتمدة (الوزن 5) مقابل 0 درجات للتخصصات الأخرى
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              يتم ترجيح المتقدم الذي ينتمي تخصصه لقائمة التخصصات ذات الأولوية والاحتياج الأكاديمي للجامعة المحددة في معايير النظام.
+            </div>
+          </div>
+
+          <!-- الخطوة 2: الأقدمية -->
+          <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #fbbf24; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>🥈 2. أقدمية التعيين الفعلي</span>
+              </strong>
+              <span style="background: rgba(245, 158, 11, 0.2); color: #fde68a; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المفاضلة الثانية</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← الأقدم تعييناً في الخدمة المدنية / الجامعة
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              في حال التساوي في معيار التخصص، يُرجح الموظف الأسبق في تاريخ وسنة التعيين الفعلي.
+            </div>
+          </div>
+
+          <!-- الخطوة 3: الاستمرارية -->
+          <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #34d399; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>🥉 3. الاستمرارية / الممارسة الفعلية للوظيفة</span>
+              </strong>
+              <span style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المفاضلة الثالثة</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← المستمر (5 نقاط) يتقدم على المتاح (3 نقاط)
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              في حال التساوي في الأقدمية، يُرجح الموظف القائم على رأس عمله فعلياً والمستمر في أداء مهامه.
+            </div>
+          </div>
+
+          <!-- الخطوة 4: التقدير العلمي -->
+          <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #f472b6; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>🏅 4. تقدير المؤهل العلمي الأكاديمي</span>
+              </strong>
+              <span style="background: rgba(244, 114, 182, 0.2); color: #fbcfe8; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المفاضلة الرابعة</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← ممتاز ثم جيد جداً ثم جيد ثم مقبول
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              في حال استمرار التعادل، يتم الترجيح بحسب التقدير الأكاديمي الأعلى في وثيقة التخرج.
+            </div>
+          </div>
+
+          <!-- الخطوة 5: صغر السن -->
+          <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #a78bfa; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>🎓 5. صغر السن (الفئة العمرية)</span>
+              </strong>
+              <span style="background: rgba(167, 139, 250, 0.2); color: #ddd6fe; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المفاضلة الخامسة</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← الأصغر سناً والأحدث تاريخ ميلاد
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              في حال التساوي في التقدير، يُرجح الأصغر سناً لإتاحة فرصة التأهيل للكفاءات الشابة وفق سياسة الجامعة.
+            </div>
+          </div>
+
+          <!-- الخطوة 6: الإحالة للجنة -->
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #f87171; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                <span>⚖️ 6. الإحالة للجنة المفاضلة</span>
+              </strong>
+              <span style="background: rgba(239, 68, 68, 0.2); color: #fecaca; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">المرحلة الاستثنائية</span>
+            </div>
+            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;">
+              ← في حال التعادل التام في كل ما سبق
+            </div>
+            <div style="color: #94a3b8; font-size: 0.78rem; line-height: 1.4;">
+              يُرفع التقرير لرئيس وأعضاء لجنة المفاضلة والتنافس للبت في المقعد بقرار رسمي ومحضر موقع.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="background: rgba(15, 23, 42, 0.9); padding: 14px 22px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-outline" onclick="switchTab('tab-scoring', 'مصفوفة المفاضلة والترتيب'); closeTieBreakingModal();" style="border-color: #3b82f6; color: #60a5fa; font-weight: 700;">
+          📊 الانتقال لمصفوفة المفاضلة
+        </button>
+        <button class="btn btn-primary" onclick="closeTieBreakingModal()" style="background: linear-gradient(135deg, #d97706, #b45309); font-weight: 800; padding: 8px 24px;">
+          إغلاق النافذة
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- التلميح العائم الفوري للمفاضلة الاستثنائية (Floating Popover) -->
+  <div id="tie-breaker-floating-popover"></div>
+
+  <!-- نافذة التفاصيل والمقارنة الموسعة للمفاضلة الاستثنائية (Detailed Tie-Breaker Modal) -->
+  <div class="modal-backdrop" id="modal-tie-breaker-details" style="display: none;">
+    <div class="modal-dialog" style="max-width: 760px; background: #0b1120; border: 1.5px solid rgba(245, 158, 11, 0.45); box-shadow: 0 25px 60px rgba(0,0,0,0.85); border-radius: 16px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, rgba(217, 119, 6, 0.25), rgba(15, 23, 42, 0.95)); padding: 16px 20px; border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+        <div>
+          <h3 class="modal-title" style="color: #fbbf24; font-size: 1.15rem; font-weight: 900; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+            <span>⚖️ تفاصيل المفاضلة الاستثنائية وكسر التعادل الرسمي</span>
+          </h3>
+          <p style="margin: 0; color: #94a3b8; font-size: 0.8rem; font-weight: 600;">
+            تقرير المقارنة التفصيلي المباشر بين المتنافسين على الحد الفاصل للمقعد الأخير
+          </p>
+        </div>
+        <button class="close-btn" onclick="closeTieBreakerDetailsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body" id="tie-breaker-modal-body" style="padding: 20px; max-height: 72vh; overflow-y: auto;">
+        <!-- يتم ملء المحتوى ديناميكياً عبر JS -->
+      </div>
+
+      <div class="modal-footer" style="background: rgba(15, 23, 42, 0.9); padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <button class="btn btn-primary" onclick="printTieBreakerCertificate()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; display: flex; align-items: center; gap: 6px;">
+          <span>🖨️ طباعة إفادة الحسم الاستثنائي (PDF)</span>
+        </button>
+        <button class="btn btn-secondary" onclick="closeTieBreakerDetailsModal()" style="font-weight: 700; padding: 8px 20px;">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- حاوية الطباعة الرسمية لإفادة كسر التعادل (A4 Single Page Certificate) -->
+  <div id="tie-breaker-print-certificate" style="display: none;"></div>
+
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/xlsx.full.min.js?v=85"></script>
-  <script src="js/initial_data.js?v=85"></script>
-  <script src="js/supabase_client.js?v=85"></script>
-  <script src="js/app.js?v=85"></script>
+  <script src="js/xlsx.full.min.js?v=90"></script>
+  <script src="js/initial_data.js?v=90"></script>
+  <script src="js/supabase_client.js?v=90"></script>
+  <script src="js/app.js?v=90"></script>
 </body>
 </html>

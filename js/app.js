@@ -121,7 +121,20 @@ function initStore() {
               });
             }
           });
+
+          // إزالة أي سجلات مكررة لنفس المتنافس
+          const uniqueMap = {};
+          const cleanList = [];
+          state.candidates.forEach(c => {
+            const k = normalizeArabicString(c.name);
+            if (k && !uniqueMap[k]) {
+              uniqueMap[k] = true;
+              cleanList.push(c);
+            }
+          });
+          state.candidates = cleanList;
         }
+
         if (state.criteria.seniority && state.criteria.seniority.maxPoints === 30) state.criteria.seniority.maxPoints = 10;
         if (state.criteria.age && state.criteria.age.maxPoints === 25) state.criteria.age.maxPoints = 5;
         if (state.criteria.specialization && state.criteria.specialization.maxPoints === 25) state.criteria.specialization.maxPoints = 5;
@@ -738,6 +751,53 @@ function calculateCandidateScore(candidate) {
 function getRankedCandidates(degreeFilter = null) {
   const GRADE_ORDER = { 'ممتاز': 4, 'جيد جداً': 3, 'جيد': 2, 'مقبول': 1, 'بدون': 0 };
 
+  // تصفية وضمان عدم وجود أي سجلات مكررة لنفس المتنافس
+  if (state.candidates && state.candidates.length > 0) {
+    const uniqueMap = {};
+    const cleanList = [];
+    state.candidates.forEach(c => {
+      const k = normalizeArabicString(c.name);
+      if (k && !uniqueMap[k]) {
+        uniqueMap[k] = true;
+        cleanList.push(c);
+      }
+    });
+    state.candidates = cleanList;
+  }
+
+  // احتساب نقاط كسر التعادل للتخصص ديناميكياً (التخصصات المعتمدة ذات الوزن 5 = 3 نقاط، أخرى = 0)
+  function getSpecTieBreakScore(c) {
+    if (!isCriterionActiveForDegree(state.criteria.specialization, c.degree)) return 0;
+    const specName = normalizeArabicString(c.specialization);
+    if (!specName) return 0;
+
+    let items = state.criteria.specialization.items || [];
+    if (c.degree === 'دكتوراه' && state.criteria.specialization.phdItems && state.criteria.specialization.phdItems.length > 0) {
+      items = state.criteria.specialization.phdItems;
+    }
+
+    const matchedItem = items.find(item => {
+      const iName = normalizeArabicString(item.name);
+      return iName && !iName.includes('اخرى') && (iName === specName || specName.includes(iName) || iName.includes(specName));
+    });
+
+    if (matchedItem && (parseFloat(matchedItem.points) || 0) >= 5) {
+      return 3;
+    }
+    return 0;
+  }
+
+  // استخراج درجة الاستمرارية (الممارسة الفعلية للوظيفة)
+  function getContinuityScore(c) {
+    if (c.scores && c.scores.customScores && c.scores.customScores['work_practice'] !== undefined) {
+      return parseFloat(c.scores.customScores['work_practice']) || 0;
+    }
+    if (c.customValues && c.customValues['work_practice'] !== undefined) {
+      return parseFloat(c.customValues['work_practice']) || 0;
+    }
+    return (c.continuity === 'مستمر') ? 5 : 3;
+  }
+
   // دوال مساعدة لاستخراج السنوات
   function getHiringYear(c) {
     let y = parseInt(c.hiring_univ) || parseInt(c.hiring_service) || 0;
@@ -751,52 +811,109 @@ function getRankedCandidates(degreeFilter = null) {
     return y || 0;
   }
 
+  // كشف المعيار الحاسم المباشر بين متنافسين متعادلين (الفائز بالمقعد الأخير وأول المستبعدين)
+  function getDecisiveFactor(a, b) {
+    // 1. التخصص الأكاديمي (3 درجات لتخصصات الوزن 5، و0 لأخرى)
+    const specA = getSpecTieBreakScore(a), specB = getSpecTieBreakScore(b);
+    if (specA !== specB) return 'مدى احتياج التخصص الأكاديمي';
+
+    // 2. أقدمية التعيين الفعلي
+    const hirA = getHiringYear(a), hirB = getHiringYear(b);
+    if (hirA !== hirB) return 'أقدمية التعيين';
+
+    // 3. الاستمرارية والممارسة الفعلية (مستمر 5 ومتاح 3)
+    const contA = getContinuityScore(a), contB = getContinuityScore(b);
+    if (contA !== contB) return 'الاستمرارية (الممارسة الفعلية)';
+
+    // 4. التقدير العلمي الأعلى
+    const gradeA = GRADE_ORDER[a.grade] || 0, gradeB = GRADE_ORDER[b.grade] || 0;
+    if (gradeA !== gradeB) return 'التقدير الأكاديمي';
+
+    // 5. صغر السن
+    const birthA = getBirthYear(a), birthB = getBirthYear(b);
+    if (birthA !== birthB) return 'صغر السن';
+
+    // 6. تعادل تام
+    return 'تعادل تام - يُحال للجنة المفاضلة';
+  }
+
   // دالة معالجة درجة واحدة (ماجستير أو دكتوراه)
   function processDegreeGroup(candidates, limit) {
     if (candidates.length === 0) return candidates;
 
-    // 1. فرز جميع المتنافسين بالنقاط الكلية تنازلياً، ثم بالمعايير الفرعية الاستثنائية
-    function detectCriterion(group) {
-      const hiringYears = new Set(group.map(c => getHiringYear(c)));
-      if (hiringYears.size > 1) return 'أقدمية التعيين';
-      const birthYears  = new Set(group.map(c => getBirthYear(c)));
-      if (birthYears.size > 1)  return 'صغر السن';
-      const grades      = new Set(group.map(c => GRADE_ORDER[c.grade] || 0));
-      if (grades.size > 1)      return 'التقدير الأكاديمي';
-      return 'تعادل تام - يُحال للجنة المفاضلة';
-    }
-
+    // 1. فرز جميع المتنافسين بالتراتبية الصارمة المعتمدة
     candidates.sort((a, b) => {
       if (b.scores.totalScore !== a.scores.totalScore) {
         return b.scores.totalScore - a.scores.totalScore;
       }
+      // 1. التخصص
+      const specTieA = getSpecTieBreakScore(a), specTieB = getSpecTieBreakScore(b);
+      if (specTieB !== specTieA) return specTieB - specTieA;     // 3 درجات للتخصص الأساسي (وزن 5) تتقدم على 0 لأخرى
+
+      // 2. أقدمية التعيين
       const hirA = getHiringYear(a), hirB = getHiringYear(b);
       if (hirA !== hirB) return hirA - hirB;                     // الأقدم تعييناً أولاً
+
+      // 3. الاستمرارية
+      const contA = getContinuityScore(a), contB = getContinuityScore(b);
+      if (contB !== contA) return contB - contA;                 // الأعلى في الاستمرارية (الممارسة الفعلية) أولاً
+
+      // 4. التقدير العلمي
+      const gradeA = GRADE_ORDER[a.grade] || 0, gradeB = GRADE_ORDER[b.grade] || 0;
+      if (gradeB !== gradeA) return gradeB - gradeA;             // الأعلى تقديراً أولاً
+
+      // 5. صغر السن
       const birthA = getBirthYear(a), birthB = getBirthYear(b);
       if (birthA !== birthB) return birthB - birthA;             // الأصغر سناً أولاً
-      return (GRADE_ORDER[b.grade] || 0) - (GRADE_ORDER[a.grade] || 0); // الأعلى تقديراً أولاً
+
+      return 0;
     });
 
-    // 2. تجميع المتنافسين بحسب النقاط الكلية
-    const scoreGroups = {};
-    candidates.forEach(c => {
-      scoreGroups[c.scores.totalScore] = scoreGroups[c.scores.totalScore] || [];
-      scoreGroups[c.scores.totalScore].push(c);
-    });
+    // 2. تصفير ملاحظة الحسم الاستثنائي لجميع المتنافسين أولاً
+    candidates.forEach(c => { c.tieBreaker = null; });
 
-    // 3. الوسام والملاحظة الاستثنائية تظهر فقط لمن هم داخل نطاق المقبولين بالفوز (أو متنافسين معهم على خط الحد)
-    const boundaryScore = candidates[Math.min(limit - 1, candidates.length - 1)].scores.totalScore;
+    // 3. تحديد المفاضلة الاستثنائية بدقة متناهية عند خط الحد الفاصل للمقعد الأخير فقط
+    if (candidates.length > limit) {
+      const lastWinner = candidates[limit - 1];
+      const firstExcluded = candidates[limit];
 
-    candidates.forEach((c, idx) => {
-      const isAcceptedZoneOrBoundary = (idx < limit) || (c.scores.totalScore === boundaryScore);
-      const group = scoreGroups[c.scores.totalScore];
-
-      if (isAcceptedZoneOrBoundary && group && group.length > 1) {
-        c.tieBreaker = detectCriterion(group);
-      } else {
-        c.tieBreaker = null;
+      // تحدث المفاضلة الاستثنائية وتمنح الشارة فقط إذا تساوى الفائز بالمقعد الأخير مع أول المستبعدين في المجموع الكلي
+      if (lastWinner.scores.totalScore === firstExcluded.scores.totalScore) {
+        lastWinner.tieBreaker = getDecisiveFactor(lastWinner, firstExcluded);
+        lastWinner.tieBreakerDetails = {
+          winner: {
+            id: lastWinner.id,
+            name: lastWinner.name,
+            degree: lastWinner.degree,
+            rank: limit,
+            totalScore: lastWinner.scores.totalScore,
+            specialization: lastWinner.specialization,
+            specTieScore: getSpecTieBreakScore(lastWinner),
+            hiringYear: getHiringYear(lastWinner),
+            continuity: lastWinner.continuity || 'مستمر',
+            continuityScore: getContinuityScore(lastWinner),
+            grade: lastWinner.grade || 'بدون',
+            birthYear: getBirthYear(lastWinner)
+          },
+          competitor: {
+            id: firstExcluded.id,
+            name: firstExcluded.name,
+            degree: firstExcluded.degree,
+            rank: limit + 1,
+            totalScore: firstExcluded.scores.totalScore,
+            specialization: firstExcluded.specialization,
+            specTieScore: getSpecTieBreakScore(firstExcluded),
+            hiringYear: getHiringYear(firstExcluded),
+            continuity: firstExcluded.continuity || 'مستمر',
+            continuityScore: getContinuityScore(firstExcluded),
+            grade: firstExcluded.grade || 'بدون',
+            birthYear: getBirthYear(firstExcluded)
+          },
+          seatNumber: limit,
+          decisiveCriterion: lastWinner.tieBreaker
+        };
       }
-    });
+    }
 
     return candidates;
   }
@@ -823,13 +940,21 @@ function getRankedCandidates(degreeFilter = null) {
   let mRank = 1;
   mastersProcessed.forEach(c => {
     c.rank   = mRank;
-    c.status = mRank <= masterLimit ? 'مقبول' : '';
+    if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+      c.status = 'معلّق للجنة';
+    } else {
+      c.status = mRank <= masterLimit ? 'مقبول' : '';
+    }
     mRank++;
   });
   let pRank = 1;
   phdsProcessed.forEach(c => {
     c.rank   = pRank;
-    c.status = pRank <= phdLimit ? 'مقبول' : '';
+    if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+      c.status = 'معلّق للجنة';
+    } else {
+      c.status = pRank <= phdLimit ? 'مقبول' : '';
+    }
     pRank++;
   });
 
@@ -988,6 +1113,384 @@ function openLockModal() {
   } else {
     openModal('modal-lock-session');
   }
+}
+
+// ── دالة فتح وإغلاق نافذة تراتبية الحسم وكسر التعادل ──
+function openTieBreakingModal() {
+  const modal = document.getElementById('modal-tie-breaking-rules');
+  if (modal) {
+    modal.classList.add('open');
+    modal.style.display = 'flex';
+  }
+}
+
+function closeTieBreakingModal() {
+  const modal = document.getElementById('modal-tie-breaking-rules');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+}
+
+// ── البحث عن متنافس الحسم الاستثنائي بالتفاصيل ──
+function findTieBreakerCandidate(candidateId) {
+  const rankedMaster = getRankedCandidates('ماجستير');
+  const rankedPhd = getRankedCandidates('دكتوراه');
+  const allRanked = [...rankedMaster, ...rankedPhd];
+  return allRanked.find(c => c.id === candidateId && c.tieBreaker && c.tieBreakerDetails);
+}
+
+// ── 1. عرض التلميح العائم الفوري (Floating Popover on Hover) ──
+function showTieBreakerTooltip(event, candidateId) {
+  const c = findTieBreakerCandidate(candidateId);
+  if (!c || !c.tieBreakerDetails) return;
+
+  const popover = document.getElementById('tie-breaker-floating-popover');
+  if (!popover) return;
+
+  const d = c.tieBreakerDetails;
+  popover.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid rgba(245,158,11,0.3); padding-bottom: 5px;">
+      <strong style="color: #fbbf24; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+        <span>⚖️ كسر التعادل على المقعد رقم (${d.seatNumber})</span>
+      </strong>
+      <span style="background: rgba(245,158,11,0.2); color: #fde68a; font-size: 0.72rem; font-weight: 800; padding: 2px 6px; border-radius: 6px;">
+        ${d.winner.degree}
+      </span>
+    </div>
+    
+    <div style="background: rgba(15, 23, 42, 0.7); padding: 8px; border-radius: 8px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.06);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="color: #34d399; font-weight: 800;">🟢 الفائز بالمقعد:</span>
+        <strong style="color: #ffffff;">${d.winner.name}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: #f87171; font-weight: 700;">🔴 أول المستبعدين:</span>
+        <span style="color: #94a3b8;">${d.competitor.name}</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 6px; font-size: 0.78rem;">
+      <div style="color: #fbbf24; font-weight: 800; margin-bottom: 2px;">
+        🏆 المعيار الفاصل المعتمد:
+      </div>
+      <div style="color: #e2e8f0; line-height: 1.4;">
+        ${d.decisiveCriterion} (إجمالي النقاط: ${d.winner.totalScore} نقطة)
+      </div>
+    </div>
+
+    <div style="font-size: 0.7rem; color: #38bdf8; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 5px; font-weight: 700;">
+      💡 انقر بالفأرة لفتح المقارنة الموسعة وطباعة إفادة الحسم (PDF)
+    </div>
+  `;
+
+  popover.style.display = 'block';
+  
+  const popWidth = 340;
+  let left = event.clientX - popWidth - 15;
+  if (left < 10) left = event.clientX + 15;
+  let top = event.clientY - 40;
+  if (top + 220 > window.innerHeight) top = window.innerHeight - 230;
+  if (top < 10) top = 10;
+
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+}
+
+function hideTieBreakerTooltip() {
+  const popover = document.getElementById('tie-breaker-floating-popover');
+  if (popover) popover.style.display = 'none';
+}
+
+// ── 2. فتح النافذة المنبثقة التفصيلية (Detailed Modal on Click) ──
+let currentTieBreakerModalCandidate = null;
+
+function openTieBreakerDetailsModal(candidateId) {
+  hideTieBreakerTooltip();
+  const c = findTieBreakerCandidate(candidateId);
+  if (!c || !c.tieBreakerDetails) return;
+
+  currentTieBreakerModalCandidate = c;
+  const modal = document.getElementById('modal-tie-breaker-details');
+  const body = document.getElementById('tie-breaker-modal-body');
+  if (!modal || !body) return;
+
+  const d = c.tieBreakerDetails;
+  const GRADE_ORDER = { 'ممتاز': 4, 'جيد جداً': 3, 'جيد': 2, 'مقبول': 1, 'بدون': 0 };
+
+  const isWinnerSpecDecisive = d.winner.specTieScore > d.competitor.specTieScore;
+  const isWinnerSeniorityDecisive = (d.winner.specTieScore === d.competitor.specTieScore && d.winner.hiringYear < d.competitor.hiringYear);
+  const isWinnerContDecisive = (!isWinnerSpecDecisive && !isWinnerSeniorityDecisive && d.winner.continuityScore > d.competitor.continuityScore);
+  const isWinnerGradeDecisive = (!isWinnerSpecDecisive && !isWinnerSeniorityDecisive && !isWinnerContDecisive && (GRADE_ORDER[d.winner.grade] || 0) > (GRADE_ORDER[d.competitor.grade] || 0));
+  const isWinnerAgeDecisive = (!isWinnerSpecDecisive && !isWinnerSeniorityDecisive && !isWinnerContDecisive && !isWinnerGradeDecisive && d.winner.birthYear > d.competitor.birthYear);
+
+  body.innerHTML = `
+    <!-- رأس بطاقة الملخص -->
+    <div style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(30,58,138,0.3)); border: 1.5px solid rgba(245,158,11,0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 18px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px;">
+        <span style="color: #fbbf24; font-size: 1.05rem; font-weight: 900;">
+          🎯 مفصل الاستحقاق على المقعد رقم (${d.seatNumber}) - ${d.winner.degree}
+        </span>
+        <span style="background: #10b981; color: #ffffff; font-weight: 900; font-size: 0.8rem; padding: 3px 12px; border-radius: 12px;">
+          إجمالي النقاط المتعادلة: ${d.winner.totalScore} نقطة
+        </span>
+      </div>
+      <p style="margin: 0; color: #cbd5e1; font-size: 0.82rem; line-height: 1.5;">
+        حدث تعادل في المجموع الكلي على الحد الفاصل للمقعد المتاح الأخير، وجرى تطبيق تراتبية كسر التعادل المعتمدة من مجلس الجامعة للفصل بين الفائز بالمقعد وأول المستبعدين.
+      </p>
+    </div>
+
+    <!-- كرت المقارنة وجهاً لوجه (Head-to-Head Card) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+      <!-- طرف الفائز -->
+      <div style="background: rgba(16, 185, 129, 0.08); border: 2px solid rgba(16, 185, 129, 0.5); border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <strong style="color: #34d399; font-size: 0.92rem;">🟢 الفائز بالمقعد:</strong>
+          <span style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-weight: 900; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px;">
+            الرتبة (${d.winner.rank}) - مقبول
+          </span>
+        </div>
+        <div style="color: #ffffff; font-size: 1.05rem; font-weight: 900; margin-bottom: 6px;">
+          ${d.winner.name}
+        </div>
+        <div style="color: #94a3b8; font-size: 0.8rem; line-height: 1.5;">
+          التخصص: <strong style="color: #e2e8f0;">${d.winner.specialization}</strong><br>
+          سنة التعيين: <strong style="color: #e2e8f0;">${d.winner.hiringYear}م</strong> | الاستمرارية: <strong style="color: #e2e8f0;">${d.winner.continuity}</strong>
+        </div>
+      </div>
+
+      <!-- طرف المستبعد -->
+      <div style="background: rgba(239, 68, 68, 0.08); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <strong style="color: #f87171; font-size: 0.92rem;">🔴 أول المستبعدين:</strong>
+          <span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-weight: 900; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px;">
+            الرتبة (${d.competitor.rank}) - مستبعد
+          </span>
+        </div>
+        <div style="color: #ffffff; font-size: 1.05rem; font-weight: 900; margin-bottom: 6px;">
+          ${d.competitor.name}
+        </div>
+        <div style="color: #94a3b8; font-size: 0.8rem; line-height: 1.5;">
+          التخصص: <strong style="color: #e2e8f0;">${d.competitor.specialization}</strong><br>
+          سنة التعيين: <strong style="color: #e2e8f0;">${d.competitor.hiringYear}م</strong> | الاستمرارية: <strong style="color: #e2e8f0;">${d.competitor.continuity}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- جدول تتبع مسار الحسم وتراتبية المعايير -->
+    <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 18px;">
+      <div style="background: rgba(30, 41, 59, 0.8); padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 800; color: #fbbf24; font-size: 0.85rem;">
+        📋 مسار التدقيق المقارن وفق التراتبية المعتمدة لمجلس الجامعة:
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+        <thead>
+          <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+            <th style="padding: 9px 12px; text-align: right;">المعيار التراتبي</th>
+            <th style="padding: 9px 12px; text-align: center; color: #34d399;">${d.winner.name}</th>
+            <th style="padding: 9px 12px; text-align: center; color: #f87171;">${d.competitor.name}</th>
+            <th style="padding: 9px 12px; text-align: center;">النتيجة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 1. التخصص -->
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isWinnerSpecDecisive ? 'background: rgba(16, 185, 129, 0.15);' : ''}">
+            <td style="padding: 9px 12px; font-weight: 700; color: #60a5fa;">🥇 1. مدى احتياج التخصص</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.winner.specialization} (${d.winner.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.competitor.specialization} (${d.competitor.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+            <td style="padding: 9px 12px; text-align: center;">
+              ${isWinnerSpecDecisive ? '<span style="color:#34d399; font-weight:900;">🟢 حُسم المقعد هنا (تخصص ذو أولوية)</span>' : '<span style="color:#94a3b8;">⚪ تعادل (انتقال للأقدمية)</span>'}
+            </td>
+          </tr>
+
+          <!-- 2. الأقدمية -->
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isWinnerSeniorityDecisive ? 'background: rgba(16, 185, 129, 0.15);' : ''}">
+            <td style="padding: 9px 12px; font-weight: 700; color: #fbbf24;">🥈 2. أقدمية التعيين</td>
+            <td style="padding: 9px 12px; text-align: center; font-weight: 800;">سنة ${d.winner.hiringYear}م</td>
+            <td style="padding: 9px 12px; text-align: center;">سنة ${d.competitor.hiringYear}م</td>
+            <td style="padding: 9px 12px; text-align: center;">
+              ${isWinnerSeniorityDecisive ? '<span style="color:#34d399; font-weight:900;">🟢 حُسم المقعد هنا (أسبق تعييناً)</span>' : (!isWinnerSpecDecisive && d.winner.hiringYear === d.competitor.hiringYear ? '<span style="color:#94a3b8;">⚪ تعادل (انتقال للاستمرارية)</span>' : '<span style="color:#64748b;">—</span>')}
+            </td>
+          </tr>
+
+          <!-- 3. الاستمرارية -->
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isWinnerContDecisive ? 'background: rgba(16, 185, 129, 0.15);' : ''}">
+            <td style="padding: 9px 12px; font-weight: 700; color: #34d399;">🥉 3. الاستمرارية والممارسة</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.winner.continuity} (${d.winner.continuityScore} نقاط)</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.competitor.continuity} (${d.competitor.continuityScore} نقاط)</td>
+            <td style="padding: 9px 12px; text-align: center;">
+              ${isWinnerContDecisive ? '<span style="color:#34d399; font-weight:900;">🟢 حُسم المقعد هنا (موظف مستمر)</span>' : (!isWinnerSpecDecisive && !isWinnerSeniorityDecisive && d.winner.continuityScore === d.competitor.continuityScore ? '<span style="color:#94a3b8;">⚪ تعادل (انتقال للتقدير)</span>' : '<span style="color:#64748b;">—</span>')}
+            </td>
+          </tr>
+
+          <!-- 4. التقدير -->
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); ${isWinnerGradeDecisive ? 'background: rgba(16, 185, 129, 0.15);' : ''}">
+            <td style="padding: 9px 12px; font-weight: 700; color: #f472b6;">🏅 4. التقدير العلمي</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.winner.grade}</td>
+            <td style="padding: 9px 12px; text-align: center;">${d.competitor.grade}</td>
+            <td style="padding: 9px 12px; text-align: center;">
+              ${isWinnerGradeDecisive ? '<span style="color:#34d399; font-weight:900;">🟢 حُسم المقعد هنا (تقدير أعلى)</span>' : (!isWinnerSpecDecisive && !isWinnerSeniorityDecisive && !isWinnerContDecisive && d.winner.grade === d.competitor.grade ? '<span style="color:#94a3b8;">⚪ تعادل (انتقال لصغر السن)</span>' : '<span style="color:#64748b;">—</span>')}
+            </td>
+          </tr>
+
+          <!-- 5. صغر السن -->
+          <tr style="${isWinnerAgeDecisive ? 'background: rgba(16, 185, 129, 0.15);' : ''}">
+            <td style="padding: 9px 12px; font-weight: 700; color: #a78bfa;">🎓 5. صغر السن</td>
+            <td style="padding: 9px 12px; text-align: center;">مواليد ${d.winner.birthYear}م</td>
+            <td style="padding: 9px 12px; text-align: center;">مواليد ${d.competitor.birthYear}م</td>
+            <td style="padding: 9px 12px; text-align: center;">
+              ${isWinnerAgeDecisive ? '<span style="color:#34d399; font-weight:900;">🟢 حُسم المقعد هنا (أصغر سناً)</span>' : '<span style="color:#64748b;">—</span>'}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- نص الحسم الرسمي المعتمد -->
+    <div style="background: rgba(30, 58, 138, 0.25); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 12px 16px; color: #e2e8f0; font-size: 0.85rem; line-height: 1.6;">
+      <strong style="color: #60a5fa; display: block; margin-bottom: 4px; font-size: 0.9rem;">⚖️ ملخص القرار الإداري والتحكيم الإلكتروني:</strong>
+      بناءً على التراتبية الشفافة المعتمدة بمجلس جامعة صنعاء لكسر التعادل، تقرر رسمياً حسم المقعد رقم (${d.seatNumber}) لدرجة (${d.winner.degree}) لصالح المرشح <strong>[${d.winner.name}]</strong> لموجب تفوقه في معيار <strong>(${d.decisiveCriterion})</strong> أمام المرشح المباشر [${d.competitor.name}].
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+}
+
+function closeTieBreakerDetailsModal() {
+  const modal = document.getElementById('modal-tie-breaker-details');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+}
+
+// ── 3. طباعة إفادة الحسم الاستثنائي الرسمية (PDF Certificate) ──
+function printTieBreakerCertificate() {
+  if (!currentTieBreakerModalCandidate || !currentTieBreakerModalCandidate.tieBreakerDetails) {
+    alert('لا توجد بيانات مفاضلة استثنائية جاهزة للطباعة');
+    return;
+  }
+
+  const c = currentTieBreakerModalCandidate;
+  const d = c.tieBreakerDetails;
+  const printArea = document.getElementById('tie-breaker-print-certificate');
+  if (!printArea) return;
+
+  const refYear = state.settings.referenceYear || 2026;
+  const univName = state.settings.universityName || 'جامعة صنعاء';
+  const councilName = state.settings.councilName || 'مجلس الجامعة - لجنة المفاضلة والتنافس';
+
+  printArea.innerHTML = `
+    <div style="font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; direction: rtl; text-align: right; line-height: 1.6; color: #000000; padding: 10px;">
+      
+      <!-- ترويسة الوثيقة الرسمية -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 20px;">
+        <div style="text-align: right;">
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900;">الجمهورية اليمنية</h3>
+          <h3 style="margin: 2px 0; font-size: 1.1rem; font-weight: 800;">${univName}</h3>
+          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #333;">${councilName}</h4>
+        </div>
+        <div style="text-align: center;">
+          <div style="width: 70px; height: 70px; border: 2px dashed #666; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; margin: auto;">
+            شعار الجامعة
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 700;">نظام المفاضلة الإلكتروني</span>
+        </div>
+        <div style="text-align: left; font-size: 0.85rem;">
+          <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}م</div>
+          <div><strong>العام الجامعي:</strong> ${refYear}م</div>
+          <div><strong>الدرجة:</strong> ${d.winner.degree}</div>
+        </div>
+      </div>
+
+      <!-- عنوان الإفادة -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 900; text-decoration: underline; letter-spacing: 0.5px;">
+          إفادة رسمية بحسم المفاضلة الاستثنائية وكسر التعادل
+        </h2>
+        <p style="margin: 4px 0 0 0; font-size: 0.9rem; font-weight: 700; color: #444;">
+          بشأن التنافس على المقعد رقم (${d.seatNumber}) لدرجة (${d.winner.degree})
+        </p>
+      </div>
+
+      <!-- تمهيد -->
+      <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 15px;">
+        تفيد لجنة المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري بجامعة صنعاء بأنه عند تطبيق معايير المفاضلة لدرجة (<strong>${d.winner.degree}</strong>)، حدث تعادل في المجموع الكلي برصيد (<strong>${d.winner.totalScore} نقطة</strong>) على الحد الفاصل للمقعد المتاح الأخير (<strong>المقعد رقم ${d.seatNumber}</strong>)، وجرى تطبيق التراتبية القانونية الشفافة المعتمدة لكسر التعادل، وكانت نتيجة الفحص والتدقيق كالتالي:
+      </p>
+
+      <!-- جدول المقارنة الرسمي -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem;" border="1">
+        <thead>
+          <tr style="background: #f1f5f9;">
+            <th style="padding: 8px; text-align: right; width: 30%;">بيان المقارنة / المعيار</th>
+            <th style="padding: 8px; text-align: center; width: 35%; background: #e6fcf5;">الفائز بالمقعد: ${d.winner.name}</th>
+            <th style="padding: 8px; text-align: center; width: 35%;">المنافس المباشر: ${d.competitor.name}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">المجموع الكلي المكتسب</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: 800;">${d.winner.totalScore} نقطة</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.competitor.totalScore} نقطة</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">1. التخصص ومدى الاحتياج</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.winner.specialization} (${d.winner.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.competitor.specialization} (${d.competitor.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">2. تاريخ وأقدمية التعيين</td>
+            <td style="padding: 6px 8px; text-align: center; font-weight: 800;">سنة ${d.winner.hiringYear}م</td>
+            <td style="padding: 6px 8px; text-align: center;">سنة ${d.competitor.hiringYear}م</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">3. الاستمرارية / الممارسة</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.winner.continuity} (${d.winner.continuityScore} نقاط)</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.competitor.continuity} (${d.competitor.continuityScore} نقاط)</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">4. التقدير العلمي المؤهل</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.winner.grade}</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.competitor.grade}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 8px; font-weight: 700;">5. تاريخ الميلاد (السن)</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.winner.birthYear}م</td>
+            <td style="padding: 6px 8px; text-align: center;">${d.competitor.birthYear}م</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- قرار الحسم -->
+      <div style="background: #f8fafc; border: 1.5px solid #000000; padding: 12px 16px; border-radius: 6px; margin-bottom: 30px; font-size: 0.9rem; line-height: 1.7;">
+        <strong>القرار والنتيجة النهائية المعتمدة:</strong><br>
+        تأكيد فوز وترشيح الأخ/الأخت (<strong>${d.winner.name}</strong>) لشغل المقعد رقم (<strong>${d.seatNumber}</strong>) لدرجة (<strong>${d.winner.degree}</strong>) استناداً إلى تفوقه وحسم النتيجة بمعيار (<strong>${d.decisiveCriterion}</strong>)، واعتبار المنافس المباشر الأخ/الأخت (<strong>${d.competitor.name}</strong>) في الترتيب التالي.
+      </div>
+
+      <!-- التوقيعات والاعتماد الرسمي -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; padding: 0 10px;">
+        <div style="text-align: center;">
+          <strong style="display: block; margin-bottom: 35px;">مُعد التقرير الإلكتروني</strong>
+          <span>......................................</span>
+        </div>
+        <div style="text-align: center;">
+          <strong style="display: block; margin-bottom: 35px;">أمين عام الجامعة</strong>
+          <span>أ. اسكندر المقالح</span>
+        </div>
+        <div style="text-align: center;">
+          <strong style="display: block; margin-bottom: 35px;">رئيس لجنة المفاضلة</strong>
+          <span>أ.د. ابراهيم المطاع</span>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  document.body.classList.add('is-tie-breaker-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-tie-breaker-print');
+  }, 1000);
 }
 
 // دالة توحيد اسم المعيار للعرض
@@ -1415,12 +1918,44 @@ function renderScoringTable() {
     // بناء خلية الملاحظة
     const tieBreakerCell = c.tieBreaker
       ? (() => {
-          const color = c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706';
-          // أول كلمة من معيار الحسم للسطر الثاني
-          const firstWord = c.tieBreaker.trim().split(/\s+/)[0];
-          return `<td style="font-size:0.82rem; color:${color}; font-weight:800; text-align:center; line-height:1.4;">
-            استثنائية<br><span style="font-size:0.76rem; font-weight:600;">بالـ${firstWord}</span>
-          </td>`;
+          let badgeText = '';
+          if (c.tieBreaker.includes('التخصص') || c.tieBreaker.includes('احتياج')) {
+            badgeText = 'بالتخصص';
+          } else if (c.tieBreaker.includes('الاستمرارية') || c.tieBreaker.includes('الممارسة')) {
+            badgeText = 'بالاستمرارية';
+          } else if (c.tieBreaker.includes('أقدمية') || c.tieBreaker.includes('التعيين')) {
+            badgeText = 'بالأقدمية';
+          } else if (c.tieBreaker.includes('السن')) {
+            badgeText = 'بصغر السن';
+          } else if (c.tieBreaker.includes('التقدير')) {
+            badgeText = 'بالتقدير';
+          } else if (c.tieBreaker.includes('يُحال')) {
+            badgeText = 'يُحال للجنة';
+          } else {
+            const firstWord = c.tieBreaker.trim().split(/\s+/)[0];
+            badgeText = firstWord.startsWith('ال') ? `ب${firstWord}` : `بالـ${firstWord}`;
+          }
+
+          if (c.tieBreakerDetails) {
+            return `
+              <td class="tie-breaker-interactive-cell" 
+                  onmouseenter="showTieBreakerTooltip(event, ${c.id})" 
+                  onmouseleave="hideTieBreakerTooltip()" 
+                  onclick="openTieBreakerDetailsModal(${c.id})"
+                  title="انقر لعرض تفاصيل مقارنة المفاضلة الاستثنائية وطباعة الإفادة">
+                <div class="tie-badge-clickable">
+                  <span class="tie-badge-tag">استثنائية</span>
+                  <span class="tie-badge-reason">${badgeText}</span>
+                  <span class="tie-badge-hint">🔍 انقر للتفاصيل</span>
+                </div>
+              </td>
+            `;
+          } else {
+            const color = c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706';
+            return `<td style="font-size:0.82rem; color:${color}; font-weight:800; text-align:center; line-height:1.4;">
+              استثنائية<br><span style="font-size:0.76rem; font-weight:600;">${badgeText}</span>
+            </td>`;
+          }
         })()
       : `<td style="color: var(--text-muted); font-size:0.8rem;">—</td>`;
 
@@ -1451,7 +1986,9 @@ function renderScoringTable() {
       <td>
         ${c.status === 'مقبول' ? `
           <span class="badge-status badge-accepted">مقبول</span>
-        ` : ''}
+        ` : (c.status === 'معلّق للجنة' ? `
+          <span class="badge-status" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.5); font-weight: 800; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px;">معلّق للجنة</span>
+        ` : '')}
       </td>
       ${tieBreakerCell}
       <td>
@@ -2013,7 +2550,7 @@ function renderDetailedReport() {
             <p style="margin: 0; color: #334155; font-size: 0.76rem;">
               تُحسب المفاضلة الاستثنائية <strong>فقط عند التعادل على الحد الفاصل للمقعد الأخير</strong> (المنحة 3 للماجستير أو المنحة 3 للدكتوراه) بناءً على التراتبية الشفافة التالية:
               <br>
-              <strong>1. الأقدمية (الأقدم تعييناً)</strong> ← <strong>2. صغر السن (الأصغر سناً)</strong> ← <strong>3. التقدير العلمي الأعلى</strong>.
+              <strong>1. مدى احتياج الجامعة للتخصص (3 درجات لتخصصات الوزن 5، و0 لأخرى)</strong> ← <strong>2. أقدمية التعيين (الأقدم تعييناً بالخدمة/الجامعة)</strong> ← <strong>3. الاستمرارية (الممارسة الفعلية: مستمر 5 ومتاح 3)</strong> ← <strong>4. التقدير العلمي الأعلى</strong> ← <strong>5. صغر السن (الأصغر سناً)</strong>.
             </p>
           </div>
         </div>

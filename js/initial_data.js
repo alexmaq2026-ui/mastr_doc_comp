@@ -122,463 +122,22 @@ const DEFAULT_CRITERIA = {
 const PRESEEDED_CANDIDATES = [
   {
     "id": 1,
-    "name": "معمر علي  مصلح  المقالح",
+    "name": "معمر علي مصلح المقالح",
     "degree": "دكتوراه",
-    "specialization": "إدارة  تنمية محلية",
+    "specialization": "إدارة تنمية محلية",
     "hiring_univ": "1994-01-24",
     "hiring_service": "",
     "birth_date": "1972م",
     "grad_year": "2013م",
     "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 9,
-    "name": "عمار  محمد أحمد  مسعد  العيوي",
-    "degree": "دكتوراه",
-    "specialization": "علم اجتماع السكان",
-    "hiring_univ": "2002-07-31",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2020م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 24,
-    "name": "لطيفة حمود علي المرسي",
-    "degree": "دكتوراه",
-    "specialization": "مناهج العلوم وطرق تدريسها",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1979",
-    "grad_year": "2017",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 27,
-    "name": "وجيدة  إبراهيم  علي  محمد الاغبري",
-    "degree": "دكتوراه",
-    "specialization": "مناهج العلوم",
-    "hiring_univ": "2013-06-29",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1979م",
-    "grad_year": "2025م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 28,
-    "name": "نوال  أحمد أحمد  العرشي",
-    "degree": "دكتوراه",
-    "specialization": "أثار قديمة",
-    "hiring_univ": "2013-07-28",
-    "hiring_service": "2013-11-13",
-    "birth_date": "1977م",
-    "grad_year": "2010م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 46,
-    "name": "أسماء محمد  ناصر  عوضه",
-    "degree": "ماجستير",
-    "specialization": "علوم حياة",
-    "hiring_univ": "2010-12-14",
-    "hiring_service": "",
-    "birth_date": "1984م",
-    "grad_year": "2008م",
-    "grade": "ممتاز",
-    "customValues": {}
-  },
-  {
-    "id": 47,
-    "name": "سميحة عبدالله شرف عبدالخالق",
-    "degree": "ماجستير",
-    "specialization": "تاريخ فرعي جغرافيا",
-    "hiring_univ": "2010-12-14",
-    "hiring_service": "",
-    "birth_date": "1983م",
-    "grad_year": "20089م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 48,
-    "name": "محمد عبدالرحمن دماج",
-    "degree": "ماجستير",
-    "specialization": "علوم سياسية",
-    "hiring_univ": "2011-02-05",
-    "hiring_service": "",
-    "birth_date": "1985م",
-    "grad_year": "2008م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 49,
-    "name": "أمة  العليم  حسين  أحمد نواس",
-    "degree": "ماجستير",
-    "specialization": "لغة  عربية",
-    "hiring_univ": "2011-07-02",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2009م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 50,
-    "name": "محمد محمد علي  نجاد",
-    "degree": "ماجستير",
-    "specialization": "شريعة  وقانون",
-    "hiring_univ": "2011-08-02",
-    "hiring_service": "",
-    "birth_date": "1982م",
-    "grad_year": "2025م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 51,
-    "name": "بلقيس  طه  عبدالله  المقطري",
-    "degree": "ماجستير",
-    "specialization": "مكتبات  وعلم المعلومات",
-    "hiring_univ": "2011-08-02",
-    "hiring_service": "",
-    "birth_date": "1981م",
-    "grad_year": "2015م",
-    "grade": "مفبول",
-    "customValues": {}
-  },
-  {
-    "id": 52,
-    "name": "يحيى علي  حزام المساجدي",
-    "degree": "ماجستير",
-    "specialization": "معلم حاسوب",
-    "hiring_univ": "2011-08-02",
-    "hiring_service": "",
-    "birth_date": "1984م",
-    "grad_year": "2024م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 53,
-    "name": "مريم  محمود ناشر  السريحي",
-    "degree": "ماجستير",
-    "specialization": "كيمياء",
-    "hiring_univ": "2011-08-27",
-    "hiring_service": "",
-    "birth_date": "1983م",
-    "grad_year": "2009م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 54,
-    "name": "وداد إسماعيل علي  الشميري",
-    "degree": "ماجستير",
-    "specialization": "فيزياء فرعي : رياضيات",
-    "hiring_univ": "2011-12-21",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2005م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 59,
-    "name": "ابتسام  عبدالله  صالح التويتي",
-    "degree": "ماجستير",
-    "specialization": "كيمياء فرعي فيزياء",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1981م",
-    "grad_year": "2004م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 60,
-    "name": "افراح  حمود  عبدالله  قيس",
-    "degree": "ماجستير",
-    "specialization": "لغة انجليزية",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1978م",
-    "grad_year": "2004م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 61,
-    "name": "رجاء عبدالوهاب  علي  سيف",
-    "degree": "ماجستير",
-    "specialization": "لغة انجليزية",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1983م",
-    "grad_year": "2004م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 62,
-    "name": "سامية  محمد  المطري",
-    "degree": "ماجستير",
-    "specialization": "إذاعة  وتلفزيون",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2012م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 63,
-    "name": "فطوم علي  أحمد باسديس",
-    "degree": "ماجستير",
-    "specialization": "دبلوم تقني",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-12-01",
-    "birth_date": "1979م",
-    "grad_year": "2016م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 64,
-    "name": "محمد  علي  محمد  عريش",
-    "degree": "ماجستير",
-    "specialization": "أثار قديمة",
-    "hiring_univ": "2013-02-18",
-    "hiring_service": "2012-01-01",
-    "birth_date": "1981م",
-    "grad_year": "2019م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 65,
-    "name": "جميلة  صالح القطيبي",
-    "degree": "ماجستير",
-    "specialization": "محاسبة",
-    "hiring_univ": "2013-07-28",
-    "hiring_service": "",
-    "birth_date": "1985م",
-    "grad_year": "2026م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 66,
-    "name": "امين محمد أمين  المقالح",
-    "degree": "ماجستير",
-    "specialization": "علوم  سياسية",
-    "hiring_univ": "2013-07-28",
-    "hiring_service": "",
-    "birth_date": "1982م",
-    "grad_year": "2010م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 67,
-    "name": "سلوى  مقبل  عيظه  الحداء",
-    "degree": "ماجستير",
-    "specialization": "لغة فرنسية",
-    "hiring_univ": "2013-10-08",
-    "hiring_service": "",
-    "birth_date": "1979",
-    "grad_year": "2002م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 68,
-    "name": "وليد فرحان علي راجح",
-    "degree": "ماجستير",
-    "specialization": "إدارة عامة",
-    "hiring_univ": "2015-09-16",
-    "hiring_service": "2016-08-14",
-    "birth_date": "1983م",
-    "grad_year": "2018م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 69,
-    "name": "أسماء محمد  علي  القباطي",
-    "degree": "ماجستير",
-    "specialization": "بساتين  وغابات",
-    "hiring_univ": "2010/12/4م",
-    "hiring_service": "",
-    "birth_date": "1985",
-    "grad_year": "2008م",
-    "grade": "جيدجداً",
-    "customValues": {}
-  },
-  {
-    "id": 70,
-    "name": "أسماء حميد الوتاري",
-    "degree": "ماجستير",
-    "specialization": "بساتين  وغابات",
-    "hiring_univ": "2012-08-14",
-    "hiring_service": "",
-    "birth_date": "1987م",
-    "grad_year": "2010م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 71,
-    "name": "محمد أحمد  حميد",
-    "degree": "ماجستير",
-    "specialization": "هندسة  زراعية",
-    "hiring_univ": "2012/8/14م",
-    "hiring_service": "",
-    "birth_date": "1987م",
-    "grad_year": "2010م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 72,
-    "name": "سماح  محمد  صالح الجعراني",
-    "degree": "ماجستير",
-    "specialization": "بساتين  وغابات",
-    "hiring_univ": "2014/3/6م",
-    "hiring_service": "",
-    "birth_date": "1985م",
-    "grad_year": "2011م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 73,
-    "name": "نور عثمان  كوكبة",
-    "degree": "ماجستير",
-    "specialization": "علوم  وتقنية  غذائية",
-    "hiring_univ": "2011-07-02",
-    "hiring_service": "",
-    "birth_date": "1986",
-    "grad_year": "2009م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 74,
-    "name": "نصر  محمد  علي العماري",
-    "degree": "ماجستير",
-    "specialization": "إدارة اعمال",
-    "hiring_univ": "2002-11-10",
-    "hiring_service": "",
-    "birth_date": "1979م",
-    "grad_year": "2009م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 75,
-    "name": "منى  علي  صالح الفضلي",
-    "degree": "ماجستير",
-    "specialization": "تمريض",
-    "hiring_univ": "2002-11-10",
-    "hiring_service": "",
-    "birth_date": "1976م",
-    "grad_year": "2016م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 76,
-    "name": "معمر  مهيوب  سعيد  قاسم",
-    "degree": "ماجستير",
-    "specialization": "صيدلة",
-    "hiring_univ": "2003-12-10",
-    "hiring_service": "",
-    "birth_date": "1981م",
-    "grad_year": "2011م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 77,
-    "name": "ايه محمد محسن الحوثي",
-    "degree": "ماجستير",
-    "specialization": "إدارة اعمال",
-    "hiring_univ": "2009-11-24",
-    "hiring_service": "",
-    "birth_date": "1986م",
-    "grad_year": "2024م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 78,
-    "name": "عادل  عبدالقادر  سيف ناجي",
-    "degree": "ماجستير",
-    "specialization": "طب وجراحة الفم",
-    "hiring_univ": "2009-12-30",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2010م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 79,
-    "name": "نصر  محمد  علي العماري",
-    "degree": "ماجستير",
-    "specialization": "إدارة اعمال",
-    "hiring_univ": "",
-    "hiring_service": "2002-11-10",
-    "birth_date": "1979م",
-    "grad_year": "2009م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 80,
-    "name": "منى  علي  صالح الفضلي",
-    "degree": "ماجستير",
-    "specialization": "تمريض",
-    "hiring_univ": "",
-    "hiring_service": "2002-11-10",
-    "birth_date": "1976م",
-    "grad_year": "2016م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 81,
-    "name": "معمر  مهيوب  سعيد  قاسم",
-    "degree": "ماجستير",
-    "specialization": "صيدلة",
-    "hiring_univ": "",
-    "hiring_service": "2003-12-10",
-    "birth_date": "1981م",
-    "grad_year": "2011م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 82,
-    "name": "ايه محمد محسن الحوثي",
-    "degree": "ماجستير",
-    "specialization": "إدارة اعمال",
-    "hiring_univ": "",
-    "hiring_service": "2009-11-24",
-    "birth_date": "1986م",
-    "grad_year": "2024م",
-    "grade": "مقبول",
-    "customValues": {}
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
   },
   {
     "id": 2,
-    "name": "فايز  عباد  أحمد  الخولاني",
+    "name": "فايز عباد أحمد الخولاني",
     "degree": "دكتوراه",
     "specialization": "إدارة عامة",
     "hiring_univ": "1994-09-19",
@@ -586,7 +145,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1975م",
     "grad_year": "2025م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
   },
   {
     "id": 3,
@@ -598,11 +160,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1974م",
     "grad_year": "2023م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 4,
-    "name": "منذر عبدالله  نعمان  الحكيمي",
+    "name": "منذر عبدالله نعمان الحكيمي",
     "degree": "دكتوراه",
     "specialization": "كيمياء",
     "hiring_univ": "1996-08-25",
@@ -610,11 +175,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1970م",
     "grad_year": "2025م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 5,
-    "name": "محمد حمود عبد الرب  كرش",
+    "name": "محمد حمود عبد الرب كرش",
     "degree": "دكتوراه",
     "specialization": "شريعة وقانون",
     "hiring_univ": "2000-08-13",
@@ -622,11 +190,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1980م",
     "grad_year": "2023م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 6,
-    "name": "قائد صالح  سعد المنامه",
+    "name": "قائد صالح سعد المنامه",
     "degree": "دكتوراه",
     "specialization": "إدارة عامة",
     "hiring_univ": "2000-09-20",
@@ -634,7 +205,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1974م",
     "grad_year": "2016م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 7,
@@ -646,211 +220,40 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1983م",
     "grad_year": "2017م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 8,
-    "name": "بشرى  أحمد إسماعيل الاكوع",
+    "name": "بشرى أحمد إسماعيل الاكوع",
     "degree": "دكتوراه",
-    "specialization": "أحياء  دقيقة طبية",
+    "specialization": "أحياء دقيقة طبية",
     "hiring_univ": "2001-10-30",
     "hiring_service": "",
     "birth_date": "1977م",
     "grad_year": "2012م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
-    "id": 29,
-    "name": "زينب علي  محمد  الانسي",
+    "id": 9,
+    "name": "عمار محمد أحمد مسعد العيوي",
     "degree": "دكتوراه",
-    "specialization": "كيمياء عضوية",
-    "hiring_univ": "2013-12-05",
-    "hiring_service": "",
-    "birth_date": "1981م",
-    "grad_year": "2023م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 30,
-    "name": "إبراهيم  عبدالله  إسحاق",
-    "degree": "دكتوراه",
-    "specialization": "إدارة عامة",
-    "hiring_univ": "2014-11-26",
-    "hiring_service": "",
-    "birth_date": "1984م",
-    "grad_year": "2023م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 31,
-    "name": "امة الخالق  عبدالرحمن  المهدي",
-    "degree": "دكتوراه",
-    "specialization": "تفسير وعلوم القراءان",
-    "hiring_univ": "2015-09-16",
-    "hiring_service": "",
-    "birth_date": "1978م",
-    "grad_year": "2025م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 32,
-    "name": "محمد عبدالولي السماوي",
-    "degree": "دكتوراه",
-    "specialization": "خضر",
-    "hiring_univ": "1995م",
-    "hiring_service": "1995م",
-    "birth_date": "1970م",
-    "grad_year": "2002م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 33,
-    "name": "ليبيا محمد مهيوب قائد صينا",
-    "degree": "دكتوراه",
-    "specialization": "هرمونات",
-    "hiring_univ": "2001-11-12",
-    "hiring_service": "",
-    "birth_date": "1976م",
-    "grad_year": "2014م",
-    "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 34,
-    "name": "خالد محمد سالم  عوض عفيف",
-    "degree": "ماجستير",
-    "specialization": "مكتبات  وعلم المعلومات",
-    "hiring_univ": "1992-07-19",
+    "specialization": "علم اجتماع السكان",
+    "hiring_univ": "2002-07-31",
     "hiring_service": "",
     "birth_date": "1980م",
-    "grad_year": "2026م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 35,
-    "name": "خالد عبده فرحان علي",
-    "degree": "ماجستير",
-    "specialization": "محاسبة",
-    "hiring_univ": "1995-10-05",
-    "hiring_service": "",
-    "birth_date": "1975م",
-    "grad_year": "2002م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 36,
-    "name": "حسن  عمر  مجلي",
-    "degree": "ماجستير",
-    "specialization": "علوم بحار",
-    "hiring_univ": "1997-09-25",
-    "hiring_service": "",
-    "birth_date": "1972م",
-    "grad_year": "1996م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 37,
-    "name": "مرتضى  عبدالوارث  محمد  مجاهد",
-    "degree": "ماجستير",
-    "specialization": "كيمياء",
-    "hiring_univ": "2002-09-21",
-    "hiring_service": "",
-    "birth_date": "1974م",
-    "grad_year": "2001م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 38,
-    "name": "خالد حسين احسن المحمدي",
-    "degree": "ماجستير",
-    "specialization": "جغرافيا فلرعي تاريخ",
-    "hiring_univ": "2002-09-21",
-    "hiring_service": "",
-    "birth_date": "1978م",
-    "grad_year": "20012م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 39,
-    "name": "امة الرزاق  عبدالله  زيد  أبو طالب",
-    "degree": "ماجستير",
-    "specialization": "شريعة وقانون",
-    "hiring_univ": "2003-06-14",
-    "hiring_service": "",
-    "birth_date": "1990م",
-    "grad_year": "2019م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 40,
-    "name": "أحمد  صالح  الربوعي",
-    "degree": "ماجستير",
-    "specialization": "شريعة  وقانون",
-    "hiring_univ": "2004-08-08",
-    "hiring_service": "",
-    "birth_date": "1979م",
-    "grad_year": "2017م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 41,
-    "name": "يحيى  محمد صالح الصديعي",
-    "degree": "ماجستير",
-    "specialization": "علوم الأرض والبيئة طبقات ونفط",
-    "hiring_univ": "2005-11-28",
-    "hiring_service": "",
-    "birth_date": "1979م",
-    "grad_year": "2005م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 83,
-    "name": "عادل  عبدالقادر  سيف ناجي",
-    "degree": "ماجستير",
-    "specialization": "طب وجراحة الفم",
-    "hiring_univ": "",
-    "hiring_service": "2009-12-30",
-    "birth_date": "1980م",
-    "grad_year": "2010م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 84,
-    "name": "ليبيا محمد مهيوب قائد صينا",
-    "degree": "دكتوراه",
-    "specialization": "هرمونات",
-    "hiring_univ": "2001-11-12",
-    "hiring_service": "2001-11-12",
-    "birth_date": "1976م",
-    "grad_year": "2014م",
+    "grad_year": "2020م",
     "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 1785872354588,
-    "name": "ابراهيم محمد ناجي العامري",
-    "degree": "دكتوراه",
-    "specialization": "إدارة عامة",
-    "hiring_univ": "1997",
-    "hiring_service": "",
-    "birth_date": "1977",
-    "grad_year": "2017",
-    "grade": "بدون",
-    "customValues": {}
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
   },
   {
     "id": 10,
@@ -862,71 +265,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1977م",
     "grad_year": "2017م",
     "grade": "بدون",
-    "customValues": {}
-  },
-  {
-    "id": 42,
-    "name": "إبراهيم  أحمد  هاشم  الشهاري",
-    "degree": "ماجستير",
-    "specialization": "صيدلة",
-    "hiring_univ": "2007-12-09",
-    "hiring_service": "",
-    "birth_date": "1975م",
-    "grad_year": "2010م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 43,
-    "name": "نوال حسن  محمد  باري",
-    "degree": "ماجستير",
-    "specialization": "علوم حاسوب",
-    "hiring_univ": "2008-09-10",
-    "hiring_service": "",
-    "birth_date": "1979م",
-    "grad_year": "2006م",
-    "grade": "مقبول",
-    "customValues": {}
-  },
-  {
-    "id": 44,
-    "name": "صالح حميد  حميد العنمي",
-    "degree": "ماجستير",
-    "specialization": "فيزياء",
-    "hiring_univ": "2009-12-12",
-    "hiring_service": "2004-12-01",
-    "birth_date": "1980م",
-    "grad_year": "2003م",
-    "grade": "جيد",
-    "customValues": {}
-  },
-  {
-    "id": 45,
-    "name": "صادق محسن عقيل الغابري",
-    "degree": "ماجستير",
-    "specialization": "نظم المعلومات  الحاسوبية",
-    "hiring_univ": "2010-10-13",
-    "hiring_service": "",
-    "birth_date": "1980م",
-    "grad_year": "2005م",
-    "grade": "جيد جداً",
-    "customValues": {}
-  },
-  {
-    "id": 14,
-    "name": "عبد الرحمن  حسن النجار",
-    "degree": "دكتوراه",
-    "specialization": "إدارة عامة",
-    "hiring_univ": "2008-09-10",
-    "hiring_service": "",
-    "birth_date": "1979م",
-    "grad_year": "2025م",
-    "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 11,
-    "name": "منى  عبدالحفيظ  الانسي",
+    "name": "منى عبدالحفيظ الانسي",
     "degree": "دكتوراه",
     "specialization": "إدارة أعمال",
     "hiring_univ": "2003-07-07",
@@ -934,7 +280,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1979م",
     "grad_year": "2025م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 12,
@@ -946,11 +295,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1976م",
     "grad_year": "2019م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 13,
-    "name": "محمد  نعمان  أحمد البريهي",
+    "name": "محمد نعمان أحمد البريهي",
     "degree": "دكتوراه",
     "specialization": "إدارة عامة",
     "hiring_univ": "2007-12-31",
@@ -958,7 +310,25 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1977م",
     "grad_year": "2019م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 14,
+    "name": "عبد الرحمن حسن النجار",
+    "degree": "دكتوراه",
+    "specialization": "إدارة عامة",
+    "hiring_univ": "2008-09-10",
+    "hiring_service": "",
+    "birth_date": "1979م",
+    "grad_year": "2025م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 15,
@@ -970,11 +340,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1978م",
     "grad_year": "2019م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 16,
-    "name": "محمد  حزام  يحيى الشامي",
+    "name": "محمد حزام يحيى الشامي",
     "degree": "دكتوراه",
     "specialization": "جغرافيا سياحية",
     "hiring_univ": "2010-02-28",
@@ -982,11 +355,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1976م",
     "grad_year": "2018م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 17,
-    "name": "فؤاد  منصور  أحمد  الورد",
+    "name": "فؤاد منصور أحمد الورد",
     "degree": "دكتوراه",
     "specialization": "ترجمة لغة أنجليزية",
     "hiring_univ": "2010-10-13",
@@ -994,7 +370,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1982م",
     "grad_year": "2020م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 18,
@@ -1006,7 +385,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1981م",
     "grad_year": "2026م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
   },
   {
     "id": 19,
@@ -1018,7 +400,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1980م",
     "grad_year": "2022م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 20,
@@ -1030,11 +415,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1972م",
     "grad_year": "2012م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 21,
-    "name": "أمجد إسماعيل  محمد  عبدالمغني",
+    "name": "أمجد إسماعيل محمد عبدالمغني",
     "degree": "دكتوراه",
     "specialization": "ترميم وصيانة اثار",
     "hiring_univ": "2013-02-18",
@@ -1042,7 +430,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1979م",
     "grad_year": "2021م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 22,
@@ -1054,11 +445,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1982",
     "grad_year": "2024م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 23,
-    "name": "كفى  سالم  حيدر  محمد",
+    "name": "كفى سالم حيدر محمد",
     "degree": "دكتوراه",
     "specialization": "إقتصاد",
     "hiring_univ": "2013-02-18",
@@ -1066,11 +460,29 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1972م",
     "grad_year": "2026م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 24,
+    "name": "لطيفة حمود علي المرسي",
+    "degree": "دكتوراه",
+    "specialization": "مناهج العلوم وطرق تدريسها",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1979",
+    "grad_year": "2017",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 25,
-    "name": "لطيفة  حمود  علي  المرسي",
+    "name": "لطيفة حمود علي المرسي",
     "degree": "دكتوراه",
     "specialization": "مناهج العلوم وطرق تدريسها",
     "hiring_univ": "2013-02-18",
@@ -1078,7 +490,10 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1979م",
     "grad_year": "2017م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 26,
@@ -1090,23 +505,449 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1983م",
     "grad_year": "2025م",
     "grade": "بدون",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 27,
+    "name": "وجيدة إبراهيم علي محمد الاغبري",
+    "degree": "دكتوراه",
+    "specialization": "مناهج العلوم",
+    "hiring_univ": "2013-06-29",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1979م",
+    "grad_year": "2025م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 28,
+    "name": "نوال أحمد أحمد العرشي",
+    "degree": "دكتوراه",
+    "specialization": "أثار قديمة",
+    "hiring_univ": "2013-07-28",
+    "hiring_service": "2013-11-13",
+    "birth_date": "1977م",
+    "grad_year": "2010م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 29,
+    "name": "زينب علي محمد الانسي",
+    "degree": "دكتوراه",
+    "specialization": "كيمياء عضوية",
+    "hiring_univ": "2013-12-05",
+    "hiring_service": "",
+    "birth_date": "1981م",
+    "grad_year": "2023م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 30,
+    "name": "إبراهيم عبدالله إسحاق",
+    "degree": "دكتوراه",
+    "specialization": "إدارة عامة",
+    "hiring_univ": "2014-11-26",
+    "hiring_service": "",
+    "birth_date": "1984م",
+    "grad_year": "2023م",
+    "grade": "بدون",
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
+  },
+  {
+    "id": 31,
+    "name": "امة الخالق عبدالرحمن المهدي",
+    "degree": "دكتوراه",
+    "specialization": "تفسير وعلوم القراءان",
+    "hiring_univ": "2015-09-16",
+    "hiring_service": "",
+    "birth_date": "1978م",
+    "grad_year": "2025م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 32,
+    "name": "محمد عبدالولي السماوي",
+    "degree": "دكتوراه",
+    "specialization": "خضر",
+    "hiring_univ": "1995م",
+    "hiring_service": "",
+    "birth_date": "1970م",
+    "grad_year": "2002م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 33,
+    "name": "ليبيا محمد مهيوب قائد صينا",
+    "degree": "دكتوراه",
+    "specialization": "هرمونات",
+    "hiring_univ": "2001-11-12",
+    "hiring_service": "",
+    "birth_date": "1976م",
+    "grad_year": "2014م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 34,
+    "name": "خالد محمد سالم عوض عفيف",
+    "degree": "ماجستير",
+    "specialization": "مكتبات وعلم المعلومات",
+    "hiring_univ": "1992-07-19",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2026م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 35,
+    "name": "خالد عبده فرحان علي",
+    "degree": "ماجستير",
+    "specialization": "محاسبة",
+    "hiring_univ": "1995-10-05",
+    "hiring_service": "",
+    "birth_date": "1975م",
+    "grad_year": "2002م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 36,
+    "name": "حسن عمر مجلي",
+    "degree": "ماجستير",
+    "specialization": "علوم بحار",
+    "hiring_univ": "1997-09-25",
+    "hiring_service": "",
+    "birth_date": "1972م",
+    "grad_year": "1996م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 37,
+    "name": "مرتضى عبدالوارث محمد مجاهد",
+    "degree": "ماجستير",
+    "specialization": "كيمياء",
+    "hiring_univ": "2002-09-21",
+    "hiring_service": "",
+    "birth_date": "1974م",
+    "grad_year": "2001م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 38,
+    "name": "خالد حسين احسن المحمدي",
+    "degree": "ماجستير",
+    "specialization": "جغرافيا فلرعي تاريخ",
+    "hiring_univ": "2002-09-21",
+    "hiring_service": "",
+    "birth_date": "1978م",
+    "grad_year": "20012م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 39,
+    "name": "امة الرزاق عبدالله زيد أبو طالب",
+    "degree": "ماجستير",
+    "specialization": "شريعة وقانون",
+    "hiring_univ": "2003-06-14",
+    "hiring_service": "",
+    "birth_date": "1990م",
+    "grad_year": "2019م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 40,
+    "name": "أحمد صالح الربوعي",
+    "degree": "ماجستير",
+    "specialization": "شريعة وقانون",
+    "hiring_univ": "2004-08-08",
+    "hiring_service": "",
+    "birth_date": "1979م",
+    "grad_year": "2017م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 41,
+    "name": "يحيى محمد صالح الصديعي",
+    "degree": "ماجستير",
+    "specialization": "علوم الأرض والبيئة طبقات ونفط",
+    "hiring_univ": "2005-11-28",
+    "hiring_service": "",
+    "birth_date": "1979م",
+    "grad_year": "2005م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 42,
+    "name": "إبراهيم أحمد هاشم الشهاري",
+    "degree": "ماجستير",
+    "specialization": "صيدلة",
+    "hiring_univ": "2007-12-09",
+    "hiring_service": "",
+    "birth_date": "1975م",
+    "grad_year": "2010م",
+    "grade": "جيد",
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
+  },
+  {
+    "id": 43,
+    "name": "نوال حسن محمد باري",
+    "degree": "ماجستير",
+    "specialization": "علوم حاسوب",
+    "hiring_univ": "2008-09-10",
+    "hiring_service": "",
+    "birth_date": "1979م",
+    "grad_year": "2006م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 44,
+    "name": "صالح حميد حميد العنمي",
+    "degree": "ماجستير",
+    "specialization": "فيزياء",
+    "hiring_univ": "2009-12-12",
+    "hiring_service": "2004-12-01",
+    "birth_date": "1980م",
+    "grad_year": "2003م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 45,
+    "name": "صادق محسن عقيل الغابري",
+    "degree": "ماجستير",
+    "specialization": "نظم المعلومات الحاسوبية",
+    "hiring_univ": "2010-10-13",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2005م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 46,
+    "name": "أسماء محمد ناصر عوضه",
+    "degree": "ماجستير",
+    "specialization": "علوم حياة",
+    "hiring_univ": "2010-12-14",
+    "hiring_service": "",
+    "birth_date": "1984م",
+    "grad_year": "2008م",
+    "grade": "ممتاز",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 47,
+    "name": "سميحة عبدالله شرف عبدالخالق",
+    "degree": "ماجستير",
+    "specialization": "تاريخ فرعي جغرافيا",
+    "hiring_univ": "2010-12-14",
+    "hiring_service": "",
+    "birth_date": "1983م",
+    "grad_year": "20089م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 48,
+    "name": "محمد عبدالرحمن دماج",
+    "degree": "ماجستير",
+    "specialization": "علوم سياسية",
+    "hiring_univ": "2011-02-05",
+    "hiring_service": "",
+    "birth_date": "1985م",
+    "grad_year": "2008م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 49,
+    "name": "أمة العليم حسين أحمد نواس",
+    "degree": "ماجستير",
+    "specialization": "لغة عربية",
+    "hiring_univ": "2011-07-02",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2009م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 50,
+    "name": "محمد محمد علي نجاد",
+    "degree": "ماجستير",
+    "specialization": "شريعة وقانون",
+    "hiring_univ": "2011-08-02",
+    "hiring_service": "",
+    "birth_date": "1982م",
+    "grad_year": "2025م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 51,
+    "name": "بلقيس طه عبدالله المقطري",
+    "degree": "ماجستير",
+    "specialization": "مكتبات وعلم المعلومات",
+    "hiring_univ": "2011-08-02",
+    "hiring_service": "",
+    "birth_date": "1981م",
+    "grad_year": "2015م",
+    "grade": "مفبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 52,
+    "name": "يحيى علي حزام المساجدي",
+    "degree": "ماجستير",
+    "specialization": "معلم حاسوب",
+    "hiring_univ": "2011-08-02",
+    "hiring_service": "",
+    "birth_date": "1984م",
+    "grad_year": "2024م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 53,
+    "name": "مريم محمود ناشر السريحي",
+    "degree": "ماجستير",
+    "specialization": "كيمياء",
+    "hiring_univ": "2011-08-27",
+    "hiring_service": "",
+    "birth_date": "1983م",
+    "grad_year": "2009م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 54,
+    "name": "وداد إسماعيل علي الشميري",
+    "degree": "ماجستير",
+    "specialization": "فيزياء فرعي : رياضيات",
+    "hiring_univ": "2011-12-21",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2005م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
     "id": 55,
-    "name": "محمد حسن أحمد  العنسي",
+    "name": "محمد حسن أحمد العنسي",
     "degree": "ماجستير",
-    "specialization": "دراسات  انجليزية",
+    "specialization": "دراسات انجليزية",
     "hiring_univ": "2012-08-14",
     "hiring_service": "",
     "birth_date": "1986م",
     "grad_year": "2010م",
     "grade": "جيد",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
-    "id": 57,
-    "name": "هاني يحيى  حسين  الحرفي",
+    "id": 56,
+    "name": "هاني يحيى حسين الحرفي",
     "degree": "ماجستير",
     "specialization": "علوم سياسية",
     "hiring_univ": "2012-11-18",
@@ -1114,11 +955,14 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1979م",
     "grad_year": "2002م",
     "grade": "جيد",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
   },
   {
-    "id": 58,
-    "name": "محسن علي  أحمد المحبشي",
+    "id": 57,
+    "name": "محسن علي أحمد المحبشي",
     "degree": "ماجستير",
     "specialization": "بساتين وغابات",
     "hiring_univ": "2013-02-10",
@@ -1126,6 +970,339 @@ const PRESEEDED_CANDIDATES = [
     "birth_date": "1984م",
     "grad_year": "2007م",
     "grade": "جيد",
-    "customValues": {}
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 58,
+    "name": "ابتسام عبدالله صالح التويتي",
+    "degree": "ماجستير",
+    "specialization": "كيمياء فرعي فيزياء",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1981م",
+    "grad_year": "2004م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 59,
+    "name": "افراح حمود عبدالله قيس",
+    "degree": "ماجستير",
+    "specialization": "لغة انجليزية",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1978م",
+    "grad_year": "2004م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 60,
+    "name": "رجاء عبدالوهاب علي سيف",
+    "degree": "ماجستير",
+    "specialization": "لغة انجليزية",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1983م",
+    "grad_year": "2004م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 61,
+    "name": "سامية محمد المطري",
+    "degree": "ماجستير",
+    "specialization": "إذاعة وتلفزيون",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2012م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 62,
+    "name": "فطوم علي أحمد باسديس",
+    "degree": "ماجستير",
+    "specialization": "دبلوم تقني",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-12-01",
+    "birth_date": "1979م",
+    "grad_year": "2016م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 63,
+    "name": "محمد علي محمد عريش",
+    "degree": "ماجستير",
+    "specialization": "أثار قديمة",
+    "hiring_univ": "2013-02-18",
+    "hiring_service": "2012-01-01",
+    "birth_date": "1981م",
+    "grad_year": "2019م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 64,
+    "name": "جميلة صالح القطيبي",
+    "degree": "ماجستير",
+    "specialization": "محاسبة",
+    "hiring_univ": "2013-07-28",
+    "hiring_service": "",
+    "birth_date": "1985م",
+    "grad_year": "2026م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 65,
+    "name": "امين محمد أمين المقالح",
+    "degree": "ماجستير",
+    "specialization": "علوم سياسية",
+    "hiring_univ": "2013-07-28",
+    "hiring_service": "",
+    "birth_date": "1982م",
+    "grad_year": "2010م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 66,
+    "name": "سلوى مقبل عيظه الحداء",
+    "degree": "ماجستير",
+    "specialization": "لغة فرنسية",
+    "hiring_univ": "2013-10-08",
+    "hiring_service": "",
+    "birth_date": "1979",
+    "grad_year": "2002م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 67,
+    "name": "وليد فرحان علي راجح",
+    "degree": "ماجستير",
+    "specialization": "إدارة عامة",
+    "hiring_univ": "2015-09-16",
+    "hiring_service": "2016-08-14",
+    "birth_date": "1983م",
+    "grad_year": "2018م",
+    "grade": "جيد جداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 68,
+    "name": "أسماء محمد علي القباطي",
+    "degree": "ماجستير",
+    "specialization": "بساتين وغابات",
+    "hiring_univ": "2010/12/4م",
+    "hiring_service": "",
+    "birth_date": "1985",
+    "grad_year": "2008م",
+    "grade": "جيدجداً",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 69,
+    "name": "أسماء حميد الوتاري",
+    "degree": "ماجستير",
+    "specialization": "بساتين وغابات",
+    "hiring_univ": "2012-08-14",
+    "hiring_service": "",
+    "birth_date": "1987م",
+    "grad_year": "2010م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 70,
+    "name": "محمد أحمد حميد",
+    "degree": "ماجستير",
+    "specialization": "هندسة زراعية",
+    "hiring_univ": "2012/8/14م",
+    "hiring_service": "",
+    "birth_date": "1987م",
+    "grad_year": "2010م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 71,
+    "name": "سماح محمد صالح الجعراني",
+    "degree": "ماجستير",
+    "specialization": "بساتين وغابات",
+    "hiring_univ": "2014/3/6م",
+    "hiring_service": "",
+    "birth_date": "1985م",
+    "grad_year": "2011م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 72,
+    "name": "نور عثمان كوكبة",
+    "degree": "ماجستير",
+    "specialization": "علوم وتقنية غذائية",
+    "hiring_univ": "2011-07-02",
+    "hiring_service": "",
+    "birth_date": "1986",
+    "grad_year": "2009م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 73,
+    "name": "نصر محمد علي العماري",
+    "degree": "ماجستير",
+    "specialization": "إدارة اعمال",
+    "hiring_univ": "2002-11-10",
+    "hiring_service": "",
+    "birth_date": "1979م",
+    "grad_year": "2009م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 74,
+    "name": "منى علي صالح الفضلي",
+    "degree": "ماجستير",
+    "specialization": "تمريض",
+    "hiring_univ": "2002-11-10",
+    "hiring_service": "",
+    "birth_date": "1976م",
+    "grad_year": "2016م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 75,
+    "name": "معمر مهيوب سعيد قاسم",
+    "degree": "ماجستير",
+    "specialization": "صيدلة",
+    "hiring_univ": "2003-12-10",
+    "hiring_service": "",
+    "birth_date": "1981م",
+    "grad_year": "2011م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 76,
+    "name": "ايه محمد محسن الحوثي",
+    "degree": "ماجستير",
+    "specialization": "إدارة اعمال",
+    "hiring_univ": "2009-11-24",
+    "hiring_service": "",
+    "birth_date": "1986م",
+    "grad_year": "2024م",
+    "grade": "مقبول",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 77,
+    "name": "عادل عبدالقادر سيف ناجي",
+    "degree": "ماجستير",
+    "specialization": "طب وجراحة الفم",
+    "hiring_univ": "2009-12-30",
+    "hiring_service": "",
+    "birth_date": "1980م",
+    "grad_year": "2010م",
+    "grade": "جيد",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 78,
+    "name": "ليبيا محمد مهيوب قائد صينا",
+    "degree": "دكتوراه",
+    "specialization": "هرمونات",
+    "hiring_univ": "2001-11-12",
+    "hiring_service": "",
+    "birth_date": "1976م",
+    "grad_year": "2014م",
+    "grade": "بدون",
+    "continuity": "مستمر",
+    "customValues": {
+      "work_practice": 5
+    }
+  },
+  {
+    "id": 79,
+    "name": "ابراهيم محمد ناجي العامري",
+    "degree": "دكتوراه",
+    "specialization": "إدارة عامة",
+    "hiring_univ": "1997",
+    "hiring_service": "",
+    "birth_date": "1977",
+    "grad_year": "2017",
+    "grade": "بدون",
+    "continuity": "متاح",
+    "customValues": {
+      "work_practice": 3
+    }
   }
 ];
