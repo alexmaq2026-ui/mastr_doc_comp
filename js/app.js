@@ -33,10 +33,40 @@ function initStore() {
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
-      if (!state.candidates || !Array.isArray(state.candidates) || state.candidates.length === 0) {
-        state.candidates = (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0)
-          ? JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES))
-          : [];
+      if (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0) {
+        const seedMap = {};
+        PRESEEDED_CANDIDATES.forEach(p => {
+          if (p.name) seedMap[normalizeArabicString(p.name)] = p;
+        });
+        if (!state.candidates || !Array.isArray(state.candidates) || state.candidates.length === 0) {
+          state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
+        } else {
+          state.candidates.forEach(c => {
+            const key = normalizeArabicString(c.name);
+            if (seedMap[key]) {
+              const p = seedMap[key];
+              c.degree = p.degree;
+              c.specialization = p.specialization;
+              c.hiring_univ = p.hiring_univ;
+              c.hiring_service = p.hiring_service || c.hiring_service || '';
+              c.birth_date = p.birth_date;
+              c.grad_year = p.grad_year;
+              c.grade = p.grade;
+              if (p.continuity) c.continuity = p.continuity;
+              if (!c.customValues) c.customValues = {};
+              if (p.customValues && p.customValues.work_practice !== undefined) {
+                c.customValues.work_practice = p.customValues.work_practice;
+              }
+            }
+          });
+          PRESEEDED_CANDIDATES.forEach(p => {
+            const key = normalizeArabicString(p.name);
+            const exists = state.candidates.some(c => normalizeArabicString(c.name) === key);
+            if (!exists) {
+              state.candidates.push(JSON.parse(JSON.stringify(p)));
+            }
+          });
+        }
       }
       if (!state.criteria) {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));

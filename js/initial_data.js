@@ -129,7 +129,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1972م",
     "grad_year": "2013م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "متاح",
     "customValues": {
       "work_practice": 3
@@ -144,7 +144,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1975م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "متاح",
     "customValues": {
       "work_practice": 3
@@ -159,7 +159,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1974م",
     "grad_year": "2023م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -174,7 +174,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1970م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -189,7 +189,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "1991-01-10",
     "birth_date": "1980م",
     "grad_year": "2023م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -204,7 +204,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1974م",
     "grad_year": "2016م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -219,7 +219,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1983م",
     "grad_year": "2017م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -234,7 +234,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1977م",
     "grad_year": "2012م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -249,7 +249,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1980م",
     "grad_year": "2020م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "متاح",
     "customValues": {
       "work_practice": 3
@@ -264,7 +264,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1977م",
     "grad_year": "2017م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -279,7 +279,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1979م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -339,7 +339,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1978م",
     "grad_year": "2019م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -354,7 +354,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "1994-11-16",
     "birth_date": "1976م",
     "grad_year": "2018م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -369,7 +369,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1982م",
     "grad_year": "2020م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -384,7 +384,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1981م",
     "grad_year": "2026م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "متاح",
     "customValues": {
       "work_practice": 3
@@ -399,7 +399,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1980م",
     "grad_year": "2022م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -429,7 +429,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1979م",
     "grad_year": "2021م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -444,7 +444,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1982",
     "grad_year": "2024م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -459,7 +459,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1972م",
     "grad_year": "2026م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -474,7 +474,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1979",
     "grad_year": "2017",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -489,7 +489,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1979م",
     "grad_year": "2017م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -504,7 +504,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1983م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -519,7 +519,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-01-01",
     "birth_date": "1979م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -534,7 +534,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2013-11-13",
     "birth_date": "1977م",
     "grad_year": "2010م",
-    "grade": "بدون",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -549,7 +549,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1981م",
     "grad_year": "2023م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -564,7 +564,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1984م",
     "grad_year": "2023م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "متاح",
     "customValues": {
       "work_practice": 3
@@ -579,7 +579,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1978م",
     "grad_year": "2025م",
-    "grade": "بدون",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -594,7 +594,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1970م",
     "grad_year": "2002م",
-    "grade": "بدون",
+    "grade": "ممتاز",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -879,7 +879,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1981م",
     "grad_year": "2015م",
-    "grade": "مفبول",
+    "grade": "مقبول",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -1029,7 +1029,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1980م",
     "grad_year": "2012م",
-    "grade": "جيد جداً",
+    "grade": "جيد",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -1044,7 +1044,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "2012-12-01",
     "birth_date": "1979م",
     "grad_year": "2016م",
-    "grade": "جيد جداً",
+    "grade": "مقبول",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
@@ -1134,7 +1134,7 @@ const PRESEEDED_CANDIDATES = [
     "hiring_service": "",
     "birth_date": "1985",
     "grad_year": "2008م",
-    "grade": "جيدجداً",
+    "grade": "جيد جداً",
     "continuity": "مستمر",
     "customValues": {
       "work_practice": 5
