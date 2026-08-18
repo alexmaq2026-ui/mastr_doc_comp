@@ -5559,56 +5559,64 @@ function calculateCandidateStrengthsAndWeaknesses(c) {
   const strengths = [];
   const weaknesses = [];
 
-  // 1. تحليل الأقدمية (الوزن الأعلى 10)
+  // 1. تحليل الأقدمية
   if (isCriterionActiveForDegree(state.criteria.seniority, c.degree)) {
     if (c.scores.seniorityScore >= 5) {
-      strengths.push(`أقدمية تعيين ممتازة (1990 - 2000م: ${c.scores.seniorityScore}/10 نقاط)`);
+      strengths.push(`أقدمية تعيين ممتازة (تعيين 1990–2000م: ${c.scores.seniorityScore}/${state.criteria.seniority?.maxPoints || 10} نقاط)`);
     } else if (c.scores.seniorityScore >= 3) {
-      strengths.push(`أقدمية خدمة معتمدة (2001 - 2015م: ${c.scores.seniorityScore}/10 نقاط)`);
+      strengths.push(`أقدمية خدمة معتمدة (تعيين 2001–2015م: ${c.scores.seniorityScore}/${state.criteria.seniority?.maxPoints || 10} نقاط)`);
     } else {
-      weaknesses.push(`أقدمية حديثة خارج الشرائح (${c.scores.seniorityScore || 0}/10 نقاط)`);
+      weaknesses.push(`أقدمية خارج الشرائح المعتمدة (${c.scores.seniorityScore || 0}/${state.criteria.seniority?.maxPoints || 10} نقاط)`);
     }
   }
 
-  // 2. تحليل الفئة العمرية (الوزن الأعلى 5)
+  // 2. تحليل الفئة العمرية
   if (isCriterionActiveForDegree(state.criteria.age, c.degree)) {
     if (c.scores.ageScore >= 5) {
-      strengths.push(`فئة عمرية شابة ومثالية (25 - 35 سنة: ${c.scores.ageScore}/5 نقاط)`);
+      strengths.push(`فئة عمرية شابة ومثالية (35 سنة فأقل: ${c.scores.ageScore}/5 نقاط)`);
     } else if (c.scores.ageScore >= 3) {
-      strengths.push(`فئة عمرية مناسبة (36 - 38 سنة: ${c.scores.ageScore}/5 نقاط)`);
+      strengths.push(`فئة عمرية مناسبة (36–38 سنة: ${c.scores.ageScore}/5 نقاط)`);
     } else {
       weaknesses.push(`فئة عمرية متقدمة (39 سنة فما فوق: ${c.scores.ageScore}/5 نقاط)`);
     }
   }
 
-  // 3. تحليل الاحتياج والتخصص (الوزن الأعلى 5)
+  // 3. تحليل الاحتياج والتخصص — قوة عند 4 نقاط فأعلى
   if (isCriterionActiveForDegree(state.criteria.specialization, c.degree)) {
     if (c.scores.specScore >= 5) {
       strengths.push(`تخصص عالي الأولوية والاحتياج (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
+    } else if (c.scores.specScore >= 4) {
+      strengths.push(`تخصص جيد الاحتياج (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
     } else {
-      weaknesses.push(`تخصص عام الاحتياج (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
+      weaknesses.push(`تخصص منخفض الأولوية (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
     }
   }
 
-  // 4. تحليل التقدير العلمي (الوزن الأعلى 5 - مخصص للماجستير فقط)
+  // 4. تحليل التقدير العلمي (ماجستير فقط) — null يعني بيانات غير مدخلة
   if (isCriterionActiveForDegree(state.criteria.grade, c.degree)) {
-    if (c.scores.gradeScore >= 5) {
-      strengths.push(`مؤهل بكالوريوس بتقدير عالي (${c.grade || 'ممتاز/جيد جداً/جيد'}: ${c.scores.gradeScore}/5 نقاط)`);
-    } else if (c.scores.gradeScore === 4) {
-      weaknesses.push(`مؤهل بكالوريوس بتقدير مقبول (4/5 نقاط)`);
+    const gradeRaw = c.scores.gradeScore;
+    if (gradeRaw == null) {
+      weaknesses.push(`تقدير بكالوريوس غير مدخل في البيانات (—/5 نقاط)`);
+    } else if (gradeRaw >= 5) {
+      strengths.push(`مؤهل بكالوريوس بتقدير ممتاز/جيد جداً (${c.grade || 'ممتاز/جيد جداً'}: ${gradeRaw}/5 نقاط)`);
+    } else if (gradeRaw >= 4) {
+      strengths.push(`مؤهل بكالوريوس بتقدير جيد (${c.grade || 'جيد'}: ${gradeRaw}/5 نقاط)`);
     } else {
-      weaknesses.push(`مؤهل بكالوريوس بدون تقدير/معدل (0/5 نقاط)`);
+      weaknesses.push(`مؤهل بكالوريوس بتقدير دون المطلوب (${gradeRaw}/5 نقاط)`);
     }
   }
 
-  // 5. المعايير الإضافية المخصصة المفعلة (ديناميكياً)
+  // 5. المعايير الإضافية المخصصة — للثنائية: مستمر فقط = قوة
   const activeCustom = (state.criteria.customCriteria || []).filter(item => item.enabled && isCriterionActiveForDegree(item, c.degree));
   activeCustom.forEach(custom => {
     const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
       ? c.scores.customScores[custom.id] : 0;
     const maxPts = custom.maxPoints || 5;
     const dName = getDisplayName(custom.name);
-    if (computedPts >= (maxPts / 2) && computedPts > 0) {
+    const isStrength = (custom.indicatorType === 'binary')
+      ? (computedPts >= maxPts)
+      : (computedPts >= (maxPts / 2) && computedPts > 0);
+    if (isStrength) {
       strengths.push(`${dName} (${computedPts}/${maxPts} نقاط)`);
     } else {
       weaknesses.push(`${dName} (${computedPts}/${maxPts} نقاط)`);
@@ -5673,11 +5681,15 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
               // 2. العمر: نقطة قوة (1) إذا كان سنه في الشرائح المناسبة (3 نقاط فأكثر: 38 سنة فأقل)
               const age1 = isAgeActive ? ((c.scores.ageScore || 0) >= 3 ? 1 : 0) : null;
 
-              // 3. التخصص: نقطة قوة (1) إذا كان من التخصصات ذات الأولوية القصوى (5 نقاط)
-              const spec1 = isSpecActive ? ((c.scores.specScore || 0) >= 5 ? 1 : 0) : null;
+              // 3. التخصص: نقطة قوة (1) إذا حصل على 4 نقاط فأعلى (أولوية قصوى أو جيد)
+              const spec1 = isSpecActive ? ((c.scores.specScore || 0) >= 4 ? 1 : 0) : null;
 
               // 4. التقدير: للمفاضلة على الماجستير فقط (جيد فأعلى: 4 أو 5 نقاط)
-              const grade1 = isGradeActive ? ((c.scores.gradeScore || 0) >= 4 ? 1 : 0) : null;
+              // إذا كانت البيانات غير مدخلة أصلاً (null/undefined) لا تُحسب ضعفاً
+              const gradeRaw = c.scores.gradeScore;
+              const grade1 = isGradeActive
+                ? (gradeRaw == null ? null : (gradeRaw >= 4 ? 1 : 0))
+                : null;
 
               // 5. المعايير المخصصة (الممارسة الفعلية للوظيفة)
               const customBinaryResults = activeCustom.map(custom => {
@@ -5686,7 +5698,10 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                 const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
                   ? c.scores.customScores[custom.id] : 0;
                 const maxPts = custom.maxPoints || 5;
-                const isStrength = (computedPts >= (maxPts / 2) && computedPts > 0) ? 1 : 0;
+                // للمعايير الثنائية (مستمر/متاح): القوة تقتصر على الخيار الأعلى (مستمر) فقط
+                const isStrength = (custom.indicatorType === 'binary')
+                  ? (computedPts >= maxPts ? 1 : 0)
+                  : (computedPts >= (maxPts / 2) && computedPts > 0) ? 1 : 0;
                 return {
                   custom,
                   pts: computedPts,
@@ -5696,21 +5711,45 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
 
               let totalCriteriaCount = 0;
               let totalStrengths = 0;
+              // للنسبة % المرجّحة: نجمع النقاط الفعلية والحد الأقصى لكل معيار نشط
+              let totalEarnedPts = 0;
+              let totalMaxPts = 0;
 
-              if (sen1 !== null) { totalCriteriaCount++; totalStrengths += sen1; }
-              if (age1 !== null) { totalCriteriaCount++; totalStrengths += age1; }
-              if (spec1 !== null) { totalCriteriaCount++; totalStrengths += spec1; }
-              if (grade1 !== null) { totalCriteriaCount++; totalStrengths += grade1; }
+              const senMaxPts = state.criteria.seniority?.maxPoints || 10;
+              const ageMaxPts = state.criteria.age?.maxPoints || 5;
+              const specMaxPts = state.criteria.specialization?.maxPoints || 5;
+              const gradeMaxPts = state.criteria.grade?.maxPoints || 5;
+
+              if (sen1 !== null) {
+                totalCriteriaCount++; totalStrengths += sen1;
+                totalEarnedPts += (c.scores.seniorityScore || 0); totalMaxPts += senMaxPts;
+              }
+              if (age1 !== null) {
+                totalCriteriaCount++; totalStrengths += age1;
+                totalEarnedPts += (c.scores.ageScore || 0); totalMaxPts += ageMaxPts;
+              }
+              if (spec1 !== null) {
+                totalCriteriaCount++; totalStrengths += spec1;
+                totalEarnedPts += (c.scores.specScore || 0); totalMaxPts += specMaxPts;
+              }
+              if (grade1 !== null) {
+                totalCriteriaCount++; totalStrengths += grade1;
+                const gradeEarned = (c.scores.gradeScore != null) ? c.scores.gradeScore : 0;
+                totalEarnedPts += gradeEarned; totalMaxPts += gradeMaxPts;
+              }
 
               customBinaryResults.forEach(r => {
                 if (r.isStrength !== null) {
                   totalCriteriaCount++;
                   totalStrengths += r.isStrength;
+                  totalEarnedPts += r.pts;
+                  totalMaxPts += (r.custom.maxPoints || 5);
                 }
               });
 
               const totalWeaknesses = Math.max(0, totalCriteriaCount - totalStrengths);
-              const strengthPercent = totalCriteriaCount > 0 ? (totalStrengths / totalCriteriaCount * 100) : 0;
+              // النسبة % مرجّحة بالنقاط الفعلية لكل معيار (لا بعدد المعايير)
+              const strengthPercent = totalMaxPts > 0 ? (totalEarnedPts / totalMaxPts * 100) : 0;
 
               let statusBadge = '';
               if (strengthPercent >= 75) {
