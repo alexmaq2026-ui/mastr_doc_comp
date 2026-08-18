@@ -87,206 +87,86 @@ const DEFAULT_COMMITTEE_MEMBERS = [
 ];
 
 const DEFAULT_CRITERIA = {
-  "seniority": {
-    "enabled": true,
-    "targetDegree": "all",
-    "weightName": "تاريخ التعيين (الأقدمية)",
-    "maxPoints": 10,
-    "startYear": 1990,
-    "endYear": 2030,
-    "stepYears": 1,
-    "brackets": [
-      {
-        "label": "1990 - 1994م",
-        "minYear": 1990,
-        "maxYear": 1994,
-        "points": 10
-      },
-      {
-        "label": "1995 - 2000م",
-        "minYear": 1995,
-        "maxYear": 2000,
-        "points": 8
-      },
-      {
-        "label": "2001 - 2005م",
-        "minYear": 2001,
-        "maxYear": 2005,
-        "points": 6
-      },
-      {
-        "label": "2006 - 2010م",
-        "minYear": 2006,
-        "maxYear": 2010,
-        "points": 4
-      },
-      {
-        "label": "2011 - 2015م",
-        "minYear": 2011,
-        "maxYear": 2015,
-        "points": 3
-      },
-      {
-        "label": "2016 - 2020م",
-        "minYear": 2016,
-        "maxYear": 2020,
-        "points": 2
-      },
-      {
-        "label": "2021 - 2030م",
-        "minYear": 2021,
-        "maxYear": 2030,
-        "points": 1
-      }
+  _approvedVersion: '2026_APPROVED_V2',
+  seniority: {
+    enabled: true,
+    targetDegree: 'all',
+    weightName: 'معيار الأقدمية بالخدمة / تاريخ التعيين',
+    maxPoints: 10,
+    startYear: 1990,
+    endYear: 2030,
+    stepYears: 1,
+    brackets: [
+      { label: '1990 - 2000م', minYear: 1990, maxYear: 2000, points: 5 },
+      { label: '2001 - 2015م', minYear: 2001, maxYear: 2015, points: 3 }
     ]
   },
-  "age": {
-    "enabled": true,
-    "targetDegree": "all",
-    "weightName": "الفئة العمرية (العمر)",
-    "maxPoints": 5,
-    "minAge": 25,
-    "maxAge": 56,
-    "stepYears": 5,
-    "brackets": [
-      {
-        "label": "50 سنة فما فوق",
-        "minAge": 50,
-        "maxAge": 120,
-        "points": 5
-      },
-      {
-        "label": "45 - 49 سنة",
-        "minAge": 45,
-        "maxAge": 49,
-        "points": 4
-      },
-      {
-        "label": "40 - 44 سنة",
-        "minAge": 40,
-        "maxAge": 44,
-        "points": 3
-      },
-      {
-        "label": "35 - 39 سنة",
-        "minAge": 35,
-        "maxAge": 39,
-        "points": 2
-      },
-      {
-        "label": "أقل من 35 سنة",
-        "minAge": 0,
-        "maxAge": 34,
-        "points": 1
-      }
-    ],
-    "phdBrackets": [
-      {
-        "label": "55 سنة فما فوق",
-        "minAge": 55,
-        "maxAge": 120,
-        "points": 5
-      },
-      {
-        "label": "50 - 54 سنة",
-        "minAge": 50,
-        "maxAge": 54,
-        "points": 4
-      },
-      {
-        "label": "45 - 49 سنة",
-        "minAge": 45,
-        "maxAge": 49,
-        "points": 3
-      },
-      {
-        "label": "40 - 44 سنة",
-        "minAge": 40,
-        "maxAge": 44,
-        "points": 2
-      },
-      {
-        "label": "أقل من 40 سنة",
-        "minAge": 0,
-        "maxAge": 39,
-        "points": 1
-      }
+  age: {
+    enabled: true,
+    targetDegree: 'all',
+    weightName: 'معيار الفئة العمرية للموظف المتقدم',
+    maxPoints: 5,
+    minAge: 25,
+    maxAge: 60,
+    stepYears: 1,
+    brackets: [
+      { label: '40 سنة ومافوق', minAge: 40, maxAge: 120, points: 1 },
+      { label: '39 سنة', minAge: 39, maxAge: 39, points: 2 },
+      { label: '38 سنة', minAge: 38, maxAge: 38, points: 3 },
+      { label: '37 سنة', minAge: 37, maxAge: 37, points: 4 },
+      { label: '36 سنة', minAge: 36, maxAge: 36, points: 4 },
+      { label: '35 سنة', minAge: 35, maxAge: 35, points: 5 },
+      { label: '34 سنة', minAge: 34, maxAge: 34, points: 5 },
+      { label: '33 سنة', minAge: 33, maxAge: 33, points: 5 },
+      { label: '32 سنة', minAge: 32, maxAge: 32, points: 5 },
+      { label: '31 سنة', minAge: 31, maxAge: 31, points: 5 },
+      { label: '30 سنة', minAge: 30, maxAge: 30, points: 5 },
+      { label: '29 سنة', minAge: 29, maxAge: 29, points: 5 },
+      { label: '28 سنة', minAge: 28, maxAge: 28, points: 5 },
+      { label: '27 سنة', minAge: 27, maxAge: 27, points: 5 },
+      { label: '26 سنة', minAge: 26, maxAge: 26, points: 5 },
+      { label: '25 سنة', minAge: 0, maxAge: 25, points: 5 }
     ]
   },
-  "specialization": {
-    "enabled": true,
-    "targetDegree": "all",
-    "weightName": "الاحتياج للتخصص",
-    "maxPoints": 5,
-    "items": [
-      {
-        "name": "شريعة وقانون",
-        "points": 5
-      },
-      {
-        "name": "علوم حاسوب",
-        "points": 5
-      },
-      {
-        "name": "اقتصاد ومحاسبة",
-        "points": 4
-      },
-      {
-        "name": "إدارة عامة",
-        "points": 4
-      },
-      {
-        "name": "إدارة أعمال",
-        "points": 3
-      },
-      {
-        "name": "أخرى",
-        "points": 2
-      }
+  specialization: {
+    enabled: true,
+    targetDegree: 'all',
+    weightName: 'معيار مدى احتياج الجامعة للتخصص',
+    maxPoints: 5,
+    items: [
+      { name: 'شريعة وقانون', points: 5 },
+      { name: 'علوم حاسوب', points: 5 },
+      { name: 'اقتصاد ومحاسبة', points: 5 },
+      { name: 'إدارة عامة', points: 5 },
+      { name: 'إدارة أعمال', points: 5 },
+      { name: 'أخرى', points: 4 }
     ]
   },
-  "grade": {
-    "enabled": true,
-    "targetDegree": "all",
-    "weightName": "تقدير المؤهل (البكالوريوس/المؤهل)",
-    "maxPoints": 5,
-    "items": [
-      {
-        "name": "ممتاز",
-        "points": 5
-      },
-      {
-        "name": "جيد جداً",
-        "points": 5
-      },
-      {
-        "name": "جيد",
-        "points": 5
-      },
-      {
-        "name": "مقبول",
-        "points": 4
-      }
+  grade: {
+    enabled: true,
+    targetDegree: 'master',
+    weightName: 'معيار تقدير المؤهل الدراسي السابق',
+    maxPoints: 5,
+    items: [
+      { name: 'ممتاز', points: 5 },
+      { name: 'جيد جداً', points: 5 },
+      { name: 'جيد', points: 5 },
+      { name: 'مقبول', points: 4 },
+      { name: 'بدون', points: 0 }
     ]
   },
-  "customCriteria": [
+  customCriteria: [
     {
-      "id": "work_practice",
-      "name": "الممارسة الفعلية للوظيفة",
-      "maxPoints": 5,
-      "enabled": true,
-      "targetDegree": "all",
-      "indicatorType": "binary",
-      "config": {
-        "options": [
-          {
-            "label": "مستمر",
-            "points": 5
-          },
-          {
-            "label": "متاح",
-            "points": 3
-          }
+      id: 'work_practice',
+      name: 'معيار الممارسة الفعلية للوظيفة',
+      maxPoints: 5,
+      enabled: true,
+      targetDegree: 'all',
+      indicatorType: 'binary',
+      config: {
+        options: [
+          { label: 'مستمر', points: 5 },
+          { label: 'متاح', points: 3 }
         ]
       }
     }

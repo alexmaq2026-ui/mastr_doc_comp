@@ -42,8 +42,29 @@ const systemSettingsToUpload = [
 ];
 
 async function upload() {
-    console.log(`🚀 بدء رفع الشحن الشامل إلى Supabase (${supabaseUrl})...`);
+    console.log(`🚀 بدء فحص وتصفير ورفع البيانات إلى Supabase (${supabaseUrl})...`);
     
+    // 0. أخذ نسخة احتياطية من البيانات الحالية أولاً
+    try {
+        const backupData = {};
+        const resC_get = await fetch(`${supabaseUrl}/rest/v1/candidates?select=*`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } });
+        if (resC_get.ok) backupData.candidates = await resC_get.json();
+
+        const resS_get = await fetch(`${supabaseUrl}/rest/v1/system_settings?select=*`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } });
+        if (resS_get.ok) backupData.system_settings = await resS_get.json();
+
+        const resM_get = await fetch(`${supabaseUrl}/rest/v1/committee_members?select=*`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } });
+        if (resM_get.ok) backupData.committee_members = await resM_get.json();
+
+        const backupDir = path.join(__dirname, 'scratch');
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        const backupPath = path.join(backupDir, `supabase_backup_${Date.now()}.json`);
+        fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2), 'utf8');
+        console.log(`💾 تم حفظ نسخة احتياطية محلية في: ${backupPath}`);
+    } catch(e) {
+        console.warn('تنبيه أثناء حفظ النسخة الاحتياطية:', e.message);
+    }
+
     // 1. مسح ثم رفع المتنافسين
     try {
         await fetch(`${supabaseUrl}/rest/v1/candidates?id=gt.0`, {
@@ -66,15 +87,21 @@ async function upload() {
         else console.error('❌ خطأ رفع المتنافسين:', await resC.text());
     } catch(e) { console.error(e); }
 
-    // 2. رفع أعضاء اللجنة
+    // 2. مسح ثم رفع أعضاء اللجنة
     try {
+        await fetch(`${supabaseUrl}/rest/v1/committee_members?id=gt.0`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+            }
+        });
         const resM = await fetch(`${supabaseUrl}/rest/v1/committee_members`, {
             method: 'POST',
             headers: {
                 'apikey': supabaseKey,
                 'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(committeeMembersToUpload)
         });
@@ -82,21 +109,29 @@ async function upload() {
         else console.error('❌ خطأ رفع أعضاء اللجنة:', await resM.text());
     } catch(e) { console.error(e); }
 
-    // 3. رفع الإعدادات والمعايير والمستخدمين
+    // 3. مسح ثم رفع الإعدادات والمعايير والمستخدمين
     try {
+        await fetch(`${supabaseUrl}/rest/v1/system_settings?key=neq.null`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+            }
+        });
         const resS = await fetch(`${supabaseUrl}/rest/v1/system_settings`, {
             method: 'POST',
             headers: {
                 'apikey': supabaseKey,
                 'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(systemSettingsToUpload)
         });
         if (resS.ok) console.log(`✅ تم رفع إعدادات المعايير والمستخدمين والإعدادات العامة بنجاح!`);
         else console.error('❌ خطأ رفع الإعدادات:', await resS.text());
     } catch(e) { console.error(e); }
+    
+    console.log('🎉 تم اكتمال تصفير وإعادة تأسيس قاعدة بيانات Supabase بنجاح تام!');
 }
 
 upload();

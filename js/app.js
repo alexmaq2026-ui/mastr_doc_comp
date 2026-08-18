@@ -47,7 +47,7 @@ function initStore() {
         state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
         saveStore(); // حفظ التحديثات فورياً في الـ LocalStorage
       }
-      if (!state.criteria) {
+      if (!state.criteria || state.criteria._approvedVersion !== '2026_APPROVED_V2') {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
       } else {
         if (state.criteria.customCriteria) {
@@ -5560,35 +5560,49 @@ function calculateCandidateStrengthsAndWeaknesses(c) {
   const weaknesses = [];
 
   // 1. تحليل الأقدمية (الوزن الأعلى 10)
-  if (c.scores.seniorityScore >= 8) {
-    strengths.push(`أقدمية تعيين ممتازة (${c.scores.seniorityScore}/10 نقاط)`);
-  } else if (c.scores.seniorityScore <= 3) {
-    weaknesses.push(`أقدمية تعيين حديثة نسبياً (${c.scores.seniorityScore}/10 نقاط)`);
+  if (isCriterionActiveForDegree(state.criteria.seniority, c.degree)) {
+    if (c.scores.seniorityScore >= 5) {
+      strengths.push(`أقدمية تعيين ممتازة (1990 - 2000م: ${c.scores.seniorityScore}/10 نقاط)`);
+    } else if (c.scores.seniorityScore >= 3) {
+      strengths.push(`أقدمية خدمة معتمدة (2001 - 2015م: ${c.scores.seniorityScore}/10 نقاط)`);
+    } else {
+      weaknesses.push(`أقدمية حديثة خارج الشرائح (${c.scores.seniorityScore || 0}/10 نقاط)`);
+    }
   }
 
   // 2. تحليل الفئة العمرية (الوزن الأعلى 5)
-  if (c.scores.ageScore >= 4) {
-    strengths.push(`سن متقدم ورصيد خبرة ممتد (${c.scores.ageScore}/5 نقاط)`);
-  } else if (c.scores.ageScore <= 2) {
-    weaknesses.push(`فئة عمرية حديثة السن (${c.scores.ageScore}/5 نقاط)`);
+  if (isCriterionActiveForDegree(state.criteria.age, c.degree)) {
+    if (c.scores.ageScore >= 5) {
+      strengths.push(`فئة عمرية شابة ومثالية (25 - 35 سنة: ${c.scores.ageScore}/5 نقاط)`);
+    } else if (c.scores.ageScore >= 3) {
+      strengths.push(`فئة عمرية مناسبة (36 - 38 سنة: ${c.scores.ageScore}/5 نقاط)`);
+    } else {
+      weaknesses.push(`فئة عمرية متقدمة (39 سنة فما فوق: ${c.scores.ageScore}/5 نقاط)`);
+    }
   }
 
   // 3. تحليل الاحتياج والتخصص (الوزن الأعلى 5)
-  if (c.scores.specScore >= 5) {
-    strengths.push(`تخصص عالي الاحتياج والأولوية (${c.scores.specScore}/5 نقاط)`);
-  } else if (c.scores.specScore <= 2) {
-    weaknesses.push(`تخصص عام الاحتياج (${c.scores.specScore}/5 نقاط)`);
+  if (isCriterionActiveForDegree(state.criteria.specialization, c.degree)) {
+    if (c.scores.specScore >= 5) {
+      strengths.push(`تخصص عالي الأولوية والاحتياج (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
+    } else {
+      weaknesses.push(`تخصص عام الاحتياج (${c.specialization}: ${c.scores.specScore}/5 نقاط)`);
+    }
   }
 
-  // 4. تحليل التقدير العلمي (الوزن الأعلى 5)
-  if (c.scores.gradeScore >= 4) {
-    strengths.push(`مؤهل علمي بدرجة (${c.grade || 'ممتاز/جيد جداً'})`);
-  } else if (c.scores.gradeScore <= 2) {
-    weaknesses.push(`تقدير المؤهل العلمي (${c.grade || 'مقبول'})`);
+  // 4. تحليل التقدير العلمي (الوزن الأعلى 5 - مخصص للماجستير فقط)
+  if (isCriterionActiveForDegree(state.criteria.grade, c.degree)) {
+    if (c.scores.gradeScore >= 5) {
+      strengths.push(`مؤهل بكالوريوس بتقدير عالي (${c.grade || 'ممتاز/جيد جداً/جيد'}: ${c.scores.gradeScore}/5 نقاط)`);
+    } else if (c.scores.gradeScore === 4) {
+      weaknesses.push(`مؤهل بكالوريوس بتقدير مقبول (4/5 نقاط)`);
+    } else {
+      weaknesses.push(`مؤهل بكالوريوس بدون تقدير/معدل (0/5 نقاط)`);
+    }
   }
 
   // 5. المعايير الإضافية المخصصة المفعلة (ديناميكياً)
-  const activeCustom = (state.criteria.customCriteria || []).filter(item => item.enabled);
+  const activeCustom = (state.criteria.customCriteria || []).filter(item => item.enabled && isCriterionActiveForDegree(item, c.degree));
   activeCustom.forEach(custom => {
     const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
       ? c.scores.customScores[custom.id] : 0;
@@ -5648,13 +5662,27 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                 <td colspan="${7 + activeCustom.length}" style="padding: 30px; text-align: center; color: var(--text-muted);">لا يوجد متنافسون في هذه الفئة</td>
               </tr>
             ` : allCandidates.map((c, idx) => {
-              const sen1 = c.scores.seniorityScore >= 6 ? 1 : 0;
-              const age1 = c.scores.ageScore >= 3 ? 1 : 0;
-              const spec1 = c.scores.specScore >= 3.5 ? 1 : 0;
-              const grade1 = c.scores.gradeScore >= 4 ? 1 : 0;
+              const isGradeActive = isCriterionActiveForDegree(state.criteria.grade, c.degree);
+              const isSenActive = isCriterionActiveForDegree(state.criteria.seniority, c.degree);
+              const isAgeActive = isCriterionActiveForDegree(state.criteria.age, c.degree);
+              const isSpecActive = isCriterionActiveForDegree(state.criteria.specialization, c.degree);
 
-              // تقييم المعايير المخصصة المفعلة (1 = قوة، 0 = ضعف)
+              // 1. الأقدمية: نقطة قوة (1) إذا حصل على 3 نقاط فأكثر (ضمن شرائح التعيين المعتمدة)
+              const sen1 = isSenActive ? ((c.scores.seniorityScore || 0) >= 3 ? 1 : 0) : null;
+
+              // 2. العمر: نقطة قوة (1) إذا كان سنه في الشرائح المناسبة (3 نقاط فأكثر: 38 سنة فأقل)
+              const age1 = isAgeActive ? ((c.scores.ageScore || 0) >= 3 ? 1 : 0) : null;
+
+              // 3. التخصص: نقطة قوة (1) إذا كان من التخصصات ذات الأولوية القصوى (5 نقاط)
+              const spec1 = isSpecActive ? ((c.scores.specScore || 0) >= 5 ? 1 : 0) : null;
+
+              // 4. التقدير: للمفاضلة على الماجستير فقط (جيد فأعلى: 4 أو 5 نقاط)
+              const grade1 = isGradeActive ? ((c.scores.gradeScore || 0) >= 4 ? 1 : 0) : null;
+
+              // 5. المعايير المخصصة (الممارسة الفعلية للوظيفة)
               const customBinaryResults = activeCustom.map(custom => {
+                const isCustomActive = isCriterionActiveForDegree(custom, c.degree);
+                if (!isCustomActive) return { custom, pts: 0, isStrength: null };
                 const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
                   ? c.scores.customScores[custom.id] : 0;
                 const maxPts = custom.maxPoints || 5;
@@ -5666,15 +5694,28 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
                 };
               });
 
-              const totalCriteriaCount = 4 + activeCustom.length;
-              const totalStrengths = sen1 + age1 + spec1 + grade1 + customBinaryResults.reduce((sum, r) => sum + r.isStrength, 0);
-              const totalWeaknesses = totalCriteriaCount - totalStrengths;
+              let totalCriteriaCount = 0;
+              let totalStrengths = 0;
+
+              if (sen1 !== null) { totalCriteriaCount++; totalStrengths += sen1; }
+              if (age1 !== null) { totalCriteriaCount++; totalStrengths += age1; }
+              if (spec1 !== null) { totalCriteriaCount++; totalStrengths += spec1; }
+              if (grade1 !== null) { totalCriteriaCount++; totalStrengths += grade1; }
+
+              customBinaryResults.forEach(r => {
+                if (r.isStrength !== null) {
+                  totalCriteriaCount++;
+                  totalStrengths += r.isStrength;
+                }
+              });
+
+              const totalWeaknesses = Math.max(0, totalCriteriaCount - totalStrengths);
               const strengthPercent = totalCriteriaCount > 0 ? (totalStrengths / totalCriteriaCount * 100) : 0;
 
               let statusBadge = '';
               if (strengthPercent >= 75) {
                 statusBadge = `<span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.22); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ممتاز (${strengthPercent.toFixed(0)}%)</span>`;
-              } else if (strengthPercent >= 45) {
+              } else if (strengthPercent >= 50) {
                 statusBadge = `<span class="badge-status" style="background: rgba(245, 158, 11, 0.22); color: #f59e0b; font-weight: 900; border: 1px solid #f59e0b; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">متوازن (${strengthPercent.toFixed(0)}%)</span>`;
               } else {
                 statusBadge = `<span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.22); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 8px; font-size: 0.78rem; white-space: nowrap;">ضعيف (${strengthPercent.toFixed(0)}%)</span>`;
@@ -5717,21 +5758,25 @@ function renderStrengthsWeaknessesReport(container, selectedDegree = 'الكل')
 
                   <!-- 4. التقدير العلمي -->
                   <td>
-                    ${grade1 === 1 ? `
+                    ${grade1 === null ? `
+                      <span class="badge-status" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; font-weight: 700; border: 1px solid #475569; padding: 2px 8px; font-size: 0.75rem;">مستثنى</span>
+                    ` : (grade1 === 1 ? `
                       <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                     ` : `
                       <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
-                    `}
+                    `)}
                   </td>
 
                   <!-- 5. المعايير المخصصة المفعلة تلقائياً -->
                   ${customBinaryResults.map(res => `
                     <td>
-                      ${res.isStrength === 1 ? `
+                      ${res.isStrength === null ? `
+                        <span class="badge-status" style="background: rgba(100, 116, 139, 0.15); color: #94a3b8; font-weight: 700; border: 1px solid #475569; padding: 2px 8px; font-size: 0.75rem;">مستثنى</span>
+                      ` : (res.isStrength === 1 ? `
                         <span class="badge-status badge-accepted" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 900; border: 1px solid #10b981; padding: 3px 12px; font-size: 0.95rem;">1</span>
                       ` : `
                         <span class="badge-status badge-rejected" style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-weight: 900; border: 1px solid #ef4444; padding: 3px 12px; font-size: 0.95rem;">0</span>
-                      `}
+                      `)}
                     </td>
                   `).join('')}
 
