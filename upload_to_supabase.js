@@ -34,24 +34,31 @@ const committeeMembersToUpload = initialData.committee.map((m, idx) => ({
     sort_order: idx + 1
 }));
 
-// 3. إعدادات النظام والمعايير المعتمدة (دون المساس بحسابات المستخدمين وكلمات مرورهم)
+// 3. إعدادات النظام والمعايير المعتمدة والمستخدمين
 const systemSettingsToUpload = [
     { key: 'global_settings', value: initialData.settings },
-    { key: 'global_criteria', value: initialData.criteria }
+    { key: 'global_criteria', value: initialData.criteria },
+    { key: 'global_users', value: initialData.users }
 ];
 
 async function upload() {
     console.log(`🚀 بدء رفع الشحن الشامل إلى Supabase (${supabaseUrl})...`);
     
-    // 1. رفع المتنافسين
+    // 1. مسح ثم رفع المتنافسين
     try {
+        await fetch(`${supabaseUrl}/rest/v1/candidates?id=gt.0`, {
+            method: 'DELETE',
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+            }
+        });
         const resC = await fetch(`${supabaseUrl}/rest/v1/candidates`, {
             method: 'POST',
             headers: {
                 'apikey': supabaseKey,
                 'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'resolution=merge-duplicates'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(candidatesToUpload)
         });

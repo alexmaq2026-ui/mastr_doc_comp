@@ -44,42 +44,7 @@ function initStore() {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
       if (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0) {
-        const seedMapByName = {};
-        const seedMapById = {};
-        PRESEEDED_CANDIDATES.forEach(p => {
-          if (p.name) seedMapByName[normalizeArabicString(p.name)] = p;
-          if (p.id) seedMapById[p.id] = p;
-        });
-
-        if (!state.candidates || !Array.isArray(state.candidates) || state.candidates.length === 0) {
-          state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
-        } else {
-          state.candidates.forEach(c => {
-            const key = normalizeArabicString(c.name);
-            const p = seedMapByName[key] || seedMapById[c.id];
-            if (p) {
-              c.degree = p.degree;
-              c.specialization = p.specialization;
-              c.hiring_univ = p.hiring_univ;
-              c.hiring_service = p.hiring_service || c.hiring_service || '';
-              c.birth_date = p.birth_date;
-              c.grad_year = p.grad_year;
-              c.grade = p.grade; // تحديث التقدير المعتمد فورياً
-              if (p.continuity) c.continuity = p.continuity;
-              if (!c.customValues) c.customValues = {};
-              if (p.customValues && p.customValues.work_practice !== undefined) {
-                c.customValues.work_practice = p.customValues.work_practice;
-              }
-            }
-          });
-          PRESEEDED_CANDIDATES.forEach(p => {
-            const key = normalizeArabicString(p.name);
-            const exists = state.candidates.some(c => normalizeArabicString(c.name) === key || c.id === p.id);
-            if (!exists) {
-              state.candidates.push(JSON.parse(JSON.stringify(p)));
-            }
-          });
-        }
+        state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
         saveStore(); // حفظ التحديثات فورياً في الـ LocalStorage
       }
       if (!state.criteria) {
