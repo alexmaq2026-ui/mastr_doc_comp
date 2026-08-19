@@ -3,7 +3,7 @@ const DEFAULT_USERS = [
   {
     "id": 1,
     "username": "admin",
-    "password": "admin123",
+    "password": "maq513",
     "name": "د. رئيس لجنة المفاضلة",
     "role": "super_admin",
     "title": "المدير الأعلى / رئيس اللجنة"
@@ -31,6 +31,14 @@ const DEFAULT_USERS = [
     "name": "د. عضو لجنة المفاضلة",
     "role": "committee_member",
     "title": "عضو لجنة المفاضلة (اطلاع فقط)"
+  },
+  {
+    "id": 5,
+    "username": "ah-m",
+    "password": "ah123456",
+    "name": "الأستاذ/عبدالملك الهمداني",
+    "role": "data_entry",
+    "title": "مدخل بيانات"
   }
 ];
 
@@ -68,21 +76,27 @@ const DEFAULT_COMMITTEE_MEMBERS = [
   },
   {
     "id": 3,
-    "name": "أ. اسكندر المقالح",
-    "adminTitle": "أمين عام الجامعة",
+    "name": "د. زيد الوريث",
+    "adminTitle": "مساعد رئيس الجامعة لشؤون المراكز",
     "committeeRole": "عضواً"
   },
   {
     "id": 4,
+    "name": "أ. اسكندر المقالح",
+    "adminTitle": "امين عام الجامعة",
+    "committeeRole": "عضواً"
+  },
+  {
+    "id": 5,
     "name": "د. محمد نجاد",
     "adminTitle": "عميد كلية الشريعة والقانون",
     "committeeRole": "عضواً"
   },
   {
-    "id": 5,
+    "id": 6,
     "name": "د. هاني مغلس",
     "adminTitle": "عميد كلية التجارة والاقتصاد",
-    "committeeRole": "عضواً"
+    "committeeRole": "عضو"
   }
 ];
 

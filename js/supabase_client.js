@@ -157,6 +157,21 @@ async function syncCandidatesFromSupabase() {
             }
         }
 
+        // 3. استجلاب ومزامنة أعضاء لجنة المفاضلة والتوقيعات أونلاين
+        const { data: mData, error: mErr } = await supabaseClient.from('committee_members').select('*').order('sort_order', { ascending: true });
+        if (!mErr && mData && mData.length > 0) {
+            state.committeeMembers = mData.map((m, idx) => ({
+                id: m.id || (idx + 1),
+                name: m.name,
+                adminTitle: m.admin_title || m.adminTitle || '',
+                committeeRole: m.committee_role || m.committeeRole || 'عضواً'
+            }));
+        } else if (!state.committeeMembers || state.committeeMembers.length === 0) {
+            if (typeof DEFAULT_COMMITTEE_MEMBERS !== 'undefined') {
+                state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
+            }
+        }
+
         saveStore();
         if (typeof refreshAllViews === 'function') refreshAllViews();
         return true;
@@ -220,9 +235,17 @@ async function uploadAllDataToSupabase() {
             if (cErr) throw cErr;
         }
 
-        // 2. رفع أعضاء اللجنة
+        // 2. رفع أعضاء اللجنة والتوقيعات الرسمية
         if (state.committeeMembers && state.committeeMembers.length > 0) {
-            const { error: mErr } = await supabaseClient.from('committee_members').upsert(state.committeeMembers);
+            const formattedMembers = state.committeeMembers.map((m, idx) => ({
+                id: parseInt(m.id) || (idx + 1),
+                name: m.name,
+                admin_title: m.adminTitle || m.admin_title || '',
+                committee_role: m.committeeRole || m.committee_role || 'عضواً',
+                sort_order: idx + 1
+            }));
+            await supabaseClient.from('committee_members').delete().gt('id', 0);
+            const { error: mErr } = await supabaseClient.from('committee_members').insert(formattedMembers);
             if (mErr) console.warn('ملاحظة رفع لجنة المفاضلة:', mErr);
         }
 
