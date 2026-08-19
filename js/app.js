@@ -410,6 +410,12 @@ function renderTabsByRole() {
     runNavBtn.style.display = (currentRole === 'super_admin') ? 'inline-flex' : 'none';
   }
 
+  // شريط أزرار التحكم والاعتماد والتصفير في الشاشة الرئيسية: يظهر للمدير الأعلى فقط
+  const bottomActionsBox = document.getElementById('home-bottom-actions-box') || document.querySelector('.bottom-actions-box');
+  if (bottomActionsBox) {
+    bottomActionsBox.style.display = (currentRole === 'super_admin') ? 'flex' : 'none';
+  }
+
   // تفعيل القيود الصارمة لعضو لجنة المفاضلة (اطلاع فقط بدون طباعة أو تعديل)
   if (currentRole === 'committee_member') {
     setTimeout(() => {
@@ -992,47 +998,47 @@ function refreshAllViews() {
 // 1. شاشة لوحة القيادة (Dashboard View)
 function renderDashboard() {
   const rankedAll = getRankedCandidates();
-  const masters = rankedAll.filter(c => c.degree === 'ماجستير');
-  const phds = rankedAll.filter(c => c.degree === 'دكتوراه');
+  const currentYear = state.settings.referenceYear || 2026;
 
-  if (document.getElementById('stat-total-candidates')) document.getElementById('stat-total-candidates').innerText = rankedAll.length;
-  if (document.getElementById('stat-masters-count')) document.getElementById('stat-masters-count').innerText = masters.length;
-  if (document.getElementById('stat-phd-count')) document.getElementById('stat-phd-count').innerText = phds.length;
-  if (document.getElementById('stat-accepted-total')) document.getElementById('stat-accepted-total').innerText = (state.settings.masterGrantsCount || 3) + (state.settings.phdGrantsCount || 3);
+  // ══════════════════════════════════════════════════════════════
+  // ── تحديث إحصائيات الصفحة الرئيسية (tab-home stats) ──
+  // ══════════════════════════════════════════════════════════════
+  const allMasters = rankedAll.filter(c => c.degree === 'ماجستير');
+  const allPhds    = rankedAll.filter(c => c.degree === 'دكتوراه');
 
-  // ── احتساب وتجميع إحصائيات الجاهزية والتوافق ديناميكياً ──
+  if (document.getElementById('stat-total-candidates'))
+    document.getElementById('stat-total-candidates').innerText = rankedAll.length;
+  if (document.getElementById('stat-masters-count'))
+    document.getElementById('stat-masters-count').innerText = allMasters.length;
+  if (document.getElementById('stat-phd-count'))
+    document.getElementById('stat-phd-count').innerText = allPhds.length;
+  if (document.getElementById('stat-accepted-total'))
+    document.getElementById('stat-accepted-total').innerText =
+      (state.settings.masterGrantsCount || 3) + (state.settings.phdGrantsCount || 3);
+
+  // ── مؤشرات الجاهزية والتوافق ──
   const targetCandidates = state.candidates || [];
-  const totalCandidates = targetCandidates.length;
-  const deficientCandidates = targetCandidates.filter(c => {
-    const hiring = c.hiring_univ || c.hiring_service;
-    const isHiringValid = !isInvalidHiringValue(hiring);
-    const isBirthValid = !isInvalidBirthValue(c.birth_date);
-    const isGradeValid = !isInvalidGradeValue(c.grade);
-    const isGradYearValid = c.grad_year && c.grad_year !== '-' && c.grad_year !== 'ـــــــــــــ' && parseInt(c.grad_year) > 0;
-    const isSpecValid = !isInvalidSpecializationValue(c.specialization);
-    return !isHiringValid || !isBirthValid || !isGradeValid || !isGradYearValid || !isSpecValid;
-  });
-
-  const deficientCount = deficientCandidates.length;
-  const completeCount = Math.max(0, totalCandidates - deficientCount);
-
-  const fieldsPerCand = 5;
-  const totalFields = totalCandidates * fieldsPerCand;
+  const totalCandidates  = targetCandidates.length;
+  const fieldsPerCand    = 5;
+  const totalFields      = totalCandidates * fieldsPerCand;
 
   let missingFieldsCount = 0;
+  let deficientCount = 0;
   targetCandidates.forEach(c => {
     const hiring = c.hiring_univ || c.hiring_service;
-    if (typeof isInvalidHiringValue === 'function' && isInvalidHiringValue(hiring)) missingFieldsCount++;
-    if (typeof isInvalidBirthValue === 'function' && isInvalidBirthValue(c.birth_date)) missingFieldsCount++;
-    if (typeof isInvalidGradeValue === 'function' && isInvalidGradeValue(c.grade)) missingFieldsCount++;
-    if (!c.grad_year || c.grad_year === '-' || c.grad_year === 'ـــــــــــــ' || parseInt(c.grad_year) <= 0) missingFieldsCount++;
-    if (typeof isInvalidSpecializationValue === 'function' && isInvalidSpecializationValue(c.specialization)) missingFieldsCount++;
+    let cMissing = 0;
+    if (typeof isInvalidHiringValue === 'function' && isInvalidHiringValue(hiring)) { missingFieldsCount++; cMissing++; }
+    if (typeof isInvalidBirthValue === 'function' && isInvalidBirthValue(c.birth_date)) { missingFieldsCount++; cMissing++; }
+    if (typeof isInvalidGradeValue === 'function' && isInvalidGradeValue(c.grade)) { missingFieldsCount++; cMissing++; }
+    if (!c.grad_year || c.grad_year === '-' || c.grad_year === 'ـــــــــــــ' || parseInt(c.grad_year) <= 0) { missingFieldsCount++; cMissing++; }
+    if (typeof isInvalidSpecializationValue === 'function' && isInvalidSpecializationValue(c.specialization)) { missingFieldsCount++; cMissing++; }
+    if (cMissing > 0) deficientCount++;
   });
 
-  const completeFieldsCount = Math.max(0, totalFields - missingFieldsCount);
-  const readinessPercent = totalFields > 0 ? ((completeFieldsCount / totalFields) * 100).toFixed(1) : '100.0';
-  const completeCandPercent = totalCandidates > 0 ? ((completeCount / totalCandidates) * 100).toFixed(1) : '100.0';
-  const deficientCandPercent = totalCandidates > 0 ? ((deficientCount / totalCandidates) * 100).toFixed(1) : '0.0';
+  const completeFieldsCount  = Math.max(0, totalFields - missingFieldsCount);
+  const completeCount        = Math.max(0, totalCandidates - deficientCount);
+  const readinessPercent     = totalFields > 0 ? ((completeFieldsCount / totalFields) * 100).toFixed(1) : '100.0';
+  const completeCandPercent  = totalCandidates > 0 ? ((completeCount / totalCandidates) * 100).toFixed(1) : '100.0';
 
   const summaryEl = document.getElementById('readiness-checked-summary');
   if (summaryEl) summaryEl.innerText = `(إجمالي عناصر المفاضلة المفحوصة ${totalFields} عنصر: ${totalCandidates} متنافس × ${fieldsPerCand} حقول)`;
@@ -1064,31 +1070,366 @@ function renderDashboard() {
   const completeCandSubEl = document.getElementById('kpi-complete-candidates-sub');
   if (completeCandSubEl) completeCandSubEl.innerHTML = `${completeCandPercent}%<br>${deficientCount === 0 ? 'مستوفي بالكامل' : `يحتاج استكمال (${deficientCount})`}`;
 
-  // جدول ملخص المقبولين
-  const tbody = document.getElementById('dashboard-top-candidates');
-  if (!tbody) return;
+  // ══════════════════════════════════════════════════════════════
+  // ── قراءة الفلتر المختار (لشاشة كشف الفائزين) ──
+  // ══════════════════════════════════════════════════════════════
+  const filterEl = document.getElementById('winners-degree-filter');
+  const degreeFilter = filterEl ? filterEl.value : 'الكل';
 
-  const acceptedMasters = masters.filter(c => c.status === 'مقبول');
-  const acceptedPhds = phds.filter(c => c.status === 'مقبول');
-  const topList = [...acceptedMasters, ...acceptedPhds];
-
-  if (topList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">لا يوجد مرشحين حتى الآن</td></tr>`;
-    return;
+  // ── تحديث العنوان الديناميكي ──
+  const titleEl = document.getElementById('winners-screen-title');
+  if (titleEl) {
+    let degreePart = '';
+    if (degreeFilter === 'ماجستير') {
+      degreePart = '<span style="color:#fbbf24;font-size:1.15rem;">ماجستير</span>';
+    } else if (degreeFilter === 'دكتوراه') {
+      degreePart = '<span style="color:#c4b5fd;font-size:1.15rem;">دكتوراه</span>';
+    } else {
+      degreePart = '<span style="color:#fbbf24;font-size:1.15rem;">ماجستير ودكتوراه</span>';
+    }
+    titleEl.innerHTML = `كشف بأسماء المستحقين للمنح ${degreePart} عبر نظام المفاضلة الآلي`;
   }
 
-  tbody.innerHTML = topList.map(c => `
-    <tr>
-      <td><strong>${c.rank}</strong></td>
-      <td><strong>${c.name}</strong></td>
-      <td><span class="badge-degree">${c.degree}</span></td>
-      <td>${c.specialization}</td>
-      <td>${c.grade}</td>
-      <td><span class="total-score-badge">${c.scores.totalScore} نقطة</span></td>
-      <td><span class="badge-status badge-accepted"> مرشح مقبول</span></td>
-    </tr>
-  `).join('');
+  // ── تحديث السنة الجامعية ──
+  const yearEl = document.getElementById('winners-academic-year');
+  if (yearEl) yearEl.textContent = `للعام الجامعي ${currentYear - 1}/${currentYear}م`;
+
+  // ── جلب المقبولين ──
+  const masters = rankedAll.filter(c => c.degree === 'ماجستير' && c.status === 'مقبول');
+  const phds    = rankedAll.filter(c => c.degree === 'دكتوراه' && c.status === 'مقبول');
+
+  const showMaster = (degreeFilter === 'الكل' || degreeFilter === 'ماجستير');
+  const showPhd    = (degreeFilter === 'الكل' || degreeFilter === 'دكتوراه');
+
+  const displayArea = document.getElementById('winners-display-area');
+  if (!displayArea) return;
+
+
+  // ── دالة بناء جدول مقبولي درجة واحدة ──
+  function buildWinnersTable(list, degree) {
+    const isPhd = degree === 'دكتوراه';
+    const accentColor = isPhd ? '#a78bfa' : '#60a5fa';
+    const accentBg    = isPhd ? 'rgba(139,92,246,0.12)' : 'rgba(59,130,246,0.12)';
+    const accentBorder = isPhd ? 'rgba(139,92,246,0.35)' : 'rgba(59,130,246,0.35)';
+    const medalColors  = ['#f59e0b', '#94a3b8', '#cd7f32'];
+    const medals       = ['🥇', '🥈', '🥉'];
+
+    if (list.length === 0) {
+      return `<div style="text-align:center;padding:30px;color:#64748b;font-size:0.9rem;border:1px dashed rgba(100,116,139,0.3);border-radius:10px;">
+        لا يوجد مقبولون لدرجة (${degree}) حتى الآن.
+      </div>`;
+    }
+
+    const rows = list.map((c, idx) => {
+      const rankNum = idx + 1;
+      const medalIcon = medals[idx] || `<span style="font-weight:900;color:${accentColor}">${rankNum}</span>`;
+      const scoreColor = rankNum === 1 ? '#fbbf24' : rankNum === 2 ? '#94a3b8' : rankNum === 3 ? '#cd7f32' : accentColor;
+      const rowBg = rankNum === 1
+        ? 'linear-gradient(90deg,rgba(251,191,36,0.06) 0%,rgba(0,0,0,0) 100%)'
+        : idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+
+      return `
+        <tr style="background:${rowBg};border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;">
+          <td style="text-align:center;font-size:1.3rem;padding:10px 8px;width:50px;">${medalIcon}</td>
+          <td style="font-weight:800;font-size:0.95rem;color:#f1f5f9;padding:10px 12px;">${c.name}</td>
+          <td style="text-align:center;padding:10px 8px;">
+            <span style="background:${accentBg};color:${accentColor};border:1px solid ${accentBorder};padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:800;">${c.degree}</span>
+          </td>
+          <td style="color:#cbd5e1;font-size:0.88rem;padding:10px 8px;">${c.specialization || '—'}</td>
+          <td style="text-align:center;padding:10px 8px;">
+            <span style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(217,119,6,0.08));color:${scoreColor};border:1px solid rgba(251,191,36,0.25);padding:4px 12px;border-radius:20px;font-weight:900;font-size:0.9rem;">${c.scores.totalScore} نقطة</span>
+          </td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div style="border-radius:12px;overflow:hidden;border:1.5px solid ${accentBorder};box-shadow:0 8px 30px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);">
+        <!-- عنوان القسم -->
+        <div style="background:linear-gradient(135deg,${isPhd ? '#2e1065,#4c1d95' : '#1e3a8a,#1d4ed8'} );padding:12px 20px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.4rem;">${isPhd ? '🎓' : '📘'}</span>
+            <div>
+              <div style="font-weight:900;color:#f8fafc;font-size:0.95rem;">منح ${degree}</div>
+              <div style="font-size:0.72rem;color:${accentColor};margin-top:2px;">عدد المنح المتاحة: ${isPhd ? (state.settings.phdGrantsCount || 3) : (state.settings.masterGrantsCount || 3)} منح</div>
+            </div>
+          </div>
+          <span style="background:rgba(0,0,0,0.3);color:${accentColor};border:1px solid ${accentBorder};padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;">
+            ${list.length} مقبول
+          </span>
+        </div>
+        <!-- الجدول -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:rgba(0,0,0,0.4);">
+                <th style="padding:10px 8px;text-align:center;color:#94a3b8;font-size:0.78rem;font-weight:700;width:50px;">الترتيب</th>
+                <th style="padding:10px 12px;text-align:right;color:#94a3b8;font-size:0.78rem;font-weight:700;">اسم المتنافس</th>
+                <th style="padding:10px 8px;text-align:center;color:#94a3b8;font-size:0.78rem;font-weight:700;">الدرجة العلمية</th>
+                <th style="padding:10px 8px;text-align:right;color:#94a3b8;font-size:0.78rem;font-weight:700;">التخصص</th>
+                <th style="padding:10px 8px;text-align:center;color:#94a3b8;font-size:0.78rem;font-weight:700;">مجموع النقاط</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+
+  // ── بناء المحتوى الكامل ──
+  let content = '';
+
+  if (degreeFilter === 'الكل') {
+    // عرض الماجستير ثم فاصل ثم الدكتوراه
+    content += buildWinnersTable(masters, 'ماجستير');
+    content += `
+      <div style="display:flex;align-items:center;gap:12px;margin:22px 0;">
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></div>
+        <span style="color:#a78bfa;font-size:0.78rem;font-weight:700;letter-spacing:2px;white-space:nowrap;">● ● ●</span>
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></div>
+      </div>`;
+    content += buildWinnersTable(phds, 'دكتوراه');
+  } else if (degreeFilter === 'ماجستير') {
+    content = buildWinnersTable(masters, 'ماجستير');
+  } else {
+    content = buildWinnersTable(phds, 'دكتوراه');
+  }
+
+  // ── إحصاء صغير في الأسفل ──
+  const totalShown = (showMaster ? masters.length : 0) + (showPhd ? phds.length : 0);
+  content += `
+    <div style="margin-top:20px;display:flex;justify-content:center;">
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(167,139,250,0.2);border-radius:20px;padding:8px 24px;font-size:0.8rem;color:#94a3b8;font-weight:600;">
+        📊 إجمالي المستحقين المعروضين: <strong style="color:#c4b5fd;">${totalShown} موظف</strong>
+      </div>
+    </div>`;
+
+  // ── قسم التواقيع الرسمية على الشاشة ──
+  const screenMembers = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
+  const screenChairman = screenMembers.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || screenMembers[0];
+  const screenRegular  = screenMembers.filter(m => m !== screenChairman).reverse();
+  const screenRector   = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
+
+  content += `
+    <div style="margin-top:28px;border-top:1.5px solid rgba(124,58,237,0.35);padding-top:20px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <span style="font-size:0.78rem;font-weight:800;color:#a78bfa;letter-spacing:1.5px;">✍️ توقيعات أعضاء لجنة المفاضلة والتنافس واعتماد رئاسة الجامعة</span>
+      </div>
+      <!-- الصف الأول: الأعضاء -->
+      <div style="display:grid;grid-template-columns:repeat(${screenRegular.length},1fr);gap:10px;margin-bottom:14px;">
+        ${screenRegular.map(m => `
+          <div style="border:1px solid rgba(100,116,139,0.35);padding:12px 10px;border-radius:10px;background:rgba(30,27,75,0.6);text-align:center;">
+            <p style="font-weight:800;color:#818cf8;font-size:0.76rem;margin:0 0 4px 0;">${m.committeeRole || 'عضواً'}</p>
+            <p style="font-weight:800;color:#f1f5f9;font-size:0.8rem;margin:0 0 2px 0;">${m.name || 'اسم العضو'}</p>
+            <p style="color:#64748b;font-size:0.7rem;margin:0 0 10px 0;">${m.adminTitle || ''}</p>
+            <div style="height:1px;background:rgba(100,116,139,0.3);margin-bottom:8px;border-bottom:1px dashed rgba(100,116,139,0.4);"></div>
+            <p style="font-size:0.65rem;color:#475569;margin:0;">التوقيع والختم الرسمي</p>
+          </div>`).join('')}
+      </div>
+      <!-- الصف الثاني: رئيس اللجنة + رئيس الجامعة -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;width:75%;margin:0 auto;">
+        <div style="border:1.5px solid rgba(59,130,246,0.4);padding:14px 12px;border-radius:12px;background:rgba(30,58,138,0.25);text-align:center;">
+          <p style="font-weight:900;color:#60a5fa;font-size:0.86rem;margin:0 0 4px 0;">${screenChairman.committeeRole || 'رئيس اللجنة'}</p>
+          <p style="font-weight:900;color:#f1f5f9;font-size:0.88rem;margin:0 0 2px 0;">${screenChairman.name || ''}</p>
+          <p style="color:#64748b;font-size:0.72rem;margin:0 0 12px 0;">${screenChairman.adminTitle || ''}</p>
+          <div style="height:1px;border-bottom:1px dashed rgba(59,130,246,0.4);margin-bottom:8px;"></div>
+          <p style="font-size:0.66rem;color:#3b82f6;margin:0;font-weight:700;">التوقيع والختم الرسمي لرئيس اللجنة</p>
+        </div>
+        <div style="border:2px solid rgba(16,185,129,0.4);padding:14px 12px;border-radius:12px;background:rgba(5,150,105,0.15);text-align:center;">
+          <p style="font-weight:900;color:#34d399;font-size:0.88rem;margin:0 0 4px 0;">يُعتمـد / رئيس الجامعة</p>
+          <p style="font-weight:900;color:#f1f5f9;font-size:0.9rem;margin:0 0 2px 0;">${screenRector}</p>
+          <p style="color:#64748b;font-size:0.72rem;margin:0 0 12px 0;">رئيس جامعة صنعاء</p>
+          <div style="height:1px;border-bottom:1.5px dashed rgba(16,185,129,0.4);margin-bottom:8px;"></div>
+          <p style="font-size:0.66rem;color:#10b981;margin:0;font-weight:800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+        </div>
+      </div>
+    </div>`;
+
+  displayArea.innerHTML = content;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// دوال طباعة كشف الفائزين الرسمي
+// ═══════════════════════════════════════════════════════════════════════
+
+function _buildWinnersPrintHTML(isDraft) {
+  const currentYear = state.settings.referenceYear || 2026;
+  const filterEl = document.getElementById('winners-degree-filter');
+  const degreeFilter = filterEl ? filterEl.value : 'الكل';
+
+  const rankedAll  = getRankedCandidates();
+  const masters    = rankedAll.filter(c => c.degree === 'ماجستير' && c.status === 'مقبول');
+  const phds       = rankedAll.filter(c => c.degree === 'دكتوراه' && c.status === 'مقبول');
+
+  const showMaster = (degreeFilter === 'الكل' || degreeFilter === 'ماجستير');
+  const showPhd    = (degreeFilter === 'الكل' || degreeFilter === 'دكتوراه');
+
+  // ── عنوان الوثيقة ──
+  let degreePart = '';
+  if (degreeFilter === 'ماجستير')      degreePart = 'ماجستير';
+  else if (degreeFilter === 'دكتوراه') degreePart = 'دكتوراه';
+  else                                  degreePart = 'ماجستير ودكتوراه';
+
+  // ── توقيعات اللجنة ──
+  const members      = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
+  const chairman     = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
+  const regularMembrs = members.filter(m => m !== chairman).reverse();
+  const rectorName   = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
+
+  // ── دالة بناء جدول طباعة لدرجة واحدة ──
+  function buildPrintTable(list, degree) {
+    if (list.length === 0) return '';
+    const isPhd = degree === 'دكتوراه';
+    const sectionColor = isPhd ? '#4c1d95' : '#1e3a8a';
+    const rows = list.map((c, idx) => `
+      <tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+        <td style="text-align:center;font-weight:900;font-size:0.9rem;padding:7px 5px;border:1px solid #e2e8f0;">${idx + 1}</td>
+        <td style="font-weight:800;font-size:0.92rem;padding:7px 10px;color:#0f172a;border:1px solid #e2e8f0;">${c.name}</td>
+        <td style="text-align:center;font-weight:800;font-size:0.85rem;padding:7px 6px;color:${isPhd ? '#6d28d9' : '#1d4ed8'};border:1px solid #e2e8f0;">${c.degree}</td>
+        <td style="font-size:0.85rem;font-weight:600;padding:7px 8px;border:1px solid #e2e8f0;">${c.specialization || '—'}</td>
+        <td style="text-align:center;font-weight:900;font-size:0.88rem;padding:7px 6px;color:#1e3a8a;border:1px solid #e2e8f0;">${c.scores.totalScore} نقطة</td>
+      </tr>`).join('');
+
+    return `
+      <div style="margin-bottom:${degreeFilter === 'الكل' ? '20px' : '0'};">
+        <div style="background:${sectionColor};color:#ffffff;padding:8px 14px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:0.92rem;">🎓 قائمة المستحقين لمنح ${degree}</strong>
+          <span style="font-size:0.78rem;background:rgba(255,255,255,0.15);padding:2px 10px;border-radius:10px;">عدد المقبولين: ${list.length}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <thead>
+            <tr style="background:${isPhd ? '#ede9fe' : '#dbeafe'};">
+              <th style="padding:7px 5px;text-align:center;border:1px solid #cbd5e1;width:40px;">م</th>
+              <th style="padding:7px 10px;text-align:right;border:1px solid #cbd5e1;">اسم المتنافس</th>
+              <th style="padding:7px 6px;text-align:center;border:1px solid #cbd5e1;width:70px;">الدرجة</th>
+              <th style="padding:7px 8px;text-align:right;border:1px solid #cbd5e1;">التخصص</th>
+              <th style="padding:7px 6px;text-align:center;border:1px solid #cbd5e1;width:90px;">مجموع النقاط</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+
+  // ── قسم التوقيعات ──
+  const signaturesHTML = `
+    <div style="margin-top:28px;border-top:2px solid #1e3a8a;padding-top:14px;page-break-inside:avoid;">
+      <h4 style="text-align:center;color:#1e3a8a;font-size:0.92rem;margin:0 0 12px 0;font-weight:800;">
+        توقيعات أعضاء لجنة المفاضلة والتنافس واعتماد رئاسة الجامعة
+      </h4>
+      <!-- الصف الأول: الأعضاء -->
+      <div style="display:grid;grid-template-columns:repeat(${regularMembrs.length},1fr);gap:10px;margin-bottom:14px;">
+        ${regularMembrs.map(m => `
+          <div style="border:1px solid #cbd5e1;padding:8px;border-radius:6px;background:#f8fafc;text-align:center;">
+            <p style="font-weight:800;color:#1e3a8a;font-size:0.76rem;margin:0 0 3px 0;">${m.committeeRole || 'عضواً'}</p>
+            <p style="font-weight:800;color:#0f172a;font-size:0.78rem;margin:0 0 2px 0;">${m.name || 'اسم العضو'}</p>
+            <p style="color:#475569;font-size:0.68rem;margin:0 0 6px 0;">${m.adminTitle || ''}</p>
+            <div style="height:18px;border-bottom:1px dashed #94a3b8;margin-bottom:4px;"></div>
+            <p style="font-size:0.62rem;color:#64748b;margin:0;">التوقيع والختم الرسمي</p>
+          </div>`).join('')}
+      </div>
+      <!-- الصف الثاني: رئيس اللجنة + رئيس الجامعة -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;width:80%;margin:0 auto;">
+        <div style="border:1.5px solid #1e3a8a;padding:10px;border-radius:8px;background:#eff6ff;text-align:center;">
+          <p style="font-weight:900;color:#1e3a8a;font-size:0.84rem;margin:0 0 3px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+          <p style="font-weight:900;color:#0f172a;font-size:0.86rem;margin:0 0 2px 0;">${chairman.name || ''}</p>
+          <p style="color:#334155;font-size:0.72rem;margin:0 0 8px 0;">${chairman.adminTitle || ''}</p>
+          <div style="height:22px;border-bottom:1px dashed #1e3a8a;margin-bottom:5px;"></div>
+          <p style="font-size:0.65rem;color:#1e3a8a;margin:0;font-weight:700;">التوقيع والختم الرسمي لرئيس اللجنة</p>
+        </div>
+        <div style="border:2px solid #059669;padding:10px;border-radius:8px;background:#ecfdf5;text-align:center;">
+          <p style="font-weight:900;color:#059669;font-size:0.86rem;margin:0 0 3px 0;">يُعتمـد / رئيس الجامعة</p>
+          <p style="font-weight:900;color:#064e3b;font-size:0.88rem;margin:0 0 2px 0;">${rectorName}</p>
+          <p style="color:#047857;font-size:0.72rem;margin:0 0 8px 0;">رئيس جامعة صنعاء</p>
+          <div style="height:22px;border-bottom:1.5px dashed #059669;margin-bottom:5px;"></div>
+          <p style="font-size:0.65rem;color:#047857;margin:0;font-weight:800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+        </div>
+      </div>
+    </div>`;
+
+  // ── بناء HTML كامل للطباعة ──
+  let tablesHTML = '';
+  if (showMaster) tablesHTML += buildPrintTable(masters, 'ماجستير');
+  if (degreeFilter === 'الكل' && showMaster && showPhd) {
+    tablesHTML += `<div style="height:1px;background:#e2e8f0;margin:16px 0;"></div>`;
+  }
+  if (showPhd) tablesHTML += buildPrintTable(phds, 'دكتوراه');
+
+  return `
+    <div style="font-family:'Tajawal','Segoe UI',Arial,sans-serif;direction:rtl;color:#0f172a;padding:8px 12px;background:#ffffff;">
+
+      ${isDraft ? `<div class="print-watermark">مسودة للتدقيق والمراجعة</div>` : ''}
+
+      <!-- الترويسة الرسمية -->
+      <div style="border-bottom:3px double #1e3a8a;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="text-align:right;">
+          <h2 style="margin:0;font-size:1.1rem;color:#0f172a;font-weight:900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
+          <h4 style="margin:3px 0 0 0;font-size:0.85rem;color:#1e3a8a;font-weight:800;">نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</h4>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:1rem;font-weight:900;color:#1e3a8a;background:#eff6ff;padding:5px 16px;border-radius:6px;border:1.5px solid #bfdbfe;">
+            كشف بأسماء المستحقين للمنح ${degreePart} عبر نظام المفاضلة الآلي
+          </div>
+          <div style="font-size:0.78rem;color:#059669;font-weight:800;margin-top:4px;">
+            للعام الجامعي ${currentYear - 1}/${currentYear}م
+          </div>
+        </div>
+        <div style="text-align:left;font-size:0.76rem;color:#475569;font-weight:700;">
+          <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-YE')}</div>
+          <div><strong>الحالة:</strong> ${isDraft ? 'مسودة للمراجعة' : 'وثيقة رسمية نهائية'}</div>
+        </div>
+      </div>
+
+      <!-- جداول البيانات -->
+      ${tablesHTML}
+
+      <!-- التوقيعات -->
+      ${signaturesHTML}
+
+      <!-- تذييل الصفحة -->
+      <div style="margin-top:18px;border-top:1px solid #e2e8f0;padding-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:0.68rem;color:#475569;">
+        <span style="background:#0f172a;color:#60a5fa;font-weight:900;padding:2px 7px;border-radius:4px;font-family:sans-serif;font-size:0.62rem;">MT</span>
+        <span>نظام المفاضلة الإلكتروني للكادر الإداري — جامعة صنعاء © ${currentYear}</span>
+        <span>MAQATECH SOFTWARE SOLUTIONS</span>
+      </div>
+    </div>`;
+}
+
+function printWinnersListDraft() {
+  const printArea = document.getElementById('winners-print-area');
+  if (!printArea) return;
+  printArea.innerHTML = _buildWinnersPrintHTML(true);
+  // إظهار منطقة الطباعة مؤقتاً (display:none يمنع visibility من العمل)
+  printArea.style.display = 'block';
+  document.body.classList.add('is-winners-list-print');
+  document.body.classList.add('is-draft-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-winners-list-print');
+    document.body.classList.remove('is-draft-print');
+    printArea.style.display = 'none';
+  }, 1200);
+}
+
+function printWinnersListFinal() {
+  const printArea = document.getElementById('winners-print-area');
+  if (!printArea) return;
+  printArea.innerHTML = _buildWinnersPrintHTML(false);
+  // إظهار منطقة الطباعة مؤقتاً
+  printArea.style.display = 'block';
+  document.body.classList.add('is-winners-list-print');
+  document.body.classList.remove('is-draft-print');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('is-winners-list-print');
+    printArea.style.display = 'none';
+  }, 1200);
+}
+
+
+
 
 function resetTestRecords() {
   if (checkSystemLockGuard()) return;

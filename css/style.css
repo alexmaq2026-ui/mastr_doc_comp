@@ -750,6 +750,20 @@ body {
     background: #5B21B6;
     transform: translateY(-1px);
 }
+
+.btn-act-amber {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+    color: #ffffff !important;
+}
+.btn-act-amber:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    transform: translateY(-1px);
+    color: #ffffff !important;
+}
+
+.btn-main-cta, .btn-run-hero {
+    padding: 16px 40px;
     font-size: 1.15rem;
     font-weight: 800;
     color: #ffffff;
@@ -2244,3 +2258,75 @@ body.is-tie-breaker-print #tie-breaker-print-certificate {
         margin: 10mm;
     }
 }
+
+/* ==========================================================================
+   CSS طباعة كشف الفائزين الرسمي (Winners List Print) - نهج visibility
+   ========================================================================== */
+
+/* الحالة الافتراضية على الشاشة: منطقة الطباعة مخفية */
+#winners-print-area {
+    display: none;
+}
+
+/* عند الطباعة: إخفاء كل شيء ثم إظهار منطقة الطباعة فقط */
+body.is-winners-list-print * {
+    visibility: hidden !important;
+}
+
+body.is-winners-list-print #winners-print-area,
+body.is-winners-list-print #winners-print-area * {
+    visibility: visible !important;
+}
+
+body.is-winners-list-print #winners-print-area {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    z-index: 999999 !important;
+    box-sizing: border-box !important;
+}
+
+@media print {
+    body.is-winners-list-print {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.is-winners-list-print #winners-print-area {
+        position: absolute !important;
+    }
+    body.is-winners-list-print table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    body.is-winners-list-print tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    body.is-winners-list-print thead {
+        display: table-header-group !important;
+    }
+    /* العلامة المائية للمسودة */
+    body.is-winners-list-print.is-draft-print .print-watermark {
+        visibility: visible !important;
+        display: block !important;
+    }
+    body.is-winners-list-print:not(.is-draft-print) .print-watermark {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    @page {
+        size: A4 portrait;
+        margin: 8mm 10mm;
+    }
+}
+
+
