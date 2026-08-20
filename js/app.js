@@ -364,12 +364,12 @@ function renderTabsByRole() {
 
   // تعريف التبويبات لكل دور
   const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'];
+                   'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'];
 
   // الخريطة: ما يُظهر لكل دور
   const visibilityMap = {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-admin'],
+                  'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'],
     data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
     auditor:     ['tab-btn-candidates','tab-btn-analytics'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
@@ -387,7 +387,7 @@ function renderTabsByRole() {
   const groups = {
     'navgroup-data':    ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring','tab-btn-minutes'],
     'navgroup-reports': ['tab-btn-report','tab-btn-analytics','tab-btn-criteria-doc'],
-    'navgroup-admin':   ['tab-btn-criteria','tab-btn-admin']
+    'navgroup-admin':   ['tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin']
   };
   Object.entries(groups).forEach(([groupId, tabs]) => {
     const groupEl = document.getElementById(groupId);
@@ -826,62 +826,125 @@ function getRankedCandidates(degreeFilter = null) {
     return y || 0;
   }
 
-  // كشف المعيار الحاسم المباشر بين متنافسين متعادلين (الفائز بالمقعد الأخير وأول المستبعدين)
+  // ════════════════════════════════════════════════════════════════
+  // محرك كسر التعادل الديناميكي — يقرأ من state.tiebreakerRules
+  // ════════════════════════════════════════════════════════════════
+
+  // دالة تقييم معيار واحد بين متنافسَيْن — تُعيد فرق الترتيب (سالب/موجب/صفر)
+  // وتُعيد أيضاً اسم المعيار الحاسم عند الطلب
+  function applyTiebreakerRule(rule, a, b, degree) {
+    // تحقق من نطاق التطبيق
+    const scope = rule.targetDegree || 'all';
+    if (scope !== 'all') {
+      const degA = (a.degree || '').trim();
+      const degB = (b.degree || '').trim();
+      const scopeAr = scope === 'master' ? 'ماجستير' : 'دكتوراه';
+      if (degA !== scopeAr && degB !== scopeAr) return 0; // لا ينطبق على أيٍّ منهما
+    }
+
+    const missingBehavior = (state.tiebreakerOptions && state.tiebreakerOptions.missingDataBehavior) || 'skip';
+
+    switch (rule.id) {
+      case 'tb_spec': {
+        const sA = getSpecTieBreakScore(a), sB = getSpecTieBreakScore(b);
+        if (sA === sB) return 0;
+        return (sB - sA) * (rule.weight || 1); // الأعلى نقاطاً أولاً
+      }
+      case 'tb_seniority': {
+        const hA = getHiringYear(a), hB = getHiringYear(b);
+        // معالجة البيانات الناقصة (9999 = بيانات ناقصة)
+        if (hA === 9999 && hB === 9999) return 0;
+        if (hA === 9999) return missingBehavior === 'last' ? 1 : 0;
+        if (hB === 9999) return missingBehavior === 'last' ? -1 : 0;
+        if (hA === hB) return 0;
+        return (hA - hB) * (rule.weight || 1); // الأقدم (سنة أصغر) أولاً
+      }
+      case 'tb_continuity': {
+        const cA = getContinuityScore(a), cB = getContinuityScore(b);
+        if (cA === cB) return 0;
+        return (cB - cA) * (rule.weight || 1); // الأعلى استمرارية أولاً
+      }
+      case 'tb_grade': {
+        const gA = GRADE_ORDER[a.grade] || 0, gB = GRADE_ORDER[b.grade] || 0;
+        if (gA === gB) return 0;
+        return (gB - gA) * (rule.weight || 1); // الأعلى تقديراً أولاً
+      }
+      case 'tb_age': {
+        const bA = getBirthYear(a), bB = getBirthYear(b);
+        // معالجة البيانات الناقصة (0 = بيانات ناقصة)
+        if (bA === 0 && bB === 0) return 0;
+        if (bA === 0) return missingBehavior === 'last' ? 1 : 0;
+        if (bB === 0) return missingBehavior === 'last' ? -1 : 0;
+        if (bA === bB) return 0;
+        return (bB - bA) * (rule.weight || 1); // الأصغر سناً (سنة أكبر) أولاً
+      }
+      default:
+        return 0;
+    }
+  }
+
+  // استرجاع المعايير المفعّلة المرتبة — مع الرجوع للقيم الافتراضية إن لم تُضبط
+  function getEffectiveTiebreakerRules() {
+    if (state.tiebreakerRules && Array.isArray(state.tiebreakerRules) && state.tiebreakerRules.length > 0) {
+      return state.tiebreakerRules
+        .filter(r => r.enabled)
+        .sort((a, b) => (parseInt(a.priority) || 99) - (parseInt(b.priority) || 99));
+    }
+    // قيم افتراضية عند غياب الإعدادات (ضمان عدم تعطل النظام)
+    return [
+      { id: 'tb_spec',       priority: 1, weight: 3, enabled: true, targetDegree: 'all' },
+      { id: 'tb_seniority',  priority: 2, weight: 2, enabled: true, targetDegree: 'all' },
+      { id: 'tb_continuity', priority: 3, weight: 2, enabled: true, targetDegree: 'all' },
+      { id: 'tb_grade',      priority: 4, weight: 1, enabled: true, targetDegree: 'all' },
+      { id: 'tb_age',        priority: 5, weight: 1, enabled: true, targetDegree: 'all' }
+    ];
+  }
+
+  // مقارنة ديناميكية بين متنافسَيْن عند تساوي نقاطهما
+  function dynamicTieCompare(a, b) {
+    const rules = getEffectiveTiebreakerRules();
+    for (const rule of rules) {
+      const diff = applyTiebreakerRule(rule, a, b, a.degree);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  }
+
+  // كشف اسم المعيار الحاسم بين متنافسَيْن (للتوثيق والعرض)
   function getDecisiveFactor(a, b) {
-    // 1. التخصص الأكاديمي (3 درجات لتخصصات الوزن 5، و0 لأخرى)
-    const specA = getSpecTieBreakScore(a), specB = getSpecTieBreakScore(b);
-    if (specA !== specB) return 'مدى احتياج التخصص الأكاديمي';
-
-    // 2. أقدمية التعيين الفعلي
-    const hirA = getHiringYear(a), hirB = getHiringYear(b);
-    if (hirA !== hirB) return 'أقدمية التعيين';
-
-    // 3. الاستمرارية والممارسة الفعلية (مستمر 5 ومتاح 3)
-    const contA = getContinuityScore(a), contB = getContinuityScore(b);
-    if (contA !== contB) return 'الاستمرارية (الممارسة الفعلية)';
-
-    // 4. التقدير العلمي الأعلى
-    const gradeA = GRADE_ORDER[a.grade] || 0, gradeB = GRADE_ORDER[b.grade] || 0;
-    if (gradeA !== gradeB) return 'التقدير الأكاديمي';
-
-    // 5. صغر السن
-    const birthA = getBirthYear(a), birthB = getBirthYear(b);
-    if (birthA !== birthB) return 'صغر السن';
-
-    // 6. تعادل تام
-    return 'تعادل تام - يُحال للجنة المفاضلة';
+    const rules = getEffectiveTiebreakerRules();
+    for (const rule of rules) {
+      const diff = applyTiebreakerRule(rule, a, b, a.degree);
+      if (diff !== 0) {
+        // إعادة الاسم العربي للمعيار
+        const names = {
+          tb_spec:       'مدى احتياج التخصص الأكاديمي',
+          tb_seniority:  'أقدمية التعيين',
+          tb_continuity: 'الاستمرارية (الممارسة الفعلية)',
+          tb_grade:      'التقدير الأكاديمي',
+          tb_age:        'صغر السن'
+        };
+        return names[rule.id] || rule.name || rule.id;
+      }
+    }
+    // تعادل تام — سلوك الإحالة حسب الإعدادات
+    const behavior = state.tiebreakerOptions && state.tiebreakerOptions.tiebreakBehavior;
+    return behavior === 'all_accept'
+      ? 'تعادل تام - قبول الجميع (توسعة استثنائية)'
+      : 'تعادل تام - يُحال للجنة المفاضلة';
   }
 
   // دالة معالجة درجة واحدة (ماجستير أو دكتوراه)
   function processDegreeGroup(candidates, limit) {
     if (candidates.length === 0) return candidates;
 
-    // 1. فرز جميع المتنافسين بالتراتبية الصارمة المعتمدة
+    // 1. فرز جميع المتنافسين بالنقاط الكلية أولاً ثم بمعايير كسر التعادل الديناميكية
     candidates.sort((a, b) => {
       if (b.scores.totalScore !== a.scores.totalScore) {
         return b.scores.totalScore - a.scores.totalScore;
       }
-      // 1. التخصص
-      const specTieA = getSpecTieBreakScore(a), specTieB = getSpecTieBreakScore(b);
-      if (specTieB !== specTieA) return specTieB - specTieA;     // 3 درجات للتخصص الأساسي (وزن 5) تتقدم على 0 لأخرى
-
-      // 2. أقدمية التعيين
-      const hirA = getHiringYear(a), hirB = getHiringYear(b);
-      if (hirA !== hirB) return hirA - hirB;                     // الأقدم تعييناً أولاً
-
-      // 3. الاستمرارية
-      const contA = getContinuityScore(a), contB = getContinuityScore(b);
-      if (contB !== contA) return contB - contA;                 // الأعلى في الاستمرارية (الممارسة الفعلية) أولاً
-
-      // 4. التقدير العلمي
-      const gradeA = GRADE_ORDER[a.grade] || 0, gradeB = GRADE_ORDER[b.grade] || 0;
-      if (gradeB !== gradeA) return gradeB - gradeA;             // الأعلى تقديراً أولاً
-
-      // 5. صغر السن
-      const birthA = getBirthYear(a), birthB = getBirthYear(b);
-      if (birthA !== birthB) return birthB - birthA;             // الأصغر سناً أولاً
-
-      return 0;
+      // تطبيق معايير كسر التعادل المفعّلة بالترتيب الديناميكي
+      return dynamicTieCompare(a, b);
     });
 
     // 2. تصفير ملاحظة الحسم الاستثنائي لجميع المتنافسين أولاً
@@ -987,6 +1050,7 @@ function refreshAllViews() {
   renderCandidatesTable();
   renderScoringTable();
   renderCriteriaSettings();
+  renderTiebreakerScreen();
   renderUsersAdminTable();
   renderDetailedReport();
   renderAnalyticsView();
@@ -7639,3 +7703,397 @@ function printCriteriaDoc() {
     document.body.classList.remove('is-criteria-doc-print');
   }, 1000);
 }
+
+// ============================================================
+// ⚖️ شاشة كسر التعادل — Tiebreaker Configuration Screen
+// ============================================================
+
+// القيم الافتراضية لمعايير كسر التعادل (مُضمَّنة في النظام)
+const DEFAULT_TIEBREAKER_RULES = [
+  {
+    id: 'tb_spec',
+    name: 'مدى احتياج التخصص الأكاديمي',
+    description: 'يُقدَّم من تخصصه ضمن القائمة المعتمدة ذات الوزن الأعلى',
+    icon: '🎓',
+    priority: 1,
+    weight: 3,
+    enabled: true,
+    targetDegree: 'all',
+    locked: false
+  },
+  {
+    id: 'tb_seniority',
+    name: 'أقدمية التعيين الفعلي',
+    description: 'يُقدَّم الأقدم تعييناً (سنة أصغر = أقدم)',
+    icon: '📅',
+    priority: 2,
+    weight: 2,
+    enabled: true,
+    targetDegree: 'all',
+    locked: false
+  },
+  {
+    id: 'tb_continuity',
+    name: 'الاستمرارية والممارسة الفعلية',
+    description: 'يُقدَّم المستمر في العمل على المتاح (مستمر=5، متاح=3)',
+    icon: '🏢',
+    priority: 3,
+    weight: 2,
+    enabled: true,
+    targetDegree: 'all',
+    locked: false
+  },
+  {
+    id: 'tb_grade',
+    name: 'التقدير الأكاديمي',
+    description: 'يُقدَّم الأعلى تقديراً (ممتاز > جيد جداً > جيد > مقبول)',
+    icon: '🏅',
+    priority: 4,
+    weight: 1,
+    enabled: true,
+    targetDegree: 'all',
+    locked: false
+  },
+  {
+    id: 'tb_age',
+    name: 'صغر السن',
+    description: 'يُقدَّم الأصغر سناً عند التعادل في جميع ما سبق',
+    icon: '🎂',
+    priority: 5,
+    weight: 1,
+    enabled: true,
+    targetDegree: 'all',
+    locked: false
+  }
+];
+
+// ضمان وجود tiebreakerRules في state مع دمج القيم المحفوظة
+function ensureTiebreakerRules() {
+  if (!state.tiebreakerRules || !Array.isArray(state.tiebreakerRules) || state.tiebreakerRules.length === 0) {
+    state.tiebreakerRules = JSON.parse(JSON.stringify(DEFAULT_TIEBREAKER_RULES));
+  } else {
+    // دمج: أضف أي قاعدة جديدة غير موجودة في المحفوظة
+    DEFAULT_TIEBREAKER_RULES.forEach(def => {
+      if (!state.tiebreakerRules.find(r => r.id === def.id)) {
+        state.tiebreakerRules.push(JSON.parse(JSON.stringify(def)));
+      }
+    });
+  }
+}
+
+// استرجاع قواعد كسر التعادل المُفعَّلة مرتبةً حسب الأولوية
+function getActiveTiebreakerRules() {
+  ensureTiebreakerRules();
+  return state.tiebreakerRules
+    .filter(r => r.enabled)
+    .sort((a, b) => (parseInt(a.priority) || 99) - (parseInt(b.priority) || 99));
+}
+
+// رسم شاشة كسر التعادل
+function renderTiebreakerScreen() {
+  const container = document.getElementById('tiebreaker-container');
+  if (!container) return;
+
+  ensureTiebreakerRules();
+  const rules = state.tiebreakerRules;
+  const isLocked = state.settings && state.settings.isLocked;
+  const isAdmin  = state.currentUser && state.currentUser.role === 'super_admin';
+
+  // بناء صفوف الجدول
+  const rows = [...rules]
+    .sort((a, b) => (parseInt(a.priority) || 99) - (parseInt(b.priority) || 99))
+    .map((rule, idx) => {
+      const scopeOptions = ['all','master','phd'].map(v => {
+        const labels = { all: 'الكل', master: 'ماجستير فقط', phd: 'دكتوراه فقط' };
+        return `<option value="${v}" ${rule.targetDegree === v ? 'selected' : ''}>${labels[v]}</option>`;
+      }).join('');
+
+      const disabledAttr = (isLocked || !isAdmin) ? 'disabled' : '';
+
+      return `
+      <tr class="tb-rule-row ${rule.enabled ? '' : 'tb-row-disabled'}" data-id="${rule.id}">
+        <td class="tb-cell-priority">
+          <input
+            type="number"
+            class="tb-priority-input"
+            value="${rule.priority}"
+            min="1" max="99"
+            onchange="updateTiebreakerField('${rule.id}','priority', this.value)"
+            ${disabledAttr}
+            title="أولوية التطبيق — الأصغر رقماً يُطبَّق أولاً"
+          >
+        </td>
+        <td class="tb-cell-name">
+          <span class="tb-icon">${rule.icon}</span>
+          <div class="tb-name-block">
+            <span class="tb-rule-name">${rule.name}</span>
+            <span class="tb-rule-desc">${rule.description}</span>
+          </div>
+        </td>
+        <td class="tb-cell-weight">
+          <input
+            type="number"
+            class="tb-weight-input"
+            value="${rule.weight}"
+            min="0" max="100"
+            step="0.5"
+            onchange="updateTiebreakerField('${rule.id}','weight', this.value)"
+            ${disabledAttr}
+            title="وزن المعيار في الحسم"
+          >
+        </td>
+        <td class="tb-cell-scope">
+          <select class="tb-scope-select" onchange="updateTiebreakerField('${rule.id}','targetDegree', this.value)" ${disabledAttr}>
+            ${scopeOptions}
+          </select>
+        </td>
+        <td class="tb-cell-toggle">
+          <label class="tb-toggle-wrap" title="${rule.enabled ? 'انقر لتعطيل المعيار' : 'انقر لتفعيل المعيار'}">
+            <input
+              type="checkbox"
+              class="tb-checkbox-hidden"
+              ${rule.enabled ? 'checked' : ''}
+              onchange="updateTiebreakerField('${rule.id}','enabled', this.checked)"
+              ${disabledAttr}
+            >
+            <span class="tb-toggle-slider ${rule.enabled ? 'tb-on' : 'tb-off'}"></span>
+            <span class="tb-toggle-label">${rule.enabled ? 'مُفعَّل' : 'معطَّل'}</span>
+          </label>
+        </td>
+      </tr>`;
+    }).join('');
+
+  // حساب إحصائيات سريعة
+  const enabledCount  = rules.filter(r => r.enabled).length;
+  const disabledCount = rules.length - enabledCount;
+
+  // بناء الشاشة الكاملة
+  container.innerHTML = `
+    <div class="tb-screen-wrapper">
+
+      <!-- رأس الشاشة -->
+      <div class="tb-header-card">
+        <div class="tb-header-icon-wrap">
+          <div class="tb-header-icon">⚖️</div>
+        </div>
+        <div class="tb-header-text">
+          <h2 class="tb-header-title">إعدادات كسر التعادل</h2>
+          <p class="tb-header-sub">
+            تُطبَّق هذه المعايير <strong>حصراً</strong> عند تساوي نقاط المفاضلة بين
+            آخر مقبول وأول مستبعد عند خط القبول.
+            المعايير المُفعَّلة تُطبَّق بالتسلسل حسب رقم الأولوية (الأصغر أولاً).
+          </p>
+        </div>
+        <div class="tb-header-stats">
+          <div class="tb-stat-box tb-stat-active">
+            <span class="tb-stat-num">${enabledCount}</span>
+            <span class="tb-stat-lbl">مُفعَّل</span>
+          </div>
+          <div class="tb-stat-box tb-stat-inactive">
+            <span class="tb-stat-num">${disabledCount}</span>
+            <span class="tb-stat-lbl">معطَّل</span>
+          </div>
+        </div>
+      </div>
+
+      ${isLocked ? `
+      <div class="tb-lock-notice">
+        🔒 النظام مقفول — لا يمكن تعديل إعدادات كسر التعادل حتى يتم فتح القفل الرسمي.
+      </div>` : ''}
+
+      ${!isAdmin ? `
+      <div class="tb-readonly-notice">
+        👁️ وضع الاطلاع — هذه الشاشة للعرض فقط. صلاحية التعديل للمدير الأعلى.
+      </div>` : ''}
+
+      <!-- جدول المعايير -->
+      <div class="tb-table-card">
+        <div class="tb-table-header">
+          <h3 class="tb-table-title">🗂️ جدول معايير كسر التعادل</h3>
+          <span class="tb-table-hint">رقم الأولوية الأصغر = يُطبَّق أولاً عند التعادل</span>
+        </div>
+        <div class="table-responsive">
+          <table class="tb-table">
+            <thead>
+              <tr>
+                <th class="tb-th-priority">الأولوية<br><span style="font-size:0.7rem;font-weight:400;">رقم</span></th>
+                <th class="tb-th-name">المعيار والوصف</th>
+                <th class="tb-th-weight">الوزن<br><span style="font-size:0.7rem;font-weight:400;">رقم</span></th>
+                <th class="tb-th-scope">نطاق التطبيق</th>
+                <th class="tb-th-toggle">التفعيل</th>
+              </tr>
+            </thead>
+            <tbody id="tb-rules-tbody">
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- خيارات متقدمة -->
+      <div class="tb-options-card">
+        <h3 class="tb-options-title">⚙️ خيارات متقدمة</h3>
+        <div class="tb-options-grid">
+          <div class="tb-option-item">
+            <label class="tb-option-label">سلوك التعادل التام:</label>
+            <select class="tb-scope-select" id="tb-tiebreak-behavior" onchange="updateTiebreakerOption('tiebreakBehavior', this.value)" ${(isLocked || !isAdmin) ? 'disabled' : ''}>
+              <option value="committee" ${(!state.tiebreakerOptions || state.tiebreakerOptions.tiebreakBehavior === 'committee') ? 'selected' : ''}>يُحال للجنة المفاضلة</option>
+              <option value="all_accept"  ${state.tiebreakerOptions && state.tiebreakerOptions.tiebreakBehavior === 'all_accept' ? 'selected' : ''}>قبول الجميع (توسعة استثنائية)</option>
+            </select>
+            <span class="tb-option-hint">ماذا يحدث إذا تعادل المتنافسون في جميع المعايير؟</span>
+          </div>
+          <div class="tb-option-item">
+            <label class="tb-option-label">سلوك البيانات الناقصة:</label>
+            <select class="tb-scope-select" id="tb-missing-data" onchange="updateTiebreakerOption('missingDataBehavior', this.value)" ${(isLocked || !isAdmin) ? 'disabled' : ''}>
+              <option value="skip"  ${(!state.tiebreakerOptions || state.tiebreakerOptions.missingDataBehavior === 'skip')  ? 'selected' : ''}>تجاوز المعيار (الانتقال للتالي)</option>
+              <option value="last"  ${state.tiebreakerOptions && state.tiebreakerOptions.missingDataBehavior === 'last'  ? 'selected' : ''}>ترتيب في النهاية (أدنى أولوية)</option>
+            </select>
+            <span class="tb-option-hint">ماذا يحدث إذا كانت بيانات المتنافس غير مكتملة لهذا المعيار؟</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- أزرار التحكم -->
+      ${isAdmin && !isLocked ? `
+      <div class="tb-actions-bar">
+        <button class="btn btn-primary" onclick="saveTiebreakerSettings()" style="background:linear-gradient(135deg,#2563eb,#0d9488); min-width:160px;">
+          💾 حفظ الإعدادات
+        </button>
+        <button class="btn btn-outline" onclick="resetTiebreakerToDefaults()" style="border-color:rgba(245,158,11,0.5); color:#f59e0b;">
+          ↩️ إعادة ضبط القيم الافتراضية
+        </button>
+        <span id="tb-save-status" class="tb-save-status"></span>
+      </div>` : ''}
+
+      <!-- معاينة التسلسل الفعلي -->
+      <div class="tb-preview-card">
+        <h3 class="tb-preview-title">👁️ معاينة تسلسل التطبيق الفعلي</h3>
+        <p class="tb-preview-sub">المعايير المُفعَّلة فقط، مرتبةً حسب الأولوية كما ستُطبَّق عند التعادل:</p>
+        <div class="tb-preview-chain" id="tb-preview-chain">
+          ${buildTiebreakerPreviewChain()}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+// بناء سلسلة المعاينة المرئية للتسلسل الفعلي
+function buildTiebreakerPreviewChain() {
+  ensureTiebreakerRules();
+  const active = getActiveTiebreakerRules();
+  if (active.length === 0) {
+    return `<div class="tb-chain-empty">⚠️ لا توجد معايير مُفعَّلة — سيُحال كل تعادل للجنة مباشرةً</div>`;
+  }
+  const items = active.map((r, i) => `
+    <div class="tb-chain-item">
+      <div class="tb-chain-num">${i + 1}</div>
+      <div class="tb-chain-icon">${r.icon}</div>
+      <div class="tb-chain-info">
+        <span class="tb-chain-name">${r.name}</span>
+        <span class="tb-chain-meta">وزن: ${r.weight} | ${r.targetDegree === 'all' ? 'الكل' : r.targetDegree === 'master' ? 'ماجستير' : 'دكتوراه'}</span>
+      </div>
+      ${i < active.length - 1 ? '<div class="tb-chain-arrow">↓</div>' : ''}
+    </div>
+  `).join('');
+
+  const behavior = state.tiebreakerOptions && state.tiebreakerOptions.tiebreakBehavior === 'all_accept'
+    ? 'قبول الجميع (توسعة استثنائية)'
+    : 'يُحال للجنة المفاضلة';
+
+  return items + `
+    <div class="tb-chain-item tb-chain-final">
+      <div class="tb-chain-num" style="background:linear-gradient(135deg,#ef4444,#dc2626);">${active.length + 1}</div>
+      <div class="tb-chain-icon">🏛️</div>
+      <div class="tb-chain-info">
+        <span class="tb-chain-name">تعادل تام</span>
+        <span class="tb-chain-meta">${behavior}</span>
+      </div>
+    </div>
+  `;
+}
+
+// تحديث حقل واحد في قاعدة كسر التعادل مباشرةً
+function updateTiebreakerField(ruleId, field, value) {
+  ensureTiebreakerRules();
+  const rule = state.tiebreakerRules.find(r => r.id === ruleId);
+  if (!rule) return;
+
+  if (field === 'priority') {
+    const parsed = parseInt(value);
+    if (isNaN(parsed) || parsed < 1) return;
+    rule.priority = parsed;
+  } else if (field === 'weight') {
+    const parsed = parseFloat(value);
+    if (isNaN(parsed) || parsed < 0) return;
+    rule.weight = parsed;
+  } else if (field === 'enabled') {
+    rule.enabled = !!value;
+  } else if (field === 'targetDegree') {
+    rule.targetDegree = value;
+  }
+
+  // تحديث معاينة التسلسل فوراً دون إعادة رسم كاملة
+  const previewEl = document.getElementById('tb-preview-chain');
+  if (previewEl) previewEl.innerHTML = buildTiebreakerPreviewChain();
+
+  // تحديث لون الصف
+  const row = document.querySelector(`.tb-rule-row[data-id="${ruleId}"]`);
+  if (row) {
+    if (rule.enabled) row.classList.remove('tb-row-disabled');
+    else row.classList.add('tb-row-disabled');
+    // تحديث نص الزر
+    const lbl = row.querySelector('.tb-toggle-label');
+    const slider = row.querySelector('.tb-toggle-slider');
+    if (lbl) lbl.textContent = rule.enabled ? 'مُفعَّل' : 'معطَّل';
+    if (slider) {
+      slider.classList.toggle('tb-on', rule.enabled);
+      slider.classList.toggle('tb-off', !rule.enabled);
+    }
+  }
+}
+
+// تحديث خيار متقدم
+function updateTiebreakerOption(optionKey, value) {
+  if (!state.tiebreakerOptions) state.tiebreakerOptions = {};
+  state.tiebreakerOptions[optionKey] = value;
+  const previewEl = document.getElementById('tb-preview-chain');
+  if (previewEl) previewEl.innerHTML = buildTiebreakerPreviewChain();
+}
+
+// حفظ إعدادات كسر التعادل
+function saveTiebreakerSettings() {
+  ensureTiebreakerRules();
+
+  // التحقق من تكرار الأولويات وإصلاحها تلقائياً
+  const priorities = state.tiebreakerRules.map(r => parseInt(r.priority) || 99);
+  const hasDuplicate = priorities.length !== new Set(priorities).size;
+  if (hasDuplicate) {
+    // إعادة ترقيم تلقائي حسب الترتيب الحالي
+    const sorted = [...state.tiebreakerRules].sort((a,b) => (parseInt(a.priority)||99) - (parseInt(b.priority)||99));
+    sorted.forEach((r, i) => { r.priority = i + 1; });
+    state.tiebreakerRules = sorted;
+  }
+
+  saveStore();
+
+  // إعادة رسم الشاشات أولاً ثم إظهار الإشعار خارج الحاوية (toast عالمي)
+  renderTiebreakerScreen();
+  renderScoringTable();
+  renderDashboard();
+
+  // الإشعار بعد الرسم حتى لا تختفي الرسالة عند إعادة بناء الشاشة
+  showToast('✅ تم حفظ إعدادات كسر التعادل بنجاح', 'success');
+}
+
+// إعادة ضبط القيم الافتراضية
+function resetTiebreakerToDefaults() {
+  if (!confirm('هل تريد إعادة ضبط جميع معايير كسر التعادل إلى القيم الافتراضية؟')) return;
+  state.tiebreakerRules = JSON.parse(JSON.stringify(DEFAULT_TIEBREAKER_RULES));
+  state.tiebreakerOptions = { tiebreakBehavior: 'committee', missingDataBehavior: 'skip' };
+  saveStore();
+  renderTiebreakerScreen();
+  renderScoringTable();
+  renderDashboard();
+}
+

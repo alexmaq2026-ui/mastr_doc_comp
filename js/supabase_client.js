@@ -220,8 +220,12 @@ async function deleteCandidateFromSupabase(candidateId) {
     }
 }
 
-// رفع وشحن جميع البيانات الحالية (المتنافسين، المعايير، المستخدمين، أعضاء اللجنة) إلى Supabase بضغطة واحدة
+// رفع وشحن جميع البيانات الحالية إلى Supabase يدوياً عند الطلب الصريح
 async function uploadAllDataToSupabase() {
+    if (!confirm('⚠️ تحذير أمان هام:\nهل أنت متأكد تماماً من رغبتك في رفع وكتابة البيانات المحلية فوق قاعدة بيانات Supabase الخارجية؟\nسيؤدي هذا إلى استبدال أي بيانات تم تعديلها على السيرفر الخارجي.')) {
+        return false;
+    }
+
     if (!supabaseClient && !initSupabase()) {
         alert('❌ يرجى إدخال وتوصيل رابط (URL) ومفتاح (API Key) الخاص بـ Supabase أولاً.');
         return false;

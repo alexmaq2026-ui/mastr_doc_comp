@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير آخر التعديل - 20 أغسطس 2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            border: 2px solid #1e3a8a;
+            border-radius: 12px;
+            padding: 24px;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* الترويسة */
+        .header-section {
+            border-bottom: 3px double #1e3a8a;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title-right h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #0f172a;
+            font-weight: 900;
+        }
+
+        .header-title-right h4 {
+            margin: 4px 0 0 0;
+            font-size: 0.95rem;
+            color: #1e3a8a;
+            font-weight: 800;
+        }
+
+        .header-center-badge {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            padding: 8px 24px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .header-center-badge .badge-main {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #1e3a8a;
+        }
+
+        .header-center-badge .badge-sub {
+            font-size: 0.82rem;
+            color: #059669;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .header-meta {
+            text-align: left;
+            font-size: 0.82rem;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        /* البطاقات والفقرات */
+        .section-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: #ffffff;
+            padding: 8px 16px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-body {
+            padding: 14px 16px;
+            background: #f8fafc;
+        }
+
+        /* الجداول */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 8px 10px;
+            text-align: right;
+            border: 1px solid #cbd5e1;
+            font-weight: 800;
+        }
+
+        td {
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.78rem;
+        }
+
+        .pill-success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .pill-protected {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+
+        .pill-removed {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        /* التواقيع */
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            page-break-inside: avoid;
+        }
+
+        .sig-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .sig-box-rector {
+            border: 2px solid #059669;
+            background: #f0fdf4;
+        }
+
+        .sig-role {
+            font-weight: 800;
+            color: #1e3a8a;
+            font-size: 0.8rem;
+            margin: 0 0 4px 0;
+        }
+
+        .sig-name {
+            font-weight: 900;
+            color: #0f172a;
+            font-size: 0.85rem;
+            margin: 0 0 2px 0;
+        }
+
+        .sig-title {
+            font-size: 0.72rem;
+            color: #475569;
+            margin: 0 0 10px 0;
+        }
+
+        .sig-line {
+            height: 1px;
+            border-bottom: 1px dashed #94a3b8;
+            margin: 8px 0 4px 0;
+        }
+
+        .sig-seal {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+
+    <!-- الترويسة الرسمية -->
+    <div class="header-section">
+        <div class="header-title-right">
+            <h2>جامعـة صنعـاء - مجلـس الجامعـة</h2>
+            <h4>نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</h4>
+        </div>
+        <div class="header-center-badge">
+            <div class="badge-main">وثيقة تقرير آخر التعديلات وقفل أمان المزامنة</div>
+            <div class="badge-sub">حماية بيانات السيرفر الخارجي (Supabase) ومنع الاستبدال التلقائي</div>
+        </div>
+        <div class="header-meta">
+            <div><strong>اليوم:</strong> الخميس</div>
+            <div><strong>التاريخ:</strong> 20 أغسطس 2026م</div>
+            <div><strong>الحالة:</strong> معتمد ومطبق 100%</div>
+        </div>
+    </div>
+
+    <!-- 1. بيان الغرض والهدف -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>🛡️ 1. الهدف من التعديلات المنفذة</span>
+        </div>
+        <div class="section-body">
+            تم تنفيذ إجراءات أمان وقفل صارمة لمنع السيرفر المحلي من مسح أو استبدال التعديلات التي تتم على السيرفر الخارجي وقاعدة بيانات Supabase، وجعل عملية الرفع تتم <strong>يدوياً وبطلب صريح فقط</strong> عند رغبة الإدارة، مع اعتماد التحديث والاستجلاب التلقائي من Supabase كمرجع وحيد ودائم.
+        </div>
+    </div>
+
+    <!-- 2. تفاصيل التعديلات المنفذة -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>⚙️ 2. جدول الإجراءات والتعديلات الفنية المطبقة</span>
+        </div>
+        <div class="section-body" style="padding: 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">م</th>
+                        <th style="width: 25%;">البند / الموقع</th>
+                        <th style="width: 50%;">الإجراء المتخذ</th>
+                        <th style="width: 20%;">الحالة بعد التعديل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: center; font-weight: 800;">1</td>
+                        <td><strong>زر الرفع الشامل في الإعدادات</strong><br><small style="color:#64748b;">index.html</small></td>
+                        <td>تم حذف زر <code>🚀 رفع البيانات الحالية أونلاين الآن</code> نهائياً من شاشة إدارة النظام لمنع النقر العرضي أو الكتابة فوق بيانات السيرفر الخارجي.</td>
+                        <td><span class="status-pill pill-removed">تم الحذف والإلغاء</span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 800;">2</td>
+                        <td><strong>سكربت الرفع الخارجي</strong><br><small style="color:#64748b;">upload_to_supabase.js</small></td>
+                        <td>تم تفعيل قفل أمان برمجي صارم يمنع تشغيل السكربت تلقائياً، ويشترط كتابة الأمر اليدوي مع وسيط التأكيد الصريح <code>--confirm-manual-overwrite</code>.</td>
+                        <td><span class="status-pill pill-protected">مقفل بأمان صارم</span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 800;">3</td>
+                        <td><strong>دوال الرفع في واجهة العميل</strong><br><small style="color:#64748b;">supabase_client.js</small></td>
+                        <td>إضافة نافذة تحذير وتأكيد أمني صريح (Confirmation Dialog) تمنع تنفيذ أي رفع دون موافقة تأكيدية واعية من المستخدم.</td>
+                        <td><span class="status-pill pill-protected">محمية بنافذة تأكيد</span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 800;">4</td>
+                        <td><strong>آلية استجلاب البيانات (Pull Sync)</strong><br><small style="color:#64748b;">syncCandidatesFromSupabase</small></td>
+                        <td>تم تعزيز دالة الاستجلاب لتسحب كافة التعديلات أونلاين (المتنافسين 77، أعضاء اللجنة 6، الإعدادات، المستخدمين 5) فور فتح النظام دون رفع أو مسح أي بيانات سحابية.</td>
+                        <td><span class="status-pill pill-success">مزامنة استجلاب آمنة</span></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; font-weight: 800;">5</td>
+                        <td><strong>تطابق السجلات المرجعية الأساسية</strong><br><small style="color:#64748b;">initial_data.js</small></td>
+                        <td>تم تثبيت الأعضاء الـ 6 بالكامل (شاملاً د. زيد الوريث) والمستخدمين الـ 5 (شاملاً أ. عبدالملك الهمداني وكلمة سر المدير maq513) كبيانات تأسيسية متطابقة 100%.</td>
+                        <td><span class="status-pill pill-success">مطابقة ومعتمدة 100%</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. التوقيعات والاعتماد الرسمي -->
+    <div style="margin-top: 24px; border-top: 2px solid #1e3a8a; padding-top: 14px;">
+        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.95rem; margin: 0 0 14px 0; font-weight: 900;">
+            توقيعات واختام اعتماد آخر التعديلات - جامعة صنعاء
+        </h4>
+        
+        <div class="signatures-grid">
+            <div class="sig-box">
+                <p class="sig-role">مسؤول إدارة وتطوير النظام</p>
+                <p class="sig-name">م. الدعم والتطوير الفني</p>
+                <p class="sig-title">MAQATECH SOFTWARE SOLUTIONS</p>
+                <div class="sig-line"></div>
+                <p class="sig-seal">التوقيع والاعتماد الفني</p>
+            </div>
+
+            <div class="sig-box">
+                <p class="sig-role">رئيس لجنة المفاضلة والتنافس</p>
+                <p class="sig-name">أ.د. ابراهيم المطاع</p>
+                <p class="sig-title">نائب رئيس الجامعة للشؤون الأكاديمية</p>
+                <div class="sig-line"></div>
+                <p class="sig-seal">التوقيع والختم الرسمي</p>
+            </div>
+
+            <div class="sig-box sig-box-rector">
+                <p class="sig-role" style="color: #059669;">يُعتمـد / رئيس الجامعة</p>
+                <p class="sig-name" style="color: #064e3b;">أ.د. محمد أحمد البخيتي</p>
+                <p class="sig-title" style="color: #047857;">رئيس جامعة صنعاء</p>
+                <div class="sig-line" style="border-bottom-color: #059669;"></div>
+                <p class="sig-seal" style="color: #047857; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- التذييل -->
+    <div class="footer-note">
+        <span>جامعة صنعاء — نظام المفاضلة والتنافس الإلكتروني للكادر الإداري © 2026</span>
+        <span>صدر التقرير بتاريخ: الخميس 20 أغسطس 2026م</span>
+        <span>MAQATECH SOFTWARE SOLUTIONS</span>
+    </div>
+
+</div>
+
+</body>
+</html>

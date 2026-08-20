@@ -2330,3 +2330,593 @@ body.is-winners-list-print #winners-print-area {
 }
 
 
+/* ============================================================
+   ⚖️ شاشة كسر التعادل — Tiebreaker Screen Styles
+   ============================================================ */
+
+.tb-screen-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── رأس الشاشة ── */
+.tb-header-card {
+    background: linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(30,41,59,0.92) 100%);
+    border: 1px solid rgba(245,158,11,0.35);
+    border-radius: 18px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.tb-header-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706, #fbbf24, #f59e0b);
+    background-size: 200% 100%;
+    animation: tbGoldShimmer 3s linear infinite;
+}
+
+@keyframes tbGoldShimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+.tb-header-icon-wrap {
+    flex-shrink: 0;
+}
+
+.tb-header-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.3));
+    border: 2px solid rgba(245,158,11,0.4);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    box-shadow: 0 0 30px rgba(245,158,11,0.2);
+}
+
+.tb-header-text {
+    flex: 1;
+}
+
+.tb-header-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #fef3c7;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+}
+
+.tb-header-sub {
+    color: #94a3b8;
+    font-size: 0.88rem;
+    line-height: 1.7;
+}
+
+.tb-header-sub strong {
+    color: #fbbf24;
+}
+
+.tb-header-stats {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.tb-stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 22px;
+    border-radius: 14px;
+    min-width: 80px;
+}
+
+.tb-stat-active {
+    background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.2));
+    border: 1px solid rgba(16,185,129,0.35);
+}
+
+.tb-stat-inactive {
+    background: linear-gradient(135deg, rgba(100,116,139,0.15), rgba(71,85,105,0.2));
+    border: 1px solid rgba(100,116,139,0.3);
+}
+
+.tb-stat-num {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #f8fafc;
+}
+
+.tb-stat-active .tb-stat-num { color: #34d399; }
+.tb-stat-inactive .tb-stat-num { color: #94a3b8; }
+
+.tb-stat-lbl {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* ── إشعارات القفل والقراءة فقط ── */
+.tb-lock-notice,
+.tb-readonly-notice {
+    padding: 14px 22px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tb-lock-notice {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+}
+
+.tb-readonly-notice {
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.25);
+    color: #93c5fd;
+}
+
+/* ── كارت الجدول ── */
+.tb-table-card {
+    background: rgba(15,23,42,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+
+.tb-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tb-table-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.tb-table-hint {
+    font-size: 0.78rem;
+    color: #64748b;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: #fbbf24;
+}
+
+/* ── الجدول الرئيسي ── */
+.tb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Cairo', sans-serif;
+}
+
+.tb-table thead tr {
+    background: linear-gradient(90deg, rgba(245,158,11,0.12), rgba(30,41,59,0.6));
+    border-bottom: 2px solid rgba(245,158,11,0.25);
+}
+
+.tb-table thead th {
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fbbf24;
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.tb-th-priority { width: 90px; }
+.tb-th-name     { text-align: right !important; }
+.tb-th-weight   { width: 90px; }
+.tb-th-scope    { width: 155px; }
+.tb-th-toggle   { width: 120px; }
+
+/* ── صفوف الجدول ── */
+.tb-rule-row {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.tb-rule-row:hover {
+    background: rgba(245,158,11,0.04);
+}
+
+.tb-rule-row:last-child {
+    border-bottom: none;
+}
+
+.tb-row-disabled {
+    opacity: 0.45;
+}
+
+.tb-row-disabled:hover {
+    background: rgba(100,116,139,0.05);
+}
+
+/* ── خلايا الجدول ── */
+.tb-cell-priority,
+.tb-cell-weight,
+.tb-cell-scope,
+.tb-cell-toggle {
+    padding: 14px 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.tb-cell-name {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tb-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    width: 38px;
+    text-align: center;
+    filter: drop-shadow(0 0 6px rgba(245,158,11,0.3));
+}
+
+.tb-name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tb-rule-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+
+.tb-rule-desc {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+/* ── حقول الإدخال داخل الجدول ── */
+.tb-priority-input,
+.tb-weight-input {
+    width: 64px;
+    padding: 8px 10px;
+    background: rgba(30,41,59,0.9);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    color: #fef3c7;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.2s ease;
+    direction: ltr;
+}
+
+.tb-priority-input:focus,
+.tb-weight-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+    background: rgba(30,41,59,1);
+}
+
+.tb-priority-input:disabled,
+.tb-weight-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.1);
+}
+
+/* ── Select نطاق التطبيق ── */
+.tb-scope-select {
+    padding: 8px 12px;
+    background: rgba(30,41,59,0.9);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.tb-scope-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+
+.tb-scope-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Toggle / Checkbox الفاخر ── */
+.tb-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tb-checkbox-hidden {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.tb-toggle-slider {
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    border-radius: 13px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    flex-shrink: 0;
+}
+
+.tb-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+.tb-on {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 0 12px rgba(16,185,129,0.35);
+}
+
+.tb-on::after {
+    right: 3px;
+}
+
+.tb-off {
+    background: rgba(100,116,139,0.4);
+    border: 1px solid rgba(100,116,139,0.3);
+}
+
+.tb-off::after {
+    left: 3px;
+}
+
+.tb-toggle-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.tb-toggle-wrap:has(.tb-on) .tb-toggle-label {
+    color: #34d399;
+}
+
+/* ── خيارات متقدمة ── */
+.tb-options-card {
+    background: rgba(15,23,42,0.75);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.tb-options-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #93c5fd;
+    margin-bottom: 20px;
+}
+
+.tb-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 700px) {
+    .tb-options-grid { grid-template-columns: 1fr; }
+}
+
+.tb-option-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tb-option-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #cbd5e1;
+}
+
+.tb-option-hint {
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1.5;
+}
+
+/* ── شريط أزرار الحفظ ── */
+.tb-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px;
+    background: rgba(15,23,42,0.6);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    flex-wrap: wrap;
+}
+
+.tb-save-status {
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-right: auto;
+    transition: all 0.3s ease;
+}
+
+/* ── قسم المعاينة ── */
+.tb-preview-card {
+    background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 16px;
+    padding: 26px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.tb-preview-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #a5b4fc;
+    margin-bottom: 6px;
+}
+
+.tb-preview-sub {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 22px;
+}
+
+.tb-preview-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: flex-start;
+    padding-right: 8px;
+}
+
+.tb-chain-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    width: 100%;
+    max-width: 540px;
+}
+
+.tb-chain-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+    z-index: 1;
+}
+
+.tb-chain-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+}
+
+.tb-chain-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    background: rgba(30,41,59,0.6);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 6px 0;
+}
+
+.tb-chain-name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.tb-chain-meta {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.tb-chain-arrow {
+    position: absolute;
+    right: 11px;
+    bottom: -4px;
+    color: rgba(245,158,11,0.6);
+    font-size: 1rem;
+    font-weight: 900;
+    z-index: 2;
+    line-height: 1;
+    transform: translateY(50%);
+}
+
+.tb-chain-final .tb-chain-info {
+    background: rgba(239,68,68,0.08);
+    border-color: rgba(239,68,68,0.25);
+}
+
+.tb-chain-final .tb-chain-name {
+    color: #fca5a5;
+}
+
+.tb-chain-empty {
+    padding: 18px 20px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 10px;
+    color: #fbbf24;
+    font-size: 0.88rem;
+    font-weight: 700;
+    width: 100%;
+}
+
+/* ── إخفاء الشاشة عند الطباعة ── */
+@media print {
+    #tab-tiebreaker { display: none !important; }
+}

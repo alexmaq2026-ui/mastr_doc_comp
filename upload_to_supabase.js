@@ -1,17 +1,26 @@
 /**
- * سكربت رفع كافة بيانات نظام مفاضلة جامعة صنعاء إلى Supabase تلقائياً
+ * سكربت محمي لرفع البيانات إلى Supabase يدوياً عند الطلب الصريح فقط
+ * للحماية من مسح التعديلات الخارجية بالخطأ.
  */
 const fs = require('fs');
 const path = require('path');
 
-const supabaseUrl = process.argv[2] || process.env.SUPABASE_URL || 'https://wpnujibmxrxxaqriadez.supabase.co';
-const supabaseKey = process.argv[3] || process.env.SUPABASE_KEY || 'sb_publishable_PudkaqYYnpEc8JrQfNUyCw_BWSzZElC';
+// قفل أمان صارم: لن يعمل السكربت إلا بتمرير وسيط التأكيد الصريح --confirm-manual-overwrite
+if (!process.argv.includes('--confirm-manual-overwrite')) {
+    console.error('⛔ تنبيه أمان: تم إيقاف الرفع التلقائي لحماية بيانات السيرفر الخارجي (Supabase) من المسح أو الاستبدال.');
+    console.error('إذا كنت تريد الرفع يدوياً وبشكل صريح، نفّذ الأمر التالي:');
+    console.error('node upload_to_supabase.js --confirm-manual-overwrite\n');
+    process.exit(1);
+}
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://wpnujibmxrxxaqriadez.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY || 'sb_publishable_PudkaqYYnpEc8JrQfNUyCw_BWSzZElC';
 
 // قراءة البيانات من initial_data.js
 const initialDataCode = fs.readFileSync(path.join(__dirname, 'js', 'initial_data.js'), 'utf8');
 const initialData = new Function(initialDataCode + '; return { users: DEFAULT_USERS, candidates: PRESEEDED_CANDIDATES, criteria: DEFAULT_CRITERIA, settings: DEFAULT_SETTINGS, committee: DEFAULT_COMMITTEE_MEMBERS };')();
 
-// 1. المتنافسين (84 متنافس)
+// 1. المتنافسين
 const candidatesToUpload = initialData.candidates.map(c => ({
     id: parseInt(c.id) || c.id,
     name: c.name,
