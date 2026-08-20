@@ -1429,8 +1429,9 @@ function _buildWinnersPrintHTML(isDraft) {
       <!-- الترويسة الرسمية -->
       <div style="border-bottom:3px double #1e3a8a;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
         <div style="text-align:right;">
-          <h2 style="margin:0;font-size:1.1rem;color:#0f172a;font-weight:900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-          <h4 style="margin:3px 0 0 0;font-size:0.85rem;color:#1e3a8a;font-weight:800;">نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</h4>
+          <h2 style="margin:0;font-size:1.1rem;color:#0f172a;font-weight:900;">جامعة صنعاء</h2>
+          <h4 style="margin:3px 0 0 0;font-size:0.88rem;color:#1e3a8a;font-weight:800;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h4>
+          <h4 style="margin:2px 0 0 0;font-size:0.82rem;color:#1e3a8a;font-weight:700;">الكادر الإداري</h4>
         </div>
         <div style="text-align:center;">
           <div style="font-size:1rem;font-weight:900;color:#1e3a8a;background:#eff6ff;padding:5px 16px;border-radius:6px;border:1.5px solid #bfdbfe;">
@@ -1800,8 +1801,9 @@ function printTieBreakerCertificate() {
       <!-- ترويسة الوثيقة الرسمية -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 20px;">
         <div style="text-align: right;">
-          <h3 style="margin: 2px 0; font-size: 1.1rem; font-weight: 800;">${univName}</h3>
-          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #333;">${councilName}</h4>
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 900;">جامعة صنعاء</h3>
+          <h4 style="margin: 3px 0 0 0; font-size: 0.9rem; font-weight: 800; color: #1e3a8a;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h4>
+          <h5 style="margin: 2px 0 0 0; font-size: 0.82rem; font-weight: 700; color: #1e3a8a;">الكادر الإداري</h5>
         </div>
         <div style="text-align: left; font-size: 0.85rem;">
           <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}م</div>
@@ -2509,8 +2511,9 @@ function generateCandidateCardHTML(candidate) {
       <!-- ترويسة البطاقة الرسمية للطباعة -->
       <div class="card-print-header" style="border-bottom: 2px double #1e3a8a; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-          <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة - بطاقة تأكيد البيانات وإقرارها</h3>
+          <h2 style="margin: 0; color: #0f172a; font-size: 1.05rem; font-weight: 900;">جامعة صنعاء</h2>
+          <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 800;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h3>
+          <h4 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.78rem; font-weight: 700;">الكادر الإداري</h4>
         </div>
         <div style="text-align: left;">
           <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
@@ -2886,8 +2889,9 @@ function renderDetailedReport() {
         <!-- شعار وشارة صاحب الحقوق الملكية MAQATECH أفقياً في أعلى التقرير -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
           <div style="text-align: right;">
-            <h2 style="margin: 0; color: #0f172a; font-size: 1.25rem;">جامعـة صنعـاء - مجلـس الجامعـة</h2>
-            <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 700;">لجنة المفاضلة والتنافس على منح الدراسات العليا (الكادر الإداري)</h3>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.25rem;">جامعة صنعاء</h2>
+            <h3 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.95rem; font-weight: 800;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h3>
+            <h4 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-weight: 700;">الكادر الإداري</h4>
           </div>
           <!-- شارة صاحب النظام MAQATECH -->
           <div style="display: flex; align-items: center; gap: 8px; background: #0f172a; color: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #334155;">
