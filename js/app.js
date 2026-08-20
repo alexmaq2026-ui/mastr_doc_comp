@@ -43,10 +43,9 @@ function initStore() {
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
-      if (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0) {
-        state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
-        saveStore(); // حفظ التحديثات فورياً في الـ LocalStorage
-      }
+      // ملاحظة: لا نستبدل المتنافسين المحفوظين بـ PRESEEDED_CANDIDATES هنا
+      // لأن ذلك يمحو أي تعديلات أجراها المستخدم عند كل إعادة تحميل للصفحة.
+      // يتم تحميل PRESEEDED_CANDIDATES فقط إذا لم تكن هناك بيانات محفوظة (انظر الـ else أدناه)
       if (!state.criteria || state.criteria._approvedVersion !== '2026_APPROVED_V2') {
         state.criteria = JSON.parse(JSON.stringify(DEFAULT_CRITERIA));
       } else {
