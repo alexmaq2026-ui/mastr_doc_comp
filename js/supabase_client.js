@@ -1,7 +1,7 @@
 // عميل مزامنة وإدارة قواعد بيانات Supabase لنظام مفاضلة جامعة صنعاء
 // ═══════════════════════════════════════════════════════════════════
-// 🔴 مفتاح تعطيل كامل لـ Supabase — اضبطه على false لإعادة التفعيل
-const SUPABASE_DISABLED = true;
+// ✅ Supabase مُفعَّل — اضبطه على true لإيقاف التواصل الخارجي
+const SUPABASE_DISABLED = false;
 // ═══════════════════════════════════════════════════════════════════
 let supabaseClient = null;
 
@@ -26,48 +26,36 @@ function initSupabase() {
 async function syncCandidatesFromSupabase() {
     if (!supabaseClient && !initSupabase()) return false;
     try {
-        // 1. استجلاب المتنافسين
+        // 1. استجلاب المتنافسين من Supabase — بيانات Supabase هي المصدر الوحيد للحقيقة
         const { data: cData, error: cErr } = await supabaseClient.from('candidates').select('*');
         if (cErr) console.warn('خطأ استجلاب المتنافسين من Supabase:', cErr);
         if (cData && cData.length > 0) {
-            const seedMapByName = {};
-            const seedMapById = {};
-            if (typeof PRESEEDED_CANDIDATES !== 'undefined') {
-                PRESEEDED_CANDIDATES.forEach(p => {
-                    const k = (typeof normalizeArabicString === 'function') ? normalizeArabicString(p.name) : (p.name || '').trim();
-                    if (k) seedMapByName[k] = p;
-                    if (p.id) seedMapById[p.id] = p;
-                });
-            }
-
-            state.candidates = cData.map(c => {
-                const normName = (typeof normalizeArabicString === 'function') ? normalizeArabicString(c.name) : (c.name || '').trim();
-                const seedP = seedMapByName[normName] || seedMapById[parseInt(c.id) || c.id];
-                return {
-                    id: parseInt(c.id) || c.id,
-                    name: c.name,
-                    degree: c.degree,
-                    specialization: c.specialization || (seedP ? seedP.specialization : 'غير محدد'),
-                    hiring_univ: c.hiring_univ || (seedP ? seedP.hiring_univ : ''),
-                    hiring_service: c.hiring_service || (seedP ? seedP.hiring_service : ''),
-                    birth_date: c.birth_date || (seedP ? seedP.birth_date : ''),
-                    grad_year: c.grad_year || (seedP ? seedP.grad_year : ''),
-                    grade: (seedP && seedP.grade) ? seedP.grade : (c.grade || 'جيد'),
-                    continuity: (seedP && seedP.continuity) ? seedP.continuity : (c.continuity || 'مستمر'),
-                    customValues: c.custom_values || c.customValues || (seedP ? seedP.customValues : {})
-                };
-            }).sort((a, b) => Number(a.id) - Number(b.id));
+            // ✅ نعتمد بيانات Supabase كاملةً دون تجاوزها بـ PRESEEDED_CANDIDATES
+            state.candidates = cData.map(c => ({
+                id: parseInt(c.id) || c.id,
+                name: c.name,
+                degree: c.degree,
+                specialization: c.specialization || 'غير محدد',
+                hiring_univ: c.hiring_univ || '',
+                hiring_service: c.hiring_service || '',
+                birth_date: c.birth_date || '',
+                grad_year: c.grad_year || '',
+                grade: c.grade || 'جيد',
+                continuity: c.continuity || 'مستمر',
+                customValues: c.custom_values || c.customValues || {}
+            })).sort((a, b) => Number(a.id) - Number(b.id));
 
             if (typeof saveStore === 'function') saveStore();
             if (typeof refreshAllViews === 'function') refreshAllViews();
         } else if (!state.candidates || state.candidates.length === 0) {
-            // فقط إذا كانت الذاكرة المحلية فارغة أيضاً
+            // فقط إذا كانت Supabase فارغة والذاكرة المحلية فارغة → نحمّل البيانات الأولية
             if (typeof PRESEEDED_CANDIDATES !== 'undefined' && PRESEEDED_CANDIDATES.length > 0) {
                 state.candidates = JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES));
                 if (typeof saveStore === 'function') saveStore();
                 if (typeof refreshAllViews === 'function') refreshAllViews();
             }
         }
+
 
         // 2. استجلاب إعدادات المعايير والمستخدمين
         const { data: sData, error: sErr } = await supabaseClient.from('system_settings').select('*');
