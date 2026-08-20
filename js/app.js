@@ -1800,15 +1800,8 @@ function printTieBreakerCertificate() {
       <!-- ترويسة الوثيقة الرسمية -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 20px;">
         <div style="text-align: right;">
-          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900;">الجمهورية اليمنية</h3>
           <h3 style="margin: 2px 0; font-size: 1.1rem; font-weight: 800;">${univName}</h3>
           <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #333;">${councilName}</h4>
-        </div>
-        <div style="text-align: center;">
-          <div style="width: 70px; height: 70px; border: 2px dashed #666; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; margin: auto;">
-            شعار الجامعة
-          </div>
-          <span style="font-size: 0.75rem; font-weight: 700;">نظام المفاضلة الإلكتروني</span>
         </div>
         <div style="text-align: left; font-size: 0.85rem;">
           <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}م</div>
