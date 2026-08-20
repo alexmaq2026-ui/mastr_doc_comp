@@ -1,7 +1,12 @@
 // عميل مزامنة وإدارة قواعد بيانات Supabase لنظام مفاضلة جامعة صنعاء
+// ═══════════════════════════════════════════════════════════════════
+// 🔴 مفتاح تعطيل كامل لـ Supabase — اضبطه على false لإعادة التفعيل
+const SUPABASE_DISABLED = true;
+// ═══════════════════════════════════════════════════════════════════
 let supabaseClient = null;
 
 function initSupabase() {
+    if (SUPABASE_DISABLED) { console.log('🔴 Supabase معطّل — وضع التخزين المحلي فقط'); return false; }
     const url = (state.settings && state.settings.supabaseUrl) ? state.settings.supabaseUrl.trim() : null;
     const key = (state.settings && state.settings.supabaseKey) ? state.settings.supabaseKey.trim() : null;
 
