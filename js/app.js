@@ -2069,19 +2069,32 @@ function renderCandidatesTable() {
       <td>${c.grad_year || '-'}</td>
       <td>${c.grade || '-'}</td>
       ${activeCustom.map(custom => {
-        const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+        const isWorkPractice = (custom.id === 'work_practice' || (custom.name && (custom.name.includes('الممارسة') || custom.name.includes('الاستمرارية'))));
+        let computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
           ? c.scores.customScores[custom.id]
-          : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) || 0 : 0);
+          : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) : null);
+
+        if (isWorkPractice) {
+          const cont = c.continuity || (c.customValues && (c.customValues.continuity || c.customValues['استمرارية']));
+          if (computedPts === null || isNaN(computedPts)) {
+            computedPts = (cont === 'متاح' ? 3 : 5);
+          }
+        } else if (computedPts === null) {
+          computedPts = 0;
+        }
+
         const rawVal = c.customValues ? c.customValues[custom.id] : null;
         const itype = custom.indicatorType || 'binary';
 
         let dispLabel = '';
-        if (itype === 'binary') {
+        if (isWorkPractice) {
+          dispLabel = (computedPts === 3 || c.continuity === 'متاح' || (c.customValues && c.customValues.continuity === 'متاح')) ? 'متاح' : 'مستمر';
+        } else if (itype === 'binary') {
           const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
             ? custom.config.options
             : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
           const matched = bOpts.find(o => o.points === computedPts);
-          dispLabel = matched ? matched.label : (computedPts >= 5 ? 'مستمر' : 'متاح');
+          dispLabel = matched ? matched.label : (computedPts >= (custom.maxPoints || 5) ? (bOpts[0]?.label || 'مستمر') : (bOpts[1]?.label || 'متاح'));
         } else if (itype === 'grade') {
           const grades = (custom.config && custom.config.grades) ? custom.config.grades : [];
           const matched = grades.find(g => g.points === computedPts);
@@ -2191,17 +2204,30 @@ function printCandidatesRegisterPDF() {
     const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
 
     const customCells = activeCustom.map(custom => {
-      const computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
+      const isWorkPractice = (custom.id === 'work_practice' || (custom.name && (custom.name.includes('الممارسة') || custom.name.includes('الاستمرارية'))));
+      let computedPts = (c.scores && c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
         ? c.scores.customScores[custom.id]
-        : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) || 0 : 0);
+        : (c.customValues && c.customValues[custom.id] !== undefined ? parseFloat(c.customValues[custom.id]) : null);
+
+      if (isWorkPractice) {
+        const cont = c.continuity || (c.customValues && (c.customValues.continuity || c.customValues['استمرارية']));
+        if (computedPts === null || isNaN(computedPts)) {
+          computedPts = (cont === 'متاح' ? 3 : 5);
+        }
+      } else if (computedPts === null) {
+        computedPts = 0;
+      }
+
       const itype = custom.indicatorType || 'binary';
       let dispLabel = '';
-      if (itype === 'binary') {
+      if (isWorkPractice) {
+        dispLabel = (computedPts === 3 || c.continuity === 'متاح' || (c.customValues && c.customValues.continuity === 'متاح')) ? 'متاح' : 'مستمر';
+      } else if (itype === 'binary') {
         const bOpts = (custom.config && custom.config.options && custom.config.options.length >= 2)
           ? custom.config.options
           : [{ label: 'مستمر', points: custom.maxPoints || 5 }, { label: 'متاح', points: 3 }];
         const matched = bOpts.find(o => o.points === computedPts);
-        dispLabel = matched ? matched.label : (computedPts >= 5 ? 'مستمر' : 'متاح');
+        dispLabel = matched ? matched.label : (computedPts >= (custom.maxPoints || 5) ? (bOpts[0]?.label || 'مستمر') : (bOpts[1]?.label || 'متاح'));
       } else {
         dispLabel = `${computedPts}`;
       }

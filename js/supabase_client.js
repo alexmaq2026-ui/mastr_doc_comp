@@ -37,7 +37,8 @@ async function syncCandidatesFromSupabase() {
                 const continuity = c.continuity          // عمود مستقل (مستقبلاً)
                                || cv.continuity          // المفتاح الإنجليزي في custom_values
                                || cv['استمرارية']        // المفتاح العربي القديم
-                               || 'مستمر';               // القيمة الافتراضية فقط إذا لم يوجد شيء
+                               || (cv.work_practice === 3 ? 'متاح' : 'مستمر');
+                const workPracticePts = (continuity === 'متاح' ? 3 : 5);
 
                 return {
                     id:             parseInt(c.id) || c.id,
@@ -50,7 +51,7 @@ async function syncCandidatesFromSupabase() {
                     grad_year:      c.grad_year || '',
                     grade:          c.grade || 'جيد',
                     continuity,                           // ← دائماً صحيح من أي مصدر
-                    customValues:   { ...cv, continuity } // ← نضمن التناسق في custom_values أيضاً
+                    customValues:   { ...cv, continuity, work_practice: cv.work_practice !== undefined ? cv.work_practice : workPracticePts }
                 };
             }).sort((a, b) => Number(a.id) - Number(b.id));
 
