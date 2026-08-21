@@ -31,19 +31,28 @@ async function syncCandidatesFromSupabase() {
         if (cErr) console.warn('خطأ استجلاب المتنافسين من Supabase:', cErr);
         if (cData && cData.length > 0) {
             // ✅ نعتمد بيانات Supabase كاملةً دون تجاوزها بـ PRESEEDED_CANDIDATES
-            state.candidates = cData.map(c => ({
-                id: parseInt(c.id) || c.id,
-                name: c.name,
-                degree: c.degree,
-                specialization: c.specialization || 'غير محدد',
-                hiring_univ: c.hiring_univ || '',
-                hiring_service: c.hiring_service || '',
-                birth_date: c.birth_date || '',
-                grad_year: c.grad_year || '',
-                grade: c.grade || 'جيد',
-                continuity: c.continuity || 'مستمر',
-                customValues: c.custom_values || c.customValues || {}
-            })).sort((a, b) => Number(a.id) - Number(b.id));
+            state.candidates = cData.map(c => {
+                // ── استخراج الاستمرارية بشكل جذري من كل المصادر المحتملة ──
+                const cv = c.custom_values || c.customValues || {};
+                const continuity = c.continuity          // عمود مستقل (مستقبلاً)
+                               || cv.continuity          // المفتاح الإنجليزي في custom_values
+                               || cv['استمرارية']        // المفتاح العربي القديم
+                               || 'مستمر';               // القيمة الافتراضية فقط إذا لم يوجد شيء
+
+                return {
+                    id:             parseInt(c.id) || c.id,
+                    name:           c.name,
+                    degree:         c.degree,
+                    specialization: c.specialization || 'غير محدد',
+                    hiring_univ:    c.hiring_univ || '',
+                    hiring_service: c.hiring_service || '',
+                    birth_date:     c.birth_date || '',
+                    grad_year:      c.grad_year || '',
+                    grade:          c.grade || 'جيد',
+                    continuity,                           // ← دائماً صحيح من أي مصدر
+                    customValues:   { ...cv, continuity } // ← نضمن التناسق في custom_values أيضاً
+                };
+            }).sort((a, b) => Number(a.id) - Number(b.id));
 
             if (typeof saveStore === 'function') saveStore();
             if (typeof refreshAllViews === 'function') refreshAllViews();
@@ -176,17 +185,32 @@ async function syncCandidatesFromSupabase() {
 
 // دالة تنقية بيانات المتنافس لإرسال الأعمدة القياسية فقط المطابقة لجدول Supabase مع حفظ المعايير المخصصة
 function sanitizeCandidateForSupabase(c) {
+    // ── استخراج الاستمرارية من أي مصدر متاح ──────────────────────────
+    const existingCV = c.customValues || c.custom_values || {};
+    const continuity = c.continuity
+                    || existingCV.continuity
+                    || existingCV['استمرارية']
+                    || 'مستمر';
+
+    // ── دمج custom_values مع ضمان وجود continuity دائماً ──────────────
+    const custom_values = {
+        ...existingCV,
+        continuity,           // ← مفتاح ثابت إنجليزي للقراءة المستقبلية
+    };
+    // حذف المفتاح العربي القديم إن وُجد (توحيد المفتاح)
+    delete custom_values['استمرارية'];
+
     return {
-        id: parseInt(c.id) || c.id,
-        name: c.name,
-        degree: c.degree,
+        id:             parseInt(c.id) || c.id,
+        name:           c.name,
+        degree:         c.degree,
         specialization: c.specialization || 'غير محدد',
-        hiring_univ: c.hiring_univ || null,
+        hiring_univ:    c.hiring_univ || null,
         hiring_service: c.hiring_service || null,
-        grad_year: c.grad_year || null,
-        grade: c.grade || null,
-        birth_date: c.birth_date || null,
-        custom_values: c.customValues || c.custom_values || {}
+        grad_year:      c.grad_year || null,
+        grade:          c.grade || null,
+        birth_date:     c.birth_date || null,
+        custom_values,         // ← continuity مضمون هنا دائماً
     };
 }
 
