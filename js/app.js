@@ -276,10 +276,24 @@ function handleLogout() {
 function renderUserBadge() {
   const userBadgeEl = document.getElementById('user-badge-container');
   if (!userBadgeEl) return;
-  
+
   if (state.currentUser) {
+    const isAdmin = state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin';
+    const isEnabled = (state.settings && state.settings.systemEnabled !== false);
+    const toggleLabel = isEnabled ? '🟢 ON' : '🔴 OFF';
+    const toggleTitle = isEnabled ? 'النظام مفتوح — اضغط لتجميده' : 'النظام مجمّد — اضغط لفتحه';
+    const toggleStyle = isEnabled
+      ? 'background:#16a34a;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-weight:900;font-size:0.82rem;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,0.4);'
+      : 'background:#dc2626;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-weight:900;font-size:0.82rem;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 8px rgba(220,38,38,0.4);';
+    const adminOnclick = isAdmin ? 'onclick="toggleSystemEnabled()"' : '';
+    const notAllowedStyle = isAdmin ? '' : 'cursor:not-allowed;opacity:0.75;';
+
     userBadgeEl.innerHTML = `
-      <div class="user-badge-wrapper">
+      <div class="user-badge-wrapper" style="display:flex;align-items:center;gap:10px;">
+        <div title="${toggleTitle}" style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+          <button ${adminOnclick} style="${toggleStyle}${notAllowedStyle}" ${!isAdmin ? 'disabled' : ''}>${toggleLabel}</button>
+          <span style="font-size:0.62rem;color:#94a3b8;font-weight:600;">${isAdmin ? 'تحكم النظام' : 'حالة النظام'}</span>
+        </div>
         <div class="user-badge">
           <div class="user-avatar">${state.currentUser.name.charAt(0)}</div>
           <div class="user-info">
@@ -293,6 +307,38 @@ function renderUserBadge() {
       </div>
     `;
   }
+}
+
+// ── تبديل حالة النظام ON/OFF — Admin فقط ─────────────────────────
+function toggleSystemEnabled() {
+  const isAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isAdmin) return;
+  const current = (state.settings && state.settings.systemEnabled !== false);
+  const next = !current;
+  if (!confirm(next
+    ? 'هل تريد 🟢 فتح النظام للتعديل؟\nسيُسمح لجميع المستخدمين بإجراء التعديلات.'
+    : 'هل تريد 🔴 تجميد النظام؟\nسيُمنع أي تعديل على البيانات أو الواجهات حتى تعيد الفتح.')) return;
+  state.settings.systemEnabled = next;
+  saveStore();
+  if (typeof syncSettingsToSupabase === 'function') syncSettingsToSupabase(state.settings);
+  renderUserBadge();
+  renderSystemEnabledBanner();
+  if (typeof showToast === 'function') {
+    showToast(next ? '🟢 تم فتح النظام للتعديل' : '🔴 تم تجميد النظام — لا يُسمح بأي تعديل', next ? 'success' : 'error');
+  }
+}
+
+// ── حارس الحماية الصارم: يمنع أي تعديل عند OFF ─────────────────
+function checkSystemEnabled() {
+  if (state.settings && state.settings.systemEnabled === false) {
+    if (typeof showToast === 'function') {
+      showToast('🔴 النظام مجمّد — تواصل مع المدير لفتح النظام.', 'error');
+    } else {
+      alert('🔴 النظام مجمّد — لا يُسمح بأي تعديل.\nتواصل مع المدير لفتح النظام.');
+    }
+    return true;
+  }
+  return false;
 }
 
 function getRoleTitle(role) {
@@ -1044,7 +1090,7 @@ function getRankedCandidates(degreeFilter = null) {
 
 // تحديث كافة الشاشات والواجهات
 function refreshAllViews() {
-  renderLockBanner();
+  renderSystemEnabledBanner();
   renderDashboard();
   renderCandidatesTable();
   renderScoringTable();
@@ -4606,11 +4652,43 @@ function scrollToCriteriaSection(sectionId) {
 // ==========================================
 
 function checkSystemLockGuard() {
+  // ── أولاً: فحص مفتاح ON/OFF (الأعلى أولوية) ─────────────────────
+  if (checkSystemEnabled()) return true;
+  // ── ثانياً: فحص القفل النهائي المعتمد ────────────────────────────
   if (state.settings && state.settings.isLocked) {
     alert(`🔒 لا يمكن إجراء هذا التعديل!\nالنظام في حالة اعتماد وقفل نهائي لمفاضلة عام ${state.settings.referenceYear || 2026}م برقم توثيق: (${state.settings.lockHash || ''}).\n\nلا يمكن إضافة أو تعديل أو حذف أي بيانات في هذا الوضع إلا بعد الفتح الاستثنائي بواسطة رئيس اللجنة / المدير الأعلى (Super Admin).`);
     return true;
   }
   return false;
+}
+
+function renderSystemEnabledBanner() {
+  const container = document.getElementById('global-lock-banner');
+  if (!container) return;
+  const isDisabled = (state.settings && state.settings.systemEnabled === false);
+  const isLocked   = state.settings && state.settings.isLocked;
+
+  if (isDisabled) {
+    // ── شريط التجميد ON/OFF ────────────────────────────────────────
+    document.body.classList.add('is-system-locked');
+    container.innerHTML = `
+      <div class="no-print" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;padding:10px 20px;font-weight:800;font-size:0.87rem;box-shadow:0 4px 16px rgba(124,58,237,0.45);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:2px solid #a78bfa;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.5rem;">🔴</span>
+          <div>
+            <div><strong>النظام في وضع التجميد — جميع التعديلات مُوقفة</strong></div>
+            <div style="font-size:0.74rem;opacity:0.9;font-weight:600;">لا يُسمح بأي إضافة أو تعديل أو حذف حتى يقوم المدير بفتح النظام</div>
+          </div>
+        </div>
+        <span style="background:rgba(0,0,0,0.25);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:3px 12px;border-radius:12px;font-size:0.78rem;">🔴 OFF — وضع القراءة فقط</span>
+      </div>
+    `;
+  } else if (isLocked) {
+    renderLockBanner();
+  } else {
+    document.body.classList.remove('is-system-locked');
+    container.innerHTML = '';
+  }
 }
 
 function renderLockBanner() {
@@ -4647,6 +4725,7 @@ function renderLockBanner() {
     container.innerHTML = '';
   }
 }
+
 
 function openLockSessionModal() {
   const isSuperAdmin = state.currentUser && state.currentUser.role === 'super_admin';
