@@ -4338,51 +4338,218 @@ function deleteCandidate(id) {
   }
 }
 
-// استيراد ملفات الإكسل
+// استيراد ملفات الإكسل الذكي المتوافق مع كافة الكشوفات
 function handleExcelImport(event) {
-  const file = event.target.files[0];
+  if (typeof checkSystemLockGuard === 'function' && checkSystemLockGuard()) {
+    if (event.target) event.target.value = '';
+    return;
+  }
+
+  const file = event.target && event.target.files ? event.target.files[0] : null;
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      let importedCount = 0;
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      let importedCandidates = [];
 
       workbook.SheetNames.forEach(sheetName => {
         const sheet = workbook.Sheets[sheetName];
-        const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        let degree = sheetName.includes('دكتور') ? 'دكتوراه' : 'ماجستير';
+        if (!sheet) return;
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+        if (!jsonRows || jsonRows.length === 0) return;
 
-        jsonRows.forEach(row => {
-          if (row && row.length >= 4 && row[1]) {
-            const name = String(row[1]).trim();
-            if (name && name !== 'الاســـــــــــــــــــم' && name !== 'None') {
-              state.candidates.unshift({
-                id: Date.now() + Math.random(),
-                name: name,
-                degree: degree,
-                hiring_service: row[2] ? String(row[2]).trim() : '',
-                hiring_univ: row[3] ? String(row[3]).trim() : '',
-                specialization: row[4] ? String(row[4]).trim() : 'غير محدد',
-                grad_year: row[5] ? String(row[5]).trim() : '',
-                grade: row[6] ? String(row[6]).trim() : 'جيد',
-                birth_date: row[7] ? String(row[7]).trim() : ''
-              });
-              importedCount++;
+        // 1. تحديد سطر العناوين ديناميكياً (Smart Header Detection)
+        let headerRowIndex = -1;
+        let colMap = {
+          name: -1,
+          degree: -1,
+          specialization: -1,
+          hiring_univ: -1,
+          birth_date: -1,
+          grad_year: -1,
+          grade: -1,
+          continuity: -1
+        };
+
+        for (let r = 0; r < Math.min(10, jsonRows.length); r++) {
+          const row = jsonRows[r];
+          if (!row || !Array.isArray(row)) continue;
+
+          row.forEach((cell, cIdx) => {
+            if (!cell) return;
+            const txt = String(cell).trim().replace(/\s+/g, ' ');
+            if (/اسم|المتنافس|الموظف|المرشح/i.test(txt) && !/الدرجة|التخصص|التعيين/i.test(txt)) {
+              colMap.name = cIdx;
+            } else if (/الدرجة|المؤهل/i.test(txt)) {
+              colMap.degree = cIdx;
+            } else if (/التخصص|المجال/i.test(txt)) {
+              colMap.specialization = cIdx;
+            } else if (/التعيين|المباشرة|الخدمة/i.test(txt)) {
+              colMap.hiring_univ = cIdx;
+            } else if (/تاريخ الميلاد|سنة الميلاد|الميلاد/i.test(txt)) {
+              colMap.birth_date = cIdx;
+            } else if (/سنة التخرج|عام التخرج|التخرج/i.test(txt)) {
+              colMap.grad_year = cIdx;
+            } else if (/التقدير|المعدل/i.test(txt)) {
+              colMap.grade = cIdx;
+            } else if (/الاستمرارية|الممارسة|الحالة|الممارسة الفعلية/i.test(txt)) {
+              colMap.continuity = cIdx;
+            }
+          });
+
+          if (colMap.name !== -1) {
+            headerRowIndex = r;
+            break;
+          }
+        }
+
+        // إذا لم يتم العثور على سطر عناوين واضح، نعتمد الترتيب القياسي لكشوفات النظام
+        if (headerRowIndex === -1) {
+          headerRowIndex = 0;
+          colMap = {
+            name: 1,
+            degree: 2,
+            specialization: 3,
+            hiring_univ: 4,
+            birth_date: 5,
+            grad_year: 7,
+            grade: 8,
+            continuity: 9
+          };
+        }
+
+        const sheetDefaultDegree = sheetName.includes('دكتور') ? 'دكتوراه' : 'ماجستير';
+
+        for (let i = headerRowIndex + 1; i < jsonRows.length; i++) {
+          const row = jsonRows[i];
+          if (!row || row.length === 0) continue;
+
+          // استخراج الاسم والتحقق من صحته
+          const nameRaw = colMap.name !== -1 && row[colMap.name] ? String(row[colMap.name]).trim() : '';
+          if (!nameRaw || /^(م|الرقم|الاسم|اسم الموظف|اسم الموظف المتنافس|None|null)$/i.test(nameRaw)) continue;
+
+          // الدرجة
+          let degreeVal = sheetDefaultDegree;
+          if (colMap.degree !== -1 && row[colMap.degree]) {
+            const dStr = String(row[colMap.degree]).trim();
+            if (dStr.includes('دكتور')) degreeVal = 'دكتوراه';
+            else if (dStr.includes('ماجست')) degreeVal = 'ماجستير';
+          }
+
+          // التخصص
+          let specVal = (colMap.specialization !== -1 && row[colMap.specialization])
+            ? String(row[colMap.specialization]).trim()
+            : 'غير محدد';
+
+          // تاريخ التعيين بالخدمة / الجامعة
+          let hiringVal = '';
+          if (colMap.hiring_univ !== -1 && row[colMap.hiring_univ]) {
+            hiringVal = String(row[colMap.hiring_univ]).split(' ')[0].replace('00:00:00', '').trim();
+          }
+
+          // تاريخ الميلاد
+          let birthVal = '';
+          if (colMap.birth_date !== -1 && row[colMap.birth_date]) {
+            let bRaw = String(row[colMap.birth_date]).split(' ')[0].replace('00:00:00', '').trim();
+            const yMatch = bRaw.match(/(\d{4})/);
+            birthVal = yMatch ? `${yMatch[1]}م` : bRaw;
+          }
+
+          // سنة التخرج
+          let gradVal = '';
+          if (colMap.grad_year !== -1 && row[colMap.grad_year]) {
+            let gRaw = String(row[colMap.grad_year]).split(' ')[0].replace('00:00:00', '').trim();
+            const yMatch = gRaw.match(/(\d{4})/);
+            gradVal = yMatch ? `${yMatch[1]}م` : gRaw;
+          }
+
+          // التقدير الأكاديمي
+          let gradeVal = 'جيد';
+          if (colMap.grade !== -1 && row[colMap.grade]) {
+            const grRaw = String(row[colMap.grade]).trim();
+            if (grRaw.includes('ممتاز')) gradeVal = 'ممتاز';
+            else if (grRaw.includes('جيد جدا') || grRaw.includes('جيد جداً')) gradeVal = 'جيد جداً';
+            else if (grRaw.includes('جيد')) gradeVal = 'جيد';
+            else if (grRaw.includes('مقبول')) gradeVal = 'مقبول';
+            else if (grRaw.includes('بدون') || grRaw.includes('لا يوجد')) gradeVal = 'بدون';
+            else gradeVal = grRaw;
+          }
+
+          // الاستمرارية والمعايير المخصصة
+          let continuityVal = 'مستمر';
+          let workPracticePts = 5;
+          if (colMap.continuity !== -1 && row[colMap.continuity]) {
+            const contRaw = String(row[colMap.continuity]).trim();
+            if (contRaw.includes('متاح')) {
+              continuityVal = 'متاح';
+              workPracticePts = 3;
+            } else if (contRaw.includes('مستمر')) {
+              continuityVal = 'مستمر';
+              workPracticePts = 5;
             }
           }
-        });
+
+          importedCandidates.push({
+            id: Date.now() + Math.floor(Math.random() * 100000),
+            name: nameRaw,
+            degree: degreeVal,
+            specialization: specVal,
+            hiring_univ: hiringVal,
+            hiring_service: '',
+            birth_date: birthVal,
+            grad_year: gradVal,
+            grade: gradeVal,
+            continuity: continuityVal,
+            customValues: {
+              work_practice: workPracticePts,
+              continuity: continuityVal
+            }
+          });
+        }
       });
+
+      if (importedCandidates.length === 0) {
+        alert('لم يتم العثور على أي بيانات متنافسين صالحة للاستيراد في الملف المحدد.');
+        if (event.target) event.target.value = '';
+        return;
+      }
+
+      // سؤال المستخدم عن طريقة الاستيراد
+      const replaceAll = confirm(`تم العثور على (${importedCandidates.length}) متنافس في ملف الإكسل بنجاح.\n\nهل تريد استبدال السجل الحالي بالكامل؟\n• [موافق / OK]: استبدال السجل الحالي بالبيانات الجديدة.\n• [إلغاء الأمر / Cancel]: دمج وإضافة المتنافسين الجدد دون حذف السجلات السابقة.`);
+
+      if (replaceAll) {
+        state.candidates = importedCandidates;
+      } else {
+        let addedCount = 0;
+        let updatedCount = 0;
+        importedCandidates.forEach(newCand => {
+          const existingIdx = state.candidates.findIndex(c => c.name === newCand.name && c.degree === newCand.degree);
+          if (existingIdx !== -1) {
+            state.candidates[existingIdx] = {
+              ...state.candidates[existingIdx],
+              ...newCand,
+              id: state.candidates[existingIdx].id
+            };
+            updatedCount++;
+          } else {
+            state.candidates.unshift(newCand);
+            addedCount++;
+          }
+        });
+      }
 
       saveStore();
       refreshAllViews();
-      alert(`تم استيراد ${importedCount} متنافس بنجاح من ملف الإكسل!`);
+
+      if (event.target) event.target.value = '';
+      alert(`✅ تم استيراد ومعالجة (${importedCandidates.length}) متنافس بنجاح!\nإجمالي المتنافسين الحاليين في النظام: ${state.candidates.length}`);
     } catch (err) {
-      console.error(err);
-      alert('حدث خطأ أثناء قراءة ملف الإكسل');
+      console.error('خطأ استيراد الإكسل:', err);
+      if (event.target) event.target.value = '';
+      alert('حدث خطأ أثناء قراءة ملف الإكسل: ' + (err.message || err));
     }
   };
   reader.readAsArrayBuffer(file);
