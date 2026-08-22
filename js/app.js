@@ -7749,10 +7749,10 @@ function renderCriterionReportScreen(redrawToolbar = true) {
 
     <!-- ══ تذييل التوقيعات والاعتماد الرسمي (للطباعة و PDF) ══ -->
     <div class="cr-print-footer">
-      <!-- الصف الأول: مدير شئون الطلاب & مدير عام الشئون الإدارية -->
+      <!-- الصف الأول: مدير شئون الموظفين & مدير عام الشئون الإدارية -->
       <div style="display:flex;justify-content:space-around;align-items:flex-end;text-align:center;font-size:0.88rem;font-weight:800;color:#0f172a;margin-bottom:28px">
         <div style="width:36%">
-          <div style="font-weight:900;font-size:0.92rem;margin-bottom:2px">مدير شئون الطلاب</div>
+          <div style="font-weight:900;font-size:0.92rem;margin-bottom:2px">مدير شئون الموظفين</div>
           <div style="margin-top:35px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
         </div>
         <div style="width:36%">
