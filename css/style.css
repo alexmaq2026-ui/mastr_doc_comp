@@ -3241,7 +3241,7 @@ body.is-winners-list-print #winners-print-area {
 /* ── لوحة اختيار المعيار — مربعات بأيقونات كبيرة ── */
 .cr-criteria-bar {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-bottom: 20px;
 }

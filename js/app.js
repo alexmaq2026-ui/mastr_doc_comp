@@ -7259,7 +7259,7 @@ function printAnalyticsReport() {
 // ====================================================
 
 let criterionReportState = {
-  activeCriterion: 'seniority', // 'seniority' | 'age' | 'specialization' | 'grade' | 'continuity' | 'totalScore'
+  activeCriterion: 'seniority', // 'seniority' | 'age' | 'specialization' | 'grade' | 'continuity'
   degreeFilter: 'الكل', // 'الكل' | 'ماجستير' | 'دكتوراه'
   searchQuery: '',
   // معيار الأقدمية
@@ -7278,10 +7278,6 @@ let criterionReportState = {
   selectedGrade: 'الكل',
   // معيار الاستمرارية
   selectedContinuity: 'الكل',
-  // معيار المجموع الكلي
-  scoreFilterType: 'all', // 'all', 'all_desc', 'all_asc', 'gte', 'range'
-  scoreMin: 15,
-  scoreMax: 30,
   // الترتيب
   sortOrder: 'default' // 'default' (الترتيب العام), 'criterion_desc', 'criterion_asc', 'name_asc'
 };
@@ -7355,9 +7351,6 @@ function resetCriterionFilters() {
     selectedSpecialization: 'الكل',
     selectedGrade: 'الكل',
     selectedContinuity: 'الكل',
-    scoreFilterType: 'all',
-    scoreMin: 15,
-    scoreMax: 30,
     sortOrder: 'default'
   };
   renderCriterionReportScreen();
@@ -7467,26 +7460,12 @@ function getCriterionFilteredCandidates() {
         return cont === criterionReportState.selectedContinuity;
       });
     }
-  } else if (crit === 'totalScore') {
-    const scType = criterionReportState.scoreFilterType;
-    if (scType === 'gte') {
-      const minScore = parseFloat(criterionReportState.scoreMin) || 0;
-      list = list.filter(c => (c.scores ? c.scores.totalScore : 0) >= minScore);
-    } else if (scType === 'range') {
-      const minScore = parseFloat(criterionReportState.scoreMin) || 0;
-      const maxScore = parseFloat(criterionReportState.scoreMax) || 100;
-      list = list.filter(c => {
-        const sc = c.scores ? c.scores.totalScore : 0;
-        return sc >= minScore && sc <= maxScore;
-      });
-    }
   }
 
   // 3. الترتيب والفرز (Sorting)
   const sort = criterionReportState.sortOrder;
   const sType = criterionReportState.seniorityFilterType;
   const aType = criterionReportState.ageFilterType;
-  const scType = criterionReportState.scoreFilterType;
 
   list.sort((a, b) => {
     // الأقدمية
@@ -7511,14 +7490,6 @@ function getCriterionFilteredCandidates() {
       const aAge = getCandidateAgeInfo(a, refYear).age;
       const bAge = getCandidateAgeInfo(b, refYear).age;
       return aAge - bAge;
-    }
-
-    // المجموع الكلي
-    if (crit === 'totalScore' && (sort === 'criterion_desc' || scType === 'all_desc')) {
-      return (b.scores?.totalScore || 0) - (a.scores?.totalScore || 0);
-    }
-    if (crit === 'totalScore' && (sort === 'criterion_asc' || scType === 'all_asc')) {
-      return (a.scores?.totalScore || 0) - (b.scores?.totalScore || 0);
     }
 
     // الاسم أبجدياً
@@ -7580,8 +7551,7 @@ function renderCriterionReportScreen(redrawToolbar = true) {
       { key: 'age',            icon: '🎂', label: 'العمر' },
       { key: 'specialization', icon: '🎓', label: 'التخصص', count: uniqueSpecs.length },
       { key: 'grade',          icon: '🏅', label: 'التقدير' },
-      { key: 'continuity',     icon: '💼', label: 'الاستمرارية' },
-      { key: 'totalScore',     icon: '🏆', label: 'المجموع الكلي' }
+      { key: 'continuity',     icon: '💼', label: 'الاستمرارية' }
     ];
 
     controlsBox.innerHTML = `
@@ -7748,18 +7718,16 @@ function renderCriterionReportScreen(redrawToolbar = true) {
             const totalScore = c.scores ? c.scores.totalScore : 0;
             const criterionPoints = getSpecificCriterionPoints(c, ac);
             const criterionBadge  = buildCriterionValueBadgeNew(c, ac, refYear);
-            const isWinner = c.status && (c.status.includes('فائز') || c.status.includes('مقبول'));
 
             const contColor = cont === 'مستمر'
               ? 'background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3)'
               : 'background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)';
 
             return `
-              <tr class="${isWinner ? 'is-winner' : ''}">
+              <tr>
                 <td><span style="font-weight:800;color:#64748b">${idx + 1}</span></td>
                 <td class="td-name">
                   <span style="font-weight:800;font-size:0.88rem">${c.name}</span>
-                  ${isWinner ? `<span class="cr-winner-badge">★ فائز</span>` : ''}
                 </td>
                 <td>
                   <span class="badge-degree" style="font-size:0.73rem;padding:2px 7px">${c.degree}</span>
@@ -7950,37 +7918,6 @@ function renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAg
     `;
   }
 
-  if (crit === 'totalScore') {
-    const scType = criterionReportState.scoreFilterType;
-    const scOptions = [
-      { v: 'all',      l: 'عرض جميع المتنافسين' },
-      { v: 'all_desc', l: 'الأعلى نقاطاً يظهر أولاً' },
-      { v: 'all_asc',  l: 'الأقل نقاطاً يظهر أولاً' },
-      { v: 'gte',      l: 'من مجموعه لا يقل عن عدد نقاط' },
-      { v: 'range',    l: 'من مجموعه يقع بين نقطتين محددتين' }
-    ];
-    return `
-      <span class="cr-filter-zone-label">🏆 نمط النقاط:</span>
-      <select onchange="criterionReportState.scoreFilterType=this.value; renderCriterionReportScreen();" style="min-width:200px">
-        ${scOptions.map(o => `<option value="${o.v}" ${scType===o.v?'selected':''}>${o.l}</option>`).join('')}
-      </select>
-      ${scType === 'gte' ? `
-        <span class="cr-filter-zone-label">الحد الأدنى:</span>
-        <input type="number" min="0" max="50" value="${criterionReportState.scoreMin||20}" style="width:70px"
-               onchange="criterionReportState.scoreMin=this.value; renderCriterionReportScreen(false);">
-        <span style="font-size:0.8rem;color:#64748b;font-weight:700">نقطة فأكثر</span>
-      ` : ''}
-      ${scType === 'range' ? `
-        <span class="cr-filter-zone-label">من:</span>
-        <input type="number" min="0" max="50" value="${criterionReportState.scoreMin||15}" style="width:65px"
-               onchange="criterionReportState.scoreMin=this.value; renderCriterionReportScreen(false);">
-        <span style="font-size:0.8rem;color:#64748b;font-weight:700">إلى:</span>
-        <input type="number" min="0" max="50" value="${criterionReportState.scoreMax||25}" style="width:65px"
-               onchange="criterionReportState.scoreMax=this.value; renderCriterionReportScreen(false);">
-        <span style="font-size:0.8rem;color:#64748b;font-weight:700">نقطة</span>
-      ` : ''}
-    `;
-  }
   return '';
 }
 
@@ -8008,20 +7945,16 @@ function buildCriterionValueBadgeNew(c, crit, refYear) {
     const col = cont === 'مستمر' ? 'rgba(16,185,129,0.14);color:#10b981;border:1px solid rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.14);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)';
     return `<span class="cr-crit-val-badge" style="background:${col}">💼 ${cont}</span>`;
   }
-  const sc = c.scores ? c.scores.totalScore : 0;
-  return `<span class="cr-crit-val-badge" style="background:rgba(15,23,42,0.5);color:#e2e8f0;border:1px solid rgba(100,116,139,0.3)">🏆 ${sc} نقطة</span>`;
+  return '';
 }
 
 function renderSpecificCriterionControls(crit, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear) {
-  // الدالة القديمة — تُعيد الجديدة
   return renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear);
 }
 
 function buildCriterionValueBadge(c, crit, refYear) {
-  // الدالة القديمة — تُعيد الجديدة
   return buildCriterionValueBadgeNew(c, crit, refYear);
 }
-
 
 function getSpecificCriterionPoints(c, crit) {
   if (!c.scores) return 0;
@@ -8033,61 +7966,7 @@ function getSpecificCriterionPoints(c, crit) {
     const custom = c.scores.customScores || {};
     return custom.work_practice !== undefined ? custom.work_practice : (getCandidateContinuityVal(c) === 'مستمر' ? 5 : 3);
   }
-  return c.scores.totalScore || 0;
-}
-
-function buildCriterionValueBadge(c, crit, refYear) {
-  if (crit === 'seniority') {
-    const s = getCandidateSeniorityYears(c, refYear);
-    if (!s.valid) {
-      return `<span style="color: #ef4444; font-weight: 800; font-size: 0.82rem;">غير محدد / ناقص</span>`;
-    }
-    return `
-      <span style="background: rgba(2, 132, 199, 0.15); color: #0284c7; border: 1px solid #0284c7; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-        📅 ${s.years} سنة أقدمية (تعيين ${s.year}م)
-      </span>
-    `;
-  }
-  if (crit === 'age') {
-    const a = getCandidateAgeInfo(c, refYear);
-    if (!a.valid) {
-      return `<span style="color: #ef4444; font-weight: 800; font-size: 0.82rem;">غير محدد / ناقص</span>`;
-    }
-    return `
-      <span style="background: rgba(217, 119, 6, 0.15); color: #d97706; border: 1px solid #d97706; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-        🎂 ${a.age} سنة (مواليد ${a.birthYear}م)
-      </span>
-    `;
-  }
-  if (crit === 'specialization') {
-    const sp = getCleanSpecializationName(c.specialization, c);
-    return `
-      <span style="background: rgba(13, 148, 136, 0.15); color: #0d9488; border: 1px solid #0d9488; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-        🎓 ${sp}
-      </span>
-    `;
-  }
-  if (crit === 'grade') {
-    const g = normalizeGradeText(c.grade) || 'بدون';
-    return `
-      <span style="background: rgba(124, 58, 237, 0.15); color: #7c3aed; border: 1px solid #7c3aed; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-        🏅 تقدير: ${g}
-      </span>
-    `;
-  }
-  if (crit === 'continuity') {
-    const cont = getCandidateContinuityVal(c);
-    return `
-      <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-        💼 حالة العمل: ${cont}
-      </span>
-    `;
-  }
-  return `
-    <span style="background: rgba(15, 23, 42, 0.2); color: var(--text-main); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
-      ⭐ ${c.scores ? c.scores.totalScore : 0} نقطة
-    </span>
-  `;
+  return 0;
 }
 
 function getCriterionReportHeaderTitle(st, refYear) {
