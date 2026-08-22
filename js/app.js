@@ -294,12 +294,8 @@ function renderUserBadge() {
           <button ${adminOnclick} style="${toggleStyle}${notAllowedStyle}" ${!isAdmin ? 'disabled' : ''}>${toggleLabel}</button>
           <span style="font-size:0.62rem;color:#94a3b8;font-weight:600;">${isAdmin ? 'تحكم النظام' : 'حالة النظام'}</span>
         </div>
-        <div class="user-badge">
-          <div class="user-avatar">${state.currentUser.name.charAt(0)}</div>
-          <div class="user-info">
-            <span class="user-name">${state.currentUser.name}</span>
-            <span class="user-role-tag">${state.currentUser.title || getRoleTitle(state.currentUser.role)}</span>
-          </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+          <span style="font-weight:800;font-size:0.9rem;color:var(--text-main);">${state.currentUser.name}</span>
         </div>
         <div class="user-actions">
           <button class="btn btn-danger btn-xs" onclick="handleLogout()">تسجيل الخروج</button>
