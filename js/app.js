@@ -7747,20 +7747,25 @@ function renderCriterionReportScreen(redrawToolbar = true) {
       </table>
     </div>
 
-    <!-- ══ تذييل التوقيعات (للطباعة) ══ -->
+    <!-- ══ تذييل التوقيعات والاعتماد الرسمي (للطباعة و PDF) ══ -->
     <div class="cr-print-footer">
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;text-align:center;font-size:0.85rem;font-weight:800;color:#0f172a">
-        <div style="width:28%">
-          <div>عضو ومقرر اللجنة</div>
-          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
+      <!-- الصف الأول: مدير شئون الطلاب & مدير عام الشئون الإدارية -->
+      <div style="display:flex;justify-content:space-around;align-items:flex-end;text-align:center;font-size:0.88rem;font-weight:800;color:#0f172a;margin-bottom:28px">
+        <div style="width:36%">
+          <div style="font-weight:900;font-size:0.92rem;margin-bottom:2px">مدير شئون الطلاب</div>
+          <div style="margin-top:35px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
         </div>
-        <div style="width:28%">
-          <div>أعضاء لجنة المفاضلة</div>
-          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
+        <div style="width:36%">
+          <div style="font-weight:900;font-size:0.92rem;margin-bottom:2px">مدير عام الشئون الإدارية</div>
+          <div style="margin-top:35px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
         </div>
-        <div style="width:28%">
-          <div>رئيس لجنة المفاضلة / نائب رئيس الجامعة</div>
-          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">أ.د / ..................................</div>
+      </div>
+      <!-- الصف الثاني: يعتمد الأمين العام -->
+      <div style="display:flex;justify-content:center;text-align:center;font-size:0.9rem;font-weight:900;color:#0f172a">
+        <div style="width:42%">
+          <div style="margin-bottom:4px;font-size:0.95rem;color:#1e3a8a">يعتمد</div>
+          <div style="font-size:0.95rem;margin-bottom:2px">الأمين العام</div>
+          <div style="margin-top:35px;border-top:1px solid #0f172a;padding-top:4px">أ. / ..................................</div>
         </div>
       </div>
     </div>
