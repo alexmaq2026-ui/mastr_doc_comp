@@ -1,4 +1,4 @@
-﻿// دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
+// دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
 function normalizeArabicString(str) {
   if (!str) return '';
   return String(str)
@@ -7813,13 +7813,13 @@ function renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAg
   if (crit === 'seniority') {
     const sType = criterionReportState.seniorityFilterType;
     const sTypeOptions = [
-      { v: 'all',      l: 'جميع سنوات الأقدمية' },
-      { v: 'all_desc', l: '⬇ الأعلى أقدمية أولاً' },
-      { v: 'all_asc',  l: '⬆ الأقل أقدمية أولاً' },
-      { v: 'exact',    l: 'سنة بعينها (بالضبط)' },
-      { v: 'gte',      l: 'أقدمية ≥ عدد سنوات' },
-      { v: 'lte',      l: 'أقدمية ≤ عدد سنوات' },
-      { v: 'range',    l: 'نطاق بين سنتين' }
+      { v: 'all',      l: 'عرض جميع سنوات الأقدمية' },
+      { v: 'all_desc', l: 'الأعلى أقدمية يظهر أولاً' },
+      { v: 'all_asc',  l: 'الأقل أقدمية يظهر أولاً' },
+      { v: 'exact',    l: 'من له أقدمية بسنة بعينها' },
+      { v: 'gte',      l: 'من أقدميته لا تقل عن عدد سنوات' },
+      { v: 'lte',      l: 'من أقدميته لا تزيد عن عدد سنوات' },
+      { v: 'range',    l: 'من أقدميته تقع بين سنتين' }
     ];
     return `
       <span class="cr-filter-zone-label">📅 نمط الأقدمية:</span>
@@ -7863,14 +7863,14 @@ function renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAg
   if (crit === 'age') {
     const aType = criterionReportState.ageFilterType;
     const aOptions = [
-      { v: 'all',            l: 'جميع الأعمار' },
-      { v: 'all_desc',       l: '⬇ الأكبر عمراً أولاً' },
-      { v: 'all_asc',        l: '⬆ الأصغر عمراً أولاً' },
-      { v: 'exact',          l: 'عمر محدد بالضبط' },
-      { v: 'bracket_under35',l: 'الشباب (أقل من 35)' },
-      { v: 'bracket_35_45',  l: 'المتوسط (35 — 45)' },
-      { v: 'bracket_over45', l: 'الخبرات (فوق 45)' },
-      { v: 'range',          l: 'نطاق عمري مخصص' }
+      { v: 'all',            l: 'عرض جميع الأعمار' },
+      { v: 'all_desc',       l: 'الأكبر سناً يظهر أولاً' },
+      { v: 'all_asc',        l: 'الأصغر سناً يظهر أولاً' },
+      { v: 'exact',          l: 'من عمره سنة محددة بالضبط' },
+      { v: 'bracket_under35',l: 'فئة الشباب (أقل من 35 سنة)' },
+      { v: 'bracket_35_45',  l: 'الفئة المتوسطة (من 35 إلى 45 سنة)' },
+      { v: 'bracket_over45', l: 'ذوو الخبرة (أكبر من 45 سنة)' },
+      { v: 'range',          l: 'من عمره يقع بين سنتين محددتين' }
     ];
     return `
       <span class="cr-filter-zone-label">🎂 نمط العمر:</span>
@@ -7957,11 +7957,11 @@ function renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAg
   if (crit === 'totalScore') {
     const scType = criterionReportState.scoreFilterType;
     const scOptions = [
-      { v: 'all',      l: 'جميع المتنافسين' },
-      { v: 'all_desc', l: '⬇ الأعلى نقاطاً أولاً' },
-      { v: 'all_asc',  l: '⬆ الأقل نقاطاً أولاً' },
-      { v: 'gte',      l: 'نقاط ≥ حد أدنى' },
-      { v: 'range',    l: 'نطاق نقاط محدد' }
+      { v: 'all',      l: 'عرض جميع المتنافسين' },
+      { v: 'all_desc', l: 'الأعلى نقاطاً يظهر أولاً' },
+      { v: 'all_asc',  l: 'الأقل نقاطاً يظهر أولاً' },
+      { v: 'gte',      l: 'من مجموعه لا يقل عن عدد نقاط' },
+      { v: 'range',    l: 'من مجموعه يقع بين نقطتين محددتين' }
     ];
     return `
       <span class="cr-filter-zone-label">🏆 نمط النقاط:</span>
