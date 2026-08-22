@@ -102,6 +102,7 @@
       </button>
       <div class="nav-dropdown">
         <button class="tab-btn" id="tab-btn-report" data-tab="tab-report">التقرير التفصيلي المعتمد</button>
+        <button class="tab-btn" id="tab-btn-criterion-report" data-tab="tab-criterion-report">التقرير بحسب المعيار</button>
         <button class="tab-btn" id="tab-btn-analytics" data-tab="tab-analytics">التقارير التحليلية والرقابية</button>
         <button class="tab-btn" id="tab-btn-criteria-doc" data-tab="tab-criteria-doc">وثيقة المعايير والأوزان</button>
       </div>
@@ -513,6 +514,33 @@
 
       <!-- ورقة التقرير الجاهزة للطباعة والتوقيع -->
       <div id="detailed-report-content"></div>
+    </section>
+
+    <!-- 4.3. شاشة التقرير بحسب المعيار (Dynamic Criterion Filter & Analytics Report) -->
+    <section id="tab-criterion-report" class="tab-content">
+      <div class="card no-print" style="margin-bottom: 20px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+          <h2 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>🎯 التقرير المخصص بحسب معايير المفاضلة (فرز وتصفية تفاعلية)</span>
+          </h2>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-secondary" onclick="exportCriterionReportToExcel()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800;">
+              <span>📊</span> تصدير Excel
+            </button>
+            <button class="btn btn-primary" onclick="printCriterionReport()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1);">
+              <span>🖨️</span> طباعة التقرير المعياري PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- لوحة التحكم وتحديد المعيار والفلاتر -->
+        <div id="criterion-filter-controls-box" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+          <!-- سيتم بناء عناصر التحكم ديناميكياً بواسطة JavaScript -->
+        </div>
+      </div>
+
+      <!-- محتوى التقرير والجدول القابل للطباعة -->
+      <div id="criterion-report-content"></div>
     </section>
 
     <!-- 4.7. شاشة المحضر الرسمي لنتائج المفاضلة (رئيس اللجنة فقط) -->

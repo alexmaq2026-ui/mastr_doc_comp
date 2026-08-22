@@ -1443,7 +1443,7 @@ body {
         line-height: 1.2 !important;
     }
 
-    .navbar, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .col-action, .col-readiness, .card-header button, #tab-candidates .card-header {
+    header, nav, .navbar, header.navbar, .dropdown-nav, #dropdown-nav, .tabs-nav, .filter-bar, .btn, .nav-controls, .no-print, .col-action, .col-readiness, .card-header button, #tab-candidates .card-header {
         display: none !important;
     }
 
@@ -1878,7 +1878,11 @@ body {
         size: A4 portrait;
         margin: 6mm 10mm;
     }
+    body.is-card-print header,
+    body.is-card-print nav,
     body.is-card-print .navbar,
+    body.is-card-print .dropdown-nav,
+    body.is-card-print #dropdown-nav,
     body.is-card-print .tabs-nav,
     body.is-card-print .main-container,
     body.is-card-print .btn,
@@ -1933,7 +1937,12 @@ body {
         padding: 0 !important;
         margin: 0 !important;
     }
+    body.is-minutes-print header,
+    body.is-minutes-print nav,
     body.is-minutes-print header.navbar,
+    body.is-minutes-print .navbar,
+    body.is-minutes-print nav.dropdown-nav,
+    body.is-minutes-print #dropdown-nav,
     body.is-minutes-print nav.tabs-nav,
     body.is-minutes-print .no-print,
     body.is-minutes-print .btn,
@@ -1960,19 +1969,27 @@ body {
         border-radius: 0 !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 10mm 14mm !important;
+        padding: 2mm 5mm !important;
+    }
+    body.is-minutes-print table td,
+    body.is-minutes-print table th {
+        padding: 2.5px 5px !important;
+        font-size: 0.74rem !important;
+        line-height: 1.25 !important;
+    }
+    body.is-minutes-print h1 { font-size: 1.05rem !important; margin: 0 0 1px 0 !important; }
+    body.is-minutes-print h2 { font-size: 0.85rem !important; margin: 0 0 1px 0 !important; }
+    body.is-minutes-print h3 { font-size: 0.78rem !important; margin: 0 0 2px 0 !important; padding: 2px 6px !important; }
+    body.is-minutes-print h4 { font-size: 0.75rem !important; margin: 0 0 4px 0 !important; }
+    body.is-minutes-print [style*="border-top: 2px solid #d97706"] {
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
     @page {
         size: A4 portrait;
-        margin: 4mm 6mm;
-    }
-    body.is-minutes-print #minutes-printable-area {
-        border: none !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 4mm 8mm !important;
+        margin: 3mm 5mm;
     }
 }
 
@@ -1986,7 +2003,12 @@ body {
         padding: 0 !important;
         margin: 0 !important;
     }
+    body.is-batch-cards-print header,
+    body.is-batch-cards-print nav,
     body.is-batch-cards-print header.navbar,
+    body.is-batch-cards-print .navbar,
+    body.is-batch-cards-print nav.dropdown-nav,
+    body.is-batch-cards-print #dropdown-nav,
     body.is-batch-cards-print nav.tabs-nav,
     body.is-batch-cards-print main.main-container,
     body.is-batch-cards-print .no-print,
@@ -2024,7 +2046,12 @@ body {
         padding: 0 !important;
         margin: 0 !important;
     }
+    body.is-criteria-doc-print header,
+    body.is-criteria-doc-print nav,
     body.is-criteria-doc-print header.navbar,
+    body.is-criteria-doc-print .navbar,
+    body.is-criteria-doc-print nav.dropdown-nav,
+    body.is-criteria-doc-print #dropdown-nav,
     body.is-criteria-doc-print nav.tabs-nav,
     body.is-criteria-doc-print .no-print,
     body.is-criteria-doc-print .btn,
@@ -2051,11 +2078,27 @@ body {
         border-radius: 0 !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 4mm 8mm !important;
+        padding: 2mm 5mm !important;
+    }
+    body.is-criteria-doc-print table td,
+    body.is-criteria-doc-print table th {
+        padding: 2px 6px !important;
+        font-size: 0.72rem !important;
+        line-height: 1.25 !important;
+    }
+    body.is-criteria-doc-print h1 { font-size: 1.05rem !important; margin: 0 0 1px 0 !important; }
+    body.is-criteria-doc-print h2 { font-size: 0.85rem !important; margin: 0 0 1px 0 !important; }
+    body.is-criteria-doc-print h3 { font-size: 0.78rem !important; margin: 0 0 2px 0 !important; padding: 2px 6px !important; }
+    body.is-criteria-doc-print h4 { font-size: 0.75rem !important; margin: 0 0 4px 0 !important; }
+    body.is-criteria-doc-print [style*="border-top: 2px solid #d97706"] {
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
     @page {
         size: A4 portrait;
-        margin: 4mm 6mm;
+        margin: 3mm 5mm;
     }
 }
 
@@ -2069,7 +2112,12 @@ body {
         padding: 0 !important;
         margin: 0 !important;
     }
+    body.is-scoring-print header,
+    body.is-scoring-print nav,
     body.is-scoring-print header.navbar,
+    body.is-scoring-print .navbar,
+    body.is-scoring-print nav.dropdown-nav,
+    body.is-scoring-print #dropdown-nav,
     body.is-scoring-print nav.tabs-nav,
     body.is-scoring-print .no-print,
     body.is-scoring-print .btn,
@@ -2114,6 +2162,8 @@ body {
     body.is-candidates-register-print header,
     body.is-candidates-register-print .navbar,
     body.is-candidates-register-print nav,
+    body.is-candidates-register-print .dropdown-nav,
+    body.is-candidates-register-print #dropdown-nav,
     body.is-candidates-register-print .tabs-nav,
     body.is-candidates-register-print main,
     body.is-candidates-register-print .main-container,
@@ -2685,6 +2735,201 @@ body.is-winners-list-print #winners-print-area {
 }
 
 .tb-toggle-slider {
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tb-table-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.tb-table-hint {
+    font-size: 0.78rem;
+    color: #64748b;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: #fbbf24;
+}
+
+/* ── الجدول الرئيسي ── */
+.tb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Cairo', sans-serif;
+}
+
+.tb-table thead tr {
+    background: linear-gradient(90deg, rgba(245,158,11,0.12), rgba(30,41,59,0.6));
+    border-bottom: 2px solid rgba(245,158,11,0.25);
+}
+
+.tb-table thead th {
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fbbf24;
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.tb-th-priority { width: 90px; }
+.tb-th-name     { text-align: right !important; }
+.tb-th-weight   { width: 90px; }
+.tb-th-scope    { width: 155px; }
+.tb-th-toggle   { width: 120px; }
+
+/* ── صفوف الجدول ── */
+.tb-rule-row {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.tb-rule-row:hover {
+    background: rgba(245,158,11,0.04);
+}
+
+.tb-rule-row:last-child {
+    border-bottom: none;
+}
+
+.tb-row-disabled {
+    opacity: 0.45;
+}
+
+.tb-row-disabled:hover {
+    background: rgba(100,116,139,0.05);
+}
+
+/* ── خلايا الجدول ── */
+.tb-cell-priority,
+.tb-cell-weight,
+.tb-cell-scope,
+.tb-cell-toggle {
+    padding: 14px 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.tb-cell-name {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tb-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    width: 38px;
+    text-align: center;
+    filter: drop-shadow(0 0 6px rgba(245,158,11,0.3));
+}
+
+.tb-name-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tb-rule-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1.2;
+}
+
+.tb-rule-desc {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+/* ── حقول الإدخال داخل الجدول ── */
+.tb-priority-input,
+.tb-weight-input {
+    width: 64px;
+    padding: 8px 10px;
+    background: rgba(30,41,59,0.9);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    color: #fef3c7;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.2s ease;
+    direction: ltr;
+}
+
+.tb-priority-input:focus,
+.tb-weight-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+    background: rgba(30,41,59,1);
+}
+
+.tb-priority-input:disabled,
+.tb-weight-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.1);
+}
+
+/* ── Select نطاق التطبيق ── */
+.tb-scope-select {
+    padding: 8px 12px;
+    background: rgba(30,41,59,0.9);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.tb-scope-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+}
+
+.tb-scope-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Toggle / Checkbox الفاخر ── */
+.tb-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tb-checkbox-hidden {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.tb-toggle-slider {
     display: inline-block;
     width: 48px;
     height: 26px;
@@ -2920,3 +3165,396 @@ body.is-winners-list-print #winners-print-area {
 @media print {
     #tab-tiebreaker { display: none !important; }
 }
+
+/* ==========================================================================
+   📄 التوثيق والترقيم التلقائي لجميع تقارير ومحاضر الطباعة (1/س إلى س/س)
+   ========================================================================== */
+@media print {
+    body {
+        counter-reset: page 0;
+    }
+
+    header,
+    nav,
+    .navbar,
+    header.navbar,
+    .dropdown-nav,
+    #dropdown-nav,
+    .tabs-nav {
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
+    }
+
+    @page {
+        @bottom-right {
+            content: "جامعة صنعاء — نظام المفاضلة الإلكتروني";
+            font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+            font-size: 7pt;
+            font-weight: 700;
+            color: #475569;
+        }
+        @bottom-center {
+            content: "الصفحة " counter(page) " / " counter(pages);
+            font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+            font-size: 7.5pt;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        @bottom-left {
+            content: "MAQATECH SOFTWARE SOLUTIONS © 2026";
+            font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif;
+            font-size: 7pt;
+            font-weight: 800;
+            color: #1e3a8a;
+        }
+    }
+
+    /* إخفاء التذييل الداخلي أثناء الطباعة لمنع التكرار و 0/0 */
+    .print-doc-footer {
+        display: none !important;
+    }
+}
+
+@media screen {
+    .print-doc-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 4px;
+        margin-top: 8px;
+        font-size: 0.72rem;
+        color: #475569;
+    }
+    .print-doc-footer .footer-page-box .page-current-counter::after {
+        content: "1 / 1";
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+}
+
+/* ============================================================
+   🎯 تقرير الفلترة بحسب المعيار — Criterion-Based Report — Luxury Edition
+   ============================================================ */
+
+/* ── لوحة اختيار المعيار — مربعات بأيقونات كبيرة ── */
+.cr-criteria-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+@media (max-width: 1100px) { .cr-criteria-bar { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .cr-criteria-bar { grid-template-columns: repeat(2, 1fr); } }
+
+.cr-crit-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 8px 12px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1.5px solid rgba(100, 116, 139, 0.22);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 82px;
+    user-select: none;
+}
+.cr-crit-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: transparent;
+    transition: background 0.22s ease;
+}
+.cr-crit-card:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+    background: rgba(30, 41, 59, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.cr-crit-card.active {
+    border-color: #38bdf8;
+    background: linear-gradient(160deg, rgba(2,132,199,0.22), rgba(3,105,161,0.12));
+    box-shadow: 0 6px 24px rgba(2,132,199,0.28), inset 0 0 0 1px rgba(56,189,248,0.12);
+}
+.cr-crit-card.active::before { background: linear-gradient(90deg, #0ea5e9, #38bdf8, #0ea5e9); }
+
+.cr-crit-icon {
+    font-size: 1.7rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+.cr-crit-card.active .cr-crit-icon {
+    filter: drop-shadow(0 0 6px rgba(56,189,248,0.5));
+    transform: scale(1.1);
+}
+.cr-crit-label {
+    font-size: 0.73rem;
+    font-weight: 800;
+    color: #64748b;
+    line-height: 1.3;
+    transition: color 0.2s;
+}
+.cr-crit-card.active .cr-crit-label { color: #7dd3fc; }
+
+/* ── شريط الأدوات العام ── */
+.cr-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(100,116,139,0.18);
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+}
+.cr-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.cr-toolbar-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #64748b;
+    white-space: nowrap;
+}
+.cr-toolbar select,
+.cr-toolbar input[type="text"] {
+    font-size: 0.83rem;
+    font-weight: 700;
+    background: rgba(15,23,42,0.8);
+    border: 1.5px solid rgba(100,116,139,0.28);
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.18s;
+}
+.cr-toolbar select:focus,
+.cr-toolbar input[type="text"]:focus { border-color: #38bdf8; }
+.cr-toolbar-sep { width: 1px; height: 26px; background: rgba(100,116,139,0.22); flex-shrink: 0; }
+.cr-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(239,68,68,0.08);
+    border: 1.5px solid rgba(239,68,68,0.28);
+    border-radius: 8px;
+    color: #f87171;
+    font-size: 0.79rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+}
+.cr-reset-btn:hover { background: rgba(239,68,68,0.18); border-color: #f87171; }
+
+/* ── لوحة فلتر المعيار ── */
+.cr-filter-zone {
+    background: rgba(2,132,199,0.05);
+    border: 1px solid rgba(56,189,248,0.16);
+    border-radius: 12px;
+    padding: 11px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+.cr-filter-zone-label {
+    font-size: 0.79rem;
+    font-weight: 800;
+    color: #7dd3fc;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.cr-filter-zone select,
+.cr-filter-zone input[type="number"] {
+    font-size: 0.83rem;
+    font-weight: 700;
+    background: rgba(15,23,42,0.85);
+    border: 1.5px solid rgba(56,189,248,0.25);
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.18s;
+}
+.cr-filter-zone select:focus,
+.cr-filter-zone input[type="number"]:focus { border-color: #38bdf8; }
+
+/* ── أزرار الاختيار السريع ── */
+.cr-quick-btns { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cr-quick-btn {
+    padding: 5px 13px;
+    background: rgba(30,41,59,0.65);
+    border: 1.5px solid rgba(100,116,139,0.28);
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 0.79rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+.cr-quick-btn:hover { border-color: #38bdf8; color: #e2e8f0; background: rgba(2,132,199,0.1); }
+.cr-quick-btn.active {
+    background: rgba(2,132,199,0.22);
+    border-color: #38bdf8;
+    color: #7dd3fc;
+    font-weight: 900;
+}
+
+/* ── بطاقات الإحصائيات ── */
+.cr-stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+@media (max-width: 900px) { .cr-stats-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .cr-stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+.cr-stat-card {
+    background: rgba(15,23,42,0.55);
+    border-radius: 12px;
+    padding: 12px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-top: 3px solid transparent;
+}
+.cr-stat-icon { font-size: 0.95rem; opacity: 0.7; margin-bottom: 1px; }
+.cr-stat-num { font-size: 1.6rem; font-weight: 900; line-height: 1.1; }
+.cr-stat-sub { font-size: 0.7rem; font-weight: 700; color: #475569; margin-top: 1px; }
+.cr-stat-card.c-blue  { border-color: #0284c7; } .cr-stat-card.c-blue  .cr-stat-num { color: #38bdf8; }
+.cr-stat-card.c-green { border-color: #059669; } .cr-stat-card.c-green .cr-stat-num { color: #34d399; }
+.cr-stat-card.c-indigo{ border-color: #4f46e5; } .cr-stat-card.c-indigo .cr-stat-num { color: #818cf8; }
+.cr-stat-card.c-teal  { border-color: #0d9488; } .cr-stat-card.c-teal  .cr-stat-num { color: #2dd4bf; }
+.cr-stat-card.c-amber { border-color: #d97706; } .cr-stat-card.c-amber .cr-stat-num { color: #fbbf24; }
+
+/* ── بانر المعيار المختار ── */
+.cr-active-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(2,132,199,0.07);
+    border: 1px solid rgba(56,189,248,0.18);
+    border-right: 4px solid #0284c7;
+    border-radius: 10px;
+    padding: 9px 14px;
+    margin-bottom: 14px;
+}
+.cr-active-banner-title { font-size: 0.84rem; font-weight: 900; color: #7dd3fc; }
+.cr-active-banner-desc  { font-size: 0.78rem; color: #64748b; font-weight: 700; }
+.cr-active-banner-pct {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #64748b;
+    background: rgba(15,23,42,0.5);
+    padding: 2px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* ── جدول البيانات ── */
+.cr-table-wrap { border: 1px solid rgba(100,116,139,0.16); border-radius: 12px; overflow: hidden; }
+.cr-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.cr-table thead tr { background: rgba(15,23,42,0.95); }
+.cr-table thead th {
+    padding: 11px 10px;
+    font-weight: 800;
+    font-size: 0.76rem;
+    color: #64748b;
+    text-align: center;
+    border-bottom: 1px solid rgba(100,116,139,0.18);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+.cr-table tbody tr { border-bottom: 1px solid rgba(100,116,139,0.08); transition: background 0.14s; }
+.cr-table tbody tr:hover { background: rgba(56,189,248,0.04); }
+.cr-table tbody tr.is-winner { background: rgba(16,185,129,0.04); }
+.cr-table tbody td { padding: 10px 10px; vertical-align: middle; text-align: center; }
+.cr-table tbody td.td-name { text-align: right; }
+
+.cr-winner-badge {
+    display: inline-block;
+    font-size: 0.64rem;
+    font-weight: 900;
+    color: #10b981;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.28);
+    padding: 1px 6px;
+    border-radius: 20px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.cr-crit-val-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+.cr-points-badge { display: inline-block; min-width: 30px; text-align: center; font-size: 0.95rem; font-weight: 900; color: #38bdf8; }
+.cr-total-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(100,116,139,0.22);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+.cr-rank-badge { font-weight: 800; font-size: 0.82rem; color: #64748b; }
+
+/* ── حالة الفراغ ── */
+.cr-empty-state { text-align: center; padding: 50px 20px; }
+.cr-empty-icon { font-size: 3rem; margin-bottom: 10px; opacity: 0.4; }
+.cr-empty-title { font-size: 1rem; font-weight: 800; color: #64748b; margin-bottom: 6px; }
+.cr-empty-sub { font-size: 0.82rem; color: #475569; }
+
+/* ── ترويسة وتذييل الطباعة ── */
+.cr-print-header { display: none; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #334155; }
+.cr-print-footer { display: none; margin-top: 24px; padding-top: 12px; border-top: 1px dashed #94a3b8; }
+
+/* إخفاء CSS القديم */
+.criterion-stat-cards-grid, .criterion-stat-card,
+.criterion-stat-label, .criterion-stat-val,
+.criterion-selector-group, .criterion-pill-btn,
+.criterion-filter-panel { display: none !important; }
+
+/* ── طباعة شاشة التقرير ── */
+@media print {
+    .cr-criteria-bar, .cr-toolbar, .cr-filter-zone,
+    .cr-stats-row, .cr-active-banner, .cr-reset-btn,
+    .no-print { display: none !important; }
+    .cr-print-header, .cr-print-footer { display: block !important; }
+    .cr-table-wrap { border: none; }
+    .cr-table thead th {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+

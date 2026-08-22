@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>دليل وإيضاحات معايير كسر التعادل والخيارات المتقدمة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .document-container {
+            border: 2px solid #1e3a8a;
+            border-radius: 12px;
+            padding: 24px;
+            background: #ffffff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* الترويسة */
+        .header-section {
+            border-bottom: 3px double #1e3a8a;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title-right h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #0f172a;
+            font-weight: 900;
+        }
+
+        .header-title-right h4 {
+            margin: 4px 0 0 0;
+            font-size: 0.92rem;
+            color: #1e3a8a;
+            font-weight: 800;
+        }
+
+        .header-center-badge {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            padding: 8px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .header-center-badge .badge-main {
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #1e3a8a;
+        }
+
+        .header-center-badge .badge-sub {
+            font-size: 0.8rem;
+            color: #059669;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .header-meta {
+            text-align: left;
+            font-size: 0.8rem;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        /* البطاقات والفقرات */
+        .section-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #1e3a8a, #2563eb);
+            color: #ffffff;
+            padding: 8px 16px;
+            font-weight: 800;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header-purple {
+            background: linear-gradient(135deg, #4c1d95, #6d28d9);
+        }
+
+        .section-body {
+            padding: 14px 16px;
+            background: #f8fafc;
+        }
+
+        .sub-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-right: 4px solid #2563eb;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .sub-box-purple {
+            border-right-color: #7c3aed;
+        }
+
+        .sub-box h4 {
+            margin: 0 0 6px 0;
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .sub-box p {
+            margin: 0;
+            color: #334155;
+            font-size: 0.85rem;
+        }
+
+        ul {
+            margin: 6px 0 0 0;
+            padding-right: 20px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        /* التواقيع */
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+            page-break-inside: avoid;
+        }
+
+        .sig-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .sig-box-rector {
+            border: 2px solid #059669;
+            background: #f0fdf4;
+        }
+
+        .sig-role {
+            font-weight: 800;
+            color: #1e3a8a;
+            font-size: 0.78rem;
+            margin: 0 0 3px 0;
+        }
+
+        .sig-name {
+            font-weight: 900;
+            color: #0f172a;
+            font-size: 0.82rem;
+            margin: 0 0 2px 0;
+        }
+
+        .sig-title {
+            font-size: 0.7rem;
+            color: #475569;
+            margin: 0 0 8px 0;
+        }
+
+        .sig-line {
+            height: 1px;
+            border-bottom: 1px dashed #94a3b8;
+            margin: 6px 0 3px 0;
+        }
+
+        .sig-seal {
+            font-size: 0.62rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+
+    <!-- الترويسة الرسمية -->
+    <div class="header-section">
+        <div class="header-title-right">
+            <h2>جامعـة صنعـاء - مجلـس الجامعـة</h2>
+            <h4>نظام المفاضلة والتنافس الإلكتروني للكادر الإداري</h4>
+        </div>
+        <div class="header-center-badge">
+            <div class="badge-main">دليل معايير كسر التعادل والخيارات المتقدمة</div>
+            <div class="badge-sub">إيضاحات فنية وإدارية شاملة لآلية اتخاذ القرار الآلي</div>
+        </div>
+        <div class="header-meta">
+            <div><strong>اليوم:</strong> الخميس</div>
+            <div><strong>التاريخ:</strong> 20 أغسطس 2026م</div>
+            <div><strong>المرجع:</strong> لائحة المفاضلة المعتمدة</div>
+        </div>
+    </div>
+
+    <!-- المحور الأول: الخطوة رقم 6 (تعادل تام) -->
+    <div class="section-card">
+        <div class="section-header">
+            <span>🏛️ المحور الأول: إيضاح الخطوة رقم (6) — «تعادل تام | يُحال للجنة المفاضلة»</span>
+        </div>
+        <div class="section-body">
+            <div class="sub-box">
+                <h4>1. ما المقصود بهذه الخطوة؟</h4>
+                <p>
+                    تُعتبر هذه الخطوة <strong>الملاذ الأخير والحاسم</strong> في النظام الآلي. فعندما يتساوى متنافسان في مجموع النقاط العام، ويستنفد النظام كافة معايير كسر التعادل الخمسة (مدى احتياج التخصص، أقدمية التعيين، الاستمرارية، التقدير الأكاديمي، وسنة الميلاد) ويظل التعادل قائماً بينهما بنسبة 100%، فإن النظام <strong>يتوقف عن الاختيار الآلي أو بالحظ والقرعة</strong>، ويُصدر قرار <strong>«تعادل تام»</strong> ليُحال الأمر رسمياً إلى قيادة الجامعة.
+                </p>
+            </div>
+
+            <div class="sub-box">
+                <h4>2. الفائدة القانونية والإدارية:</h4>
+                <ul>
+                    <li><strong>العدالة والنزاهة المطلقة:</strong> منع النظام من التمييز العشوائي بين موظفين تساووا في كل شيء قانوني ومادي.</li>
+                    <li><strong>صلاحية القيادة ومجلس الجامعة:</strong> إتاحة المجال لمجلس الجامعة ولجنة المفاضلة للبت في الحالة، إما بإضافة منحة استثنائية للمتنافسَيْن معاً، أو إجراء مفاضلة إضافية بقرار رسمي معتمد.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- المحور الثاني: الخيارات المتقدمة -->
+    <div class="section-card">
+        <div class="section-header section-header-purple">
+            <span>⚙️ المحور الثاني: الدليل الإجرائي الدقيق لقسم «الخيارات المتقدمة»</span>
+        </div>
+        <div class="section-body">
+            <div class="sub-box sub-box-purple">
+                <h4>1. سلوك التعادل التام (Ultimate Tie-Breaking Behavior):</h4>
+                <p><strong>الغرض:</strong> تحديد الإجراء المباشر للنظام إذا تطابقت كافة المعايير الخمسة بين المتنافسين.</p>
+                <ul>
+                    <li><strong><code>يُحال للجنة المفاضلة</code> (الافتراضي والمعتمد):</strong> يرفع النظام الحالة رسمياً لمجلس الجامعة واللجنة لاتخاذ القرار المناسب.</li>
+                    <li><strong><code>قبول الجميع (توسعة استثنائية)</code>:</strong> يقوم النظام تلقائياً بتوسيع مقاعد المنح وقبول كلا المتنافسين معاً كفائزين.</li>
+                </ul>
+            </div>
+
+            <div class="sub-box sub-box-purple">
+                <h4>2. سلوك البيانات الناقصة (Missing Data Behavior):</h4>
+                <p><strong>الغرض:</strong> تحديد كيفية تصرف النظام إذا كان أحد المتنافسين يفتقر لبيان محدد أثناء كسر التعادل (مثل: عدم توفر تاريخ التعيين أو تاريخ الميلاد).</p>
+                <ul>
+                    <li><strong><code>تجاوز المعيار (الانتقال للتالي)</code> (الافتراضي):</strong> يتجاوز النظام هذا المعيار مؤقتاً وينتقل للمعيار التالي للمفاضلة دون إجحاف.</li>
+                    <li><strong><code>ترتيب في النهاية (أدنى أولوية)</code>:</strong> يُعطي الأولوية للمتنافس المستوفي لكافة بياناته ووثائقه، ويؤخر المتنافس ذو البيانات الناقصة.</li>
+                </ul>
+            </div>
+
+            <div class="sub-box sub-box-purple">
+                <h4>3. أزرار التحكم والإجراءات:</h4>
+                <ul>
+                    <li><strong>💾 حفظ الإعدادات:</strong> لحفظ وتثبيت أي تعديل يجريه رئيس اللجنة على أوزان أو أولويات أو خيارات كسر التعادل.</li>
+                    <li><strong>↩️ إعادة ضبط القيم الافتراضية:</strong> لاستعادة الترتيب القياسي للائحة المعتمدة بضغطة زر واحدة.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- التواقيع والاعتماد الرسمي -->
+    <div style="margin-top: 18px; border-top: 2px solid #1e3a8a; padding-top: 10px;">
+        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.9rem; margin: 0 0 10px 0; font-weight: 900;">
+            توقيعات واعتماد الدليل الإجرائي لمعايير كسر التعادل — جامعة صنعاء
+        </h4>
+        
+        <div class="signatures-grid">
+            <div class="sig-box">
+                <p class="sig-role">مسؤول إدارة وتطوير النظام</p>
+                <p class="sig-name">م. الدعم والتطوير الفني</p>
+                <p class="sig-title">MAQATECH SOFTWARE SOLUTIONS</p>
+                <div class="sig-line"></div>
+                <p class="sig-seal">التوقيع والاعتماد الفني</p>
+            </div>
+
+            <div class="sig-box">
+                <p class="sig-role">رئيس لجنة المفاضلة والتنافس</p>
+                <p class="sig-name">أ.د. ابراهيم المطاع</p>
+                <p class="sig-title">نائب رئيس الجامعة للشؤون الأكاديمية</p>
+                <div class="sig-line"></div>
+                <p class="sig-seal">التوقيع والختم الرسمي</p>
+            </div>
+
+            <div class="sig-box sig-box-rector">
+                <p class="sig-role" style="color: #059669;">يُعتمـد / رئيس الجامعة</p>
+                <p class="sig-name" style="color: #064e3b;">أ.د. محمد أحمد البخيتي</p>
+                <p class="sig-title" style="color: #047857;">رئيس جامعة صنعاء</p>
+                <div class="sig-line" style="border-bottom-color: #059669;"></div>
+                <p class="sig-seal" style="color: #047857; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- التذييل -->
+    <div class="footer-note">
+        <span>جامعة صنعاء — نظام المفاضلة والتنافس الإلكتروني للكادر الإداري © 2026</span>
+        <span>صدرت الوثيقة بتاريخ: الخميس 20 أغسطس 2026م</span>
+        <span>MAQATECH SOFTWARE SOLUTIONS</span>
+    </div>
+
+</div>
+
+</body>
+</html>

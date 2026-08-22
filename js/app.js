@@ -1,4 +1,4 @@
-// دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
+﻿// دالة توحيد وتطهير النصوص العربية (إزالة الهمزات وتوحيد الألف والياء والمسافات الزائدة)
 function normalizeArabicString(str) {
   if (!str) return '';
   return String(str)
@@ -409,16 +409,16 @@ function renderTabsByRole() {
 
   // تعريف التبويبات لكل دور
   const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'];
+                   'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'];
 
   // الخريطة: ما يُظهر لكل دور
   const visibilityMap = {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'],
-    data_entry:  ['tab-btn-candidates','tab-btn-analytics'],
-    auditor:     ['tab-btn-candidates','tab-btn-analytics'],
+                  'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'],
+    data_entry:  ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
+    auditor:     ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                       'tab-btn-report','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria']
+                       'tab-btn-report','tab-btn-criterion-report','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria']
   };
 
   const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
@@ -431,7 +431,7 @@ function renderTabsByRole() {
   // إخفاء المجموعات التي لا تحتوي على أي تبويب مسموح به
   const groups = {
     'navgroup-data':    ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring','tab-btn-minutes'],
-    'navgroup-reports': ['tab-btn-report','tab-btn-analytics','tab-btn-criteria-doc'],
+    'navgroup-reports': ['tab-btn-report','tab-btn-criterion-report','tab-btn-analytics','tab-btn-criteria-doc'],
     'navgroup-admin':   ['tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin']
   };
   Object.entries(groups).forEach(([groupId, tabs]) => {
@@ -1098,6 +1098,7 @@ function refreshAllViews() {
   renderTiebreakerScreen();
   renderUsersAdminTable();
   renderDetailedReport();
+  renderCriterionReportScreen();
   renderAnalyticsView();
   renderMinutes();
   renderCriteriaDoc();
@@ -1359,6 +1360,84 @@ function renderDashboard() {
 
 
 // ═══════════════════════════════════════════════════════════════════════
+// دالة ضبط ترقيم الصفحات وتاريخ الطباعة في تذييل كل صفحة مطبوعة تلقائياً
+// ═══════════════════════════════════════════════════════════════════════
+function setPrintPageDate(dateText) {
+  const d = dateText || (state.settings && (state.settings.competitionDate || state.settings.sessionDate)) || 'شهر اغسطس 2026';
+  const refYear = (state.settings && state.settings.referenceYear) || 2026;
+  let styleEl = document.getElementById('dynamic-print-page-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-print-page-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.innerHTML = `
+    @media print {
+      @page {
+        @bottom-right {
+          content: "جامعة صنعاء — نظام المفاضلة الإلكتروني" !important;
+          font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+          font-size: 7pt !important;
+          font-weight: 700 !important;
+          color: #475569 !important;
+        }
+        @bottom-center {
+          content: "الصفحة " counter(page) " / " counter(pages) "   —   التاريخ: ${d}" !important;
+          font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+          font-size: 7.5pt !important;
+          font-weight: 800 !important;
+          color: #0f172a !important;
+        }
+        @bottom-left {
+          content: "MAQATECH SOFTWARE SOLUTIONS © ${refYear}" !important;
+          font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+          font-size: 7pt !important;
+          font-weight: 800 !important;
+          color: #1e3a8a !important;
+        }
+      }
+      header,
+      nav,
+      .navbar,
+      header.navbar,
+      .dropdown-nav,
+      #dropdown-nav,
+      .tabs-nav,
+      .filter-bar,
+      .btn,
+      .nav-controls,
+      .no-print,
+      .modal-overlay,
+      .col-action,
+      .col-readiness,
+      .card-header button {
+        display: none !important;
+        height: 0 !important;
+        visibility: hidden !important;
+      }
+      .print-doc-footer {
+        display: none !important;
+      }
+    }
+  `;
+}
+
+function getOfficialPrintFooterHTML(customDate) {
+  const dateStr = customDate || (state.settings && (state.settings.sessionDate || state.settings.competitionDate)) || new Date().toLocaleDateString('ar-YE');
+
+  return `
+    <div class="print-doc-footer" style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #334155; page-break-inside: avoid; break-inside: avoid;">
+      <div style="font-weight: 700; color: #334155;">
+        التاريخ: ${dateStr}
+      </div>
+      <div class="footer-page-box" style="font-weight: 800; color: #0f172a; font-size: 0.74rem;">
+        الصفحة <span class="page-current-counter"></span>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // دوال طباعة كشف الفائزين الرسمي
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -1498,16 +1577,13 @@ function _buildWinnersPrintHTML(isDraft) {
       <!-- التوقيعات -->
       ${signaturesHTML}
 
-      <!-- تذييل الصفحة -->
-      <div style="margin-top:18px;border-top:1px solid #e2e8f0;padding-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:0.68rem;color:#475569;">
-        <span style="background:#0f172a;color:#60a5fa;font-weight:900;padding:2px 7px;border-radius:4px;font-family:sans-serif;font-size:0.62rem;">MT</span>
-        <span>نظام المفاضلة الإلكتروني للكادر الإداري — جامعة صنعاء © ${currentYear}</span>
-        <span>MAQATECH SOFTWARE SOLUTIONS</span>
-      </div>
+      <!-- تذييل التوثيق والترقيم الرسمي -->
+      ${getOfficialPrintFooterHTML()}
     </div>`;
 }
 
 function printWinnersListDraft() {
+  setPrintPageDate();
   const printArea = document.getElementById('winners-print-area');
   if (!printArea) return;
   printArea.innerHTML = _buildWinnersPrintHTML(true);
@@ -1524,6 +1600,7 @@ function printWinnersListDraft() {
 }
 
 function printWinnersListFinal() {
+  setPrintPageDate();
   const printArea = document.getElementById('winners-print-area');
   if (!printArea) return;
   printArea.innerHTML = _buildWinnersPrintHTML(false);
@@ -1937,9 +2014,13 @@ function printTieBreakerCertificate() {
         </div>
       </div>
 
+      <!-- تذييل التوثيق والترقيم الرسمي -->
+      ${getOfficialPrintFooterHTML()}
+
     </div>
   `;
 
+  setPrintPageDate();
   document.body.classList.add('is-tie-breaker-print');
   window.print();
   setTimeout(() => {
@@ -2294,9 +2375,13 @@ function printCandidatesRegisterPDF() {
 
       <!-- التوقيعات -->
       ${signaturesHTML}
+
+      <!-- تذييل التوثيق والترقيم الرسمي -->
+      ${getOfficialPrintFooterHTML()}
     </div>
   `;
 
+  setPrintPageDate();
   document.body.classList.add('is-candidates-register-print');
   window.print();
   setTimeout(() => {
@@ -2723,6 +2808,9 @@ function generateCandidateCardHTML(candidate) {
           </div>
         </div>
       </div>
+
+      <!-- تذييل التوثيق والترقيم الرسمي -->
+      ${getOfficialPrintFooterHTML()}
     </div>
   `;
 }
@@ -2753,6 +2841,7 @@ function printAllCandidateCardsFinal() {
 
   batchContainer.innerHTML = candidatesToPrint.map(c => generateCandidateCardHTML(c)).join('');
 
+  setPrintPageDate();
   document.body.classList.add('is-batch-cards-print');
   document.body.classList.remove('is-draft-print');
   window.print();
@@ -2787,6 +2876,7 @@ function printAllCandidateCardsDraft() {
 
   batchContainer.innerHTML = candidatesToPrint.map(c => generateCandidateCardHTML(c)).join('');
 
+  setPrintPageDate();
   document.body.classList.add('is-batch-cards-print');
   document.body.classList.add('is-draft-print');
   window.print();
@@ -2802,6 +2892,7 @@ function printAllCandidateCards() {
 
 // دالة طباعة بطاقة تفاصيل المتنافس الاحترافية A4
 function printCandidateDetailsCard() {
+  setPrintPageDate();
   document.body.classList.add('is-card-print');
   window.print();
   setTimeout(() => {
@@ -5902,6 +5993,7 @@ function runPanoramicSimulation() {
 }
 
 function printDetailedReportDraft() {
+  setPrintPageDate();
   document.body.classList.add('is-draft-print');
   const watermarkEl = document.getElementById('report-print-watermark');
   if (watermarkEl) watermarkEl.style.display = 'block';
@@ -5915,6 +6007,7 @@ function printDetailedReportDraft() {
 }
 
 function printDetailedReportFinal() {
+  setPrintPageDate();
   document.body.classList.remove('is-draft-print');
   const watermarkEl = document.getElementById('report-print-watermark');
   if (watermarkEl) watermarkEl.style.display = 'none';
@@ -5927,6 +6020,7 @@ function printDetailedReport() {
 }
 
 function printScoringMatrixDraft() {
+  setPrintPageDate();
   document.body.classList.add('is-scoring-print');
   document.body.classList.add('is-draft-print');
   const watermarkEl = document.getElementById('scoring-print-watermark');
@@ -5942,6 +6036,7 @@ function printScoringMatrixDraft() {
 }
 
 function printScoringMatrixFinal() {
+  setPrintPageDate();
   document.body.classList.add('is-scoring-print');
   document.body.classList.remove('is-draft-print');
   const watermarkEl = document.getElementById('scoring-print-watermark');
@@ -7163,6 +7258,944 @@ function printAnalyticsReport() {
 
 
 // ====================================================
+// 🎯 شاشة التقرير بحسب المعيار (Dynamic Criterion-Based Report Engine)
+// فلترة ذكية ومتقدمة وشاملة بحسب أي معيار من معايير المفاضلة
+// ====================================================
+
+let criterionReportState = {
+  activeCriterion: 'seniority', // 'seniority' | 'age' | 'specialization' | 'grade' | 'continuity' | 'totalScore'
+  degreeFilter: 'الكل', // 'الكل' | 'ماجستير' | 'دكتوراه'
+  searchQuery: '',
+  // معيار الأقدمية
+  seniorityFilterType: 'all', // 'all', 'all_desc', 'all_asc', 'exact', 'gte', 'lte', 'range'
+  seniorityExactYears: 'all',
+  seniorityMinYears: 10,
+  seniorityMaxYears: 35,
+  // معيار العمر
+  ageFilterType: 'all', // 'all', 'all_desc', 'all_asc', 'exact', 'bracket_under35', 'bracket_35_45', 'bracket_over45', 'range'
+  ageExact: 'all',
+  ageMin: 25,
+  ageMax: 60,
+  // معيار التخصص
+  selectedSpecialization: 'الكل',
+  // معيار التقدير
+  selectedGrade: 'الكل',
+  // معيار الاستمرارية
+  selectedContinuity: 'الكل',
+  // معيار المجموع الكلي
+  scoreFilterType: 'all', // 'all', 'all_desc', 'all_asc', 'gte', 'range'
+  scoreMin: 15,
+  scoreMax: 30,
+  // الترتيب
+  sortOrder: 'default' // 'default' (الترتيب العام), 'criterion_desc', 'criterion_asc', 'name_asc'
+};
+
+function getCandidateSeniorityYears(c, refYear) {
+  let hiringYear = parseInt(c.hiring_univ) || parseInt(c.hiring_service);
+  if (!hiringYear && c.hiring_univ) {
+    const m = String(c.hiring_univ).match(/(\d{4})/);
+    if (m) hiringYear = parseInt(m[1]);
+  }
+  if (!hiringYear && c.hiring_service) {
+    const m = String(c.hiring_service).match(/(\d{4})/);
+    if (m) hiringYear = parseInt(m[1]);
+  }
+  if (hiringYear && hiringYear > 1950 && hiringYear <= refYear) {
+    return { years: refYear - hiringYear, year: hiringYear, valid: true };
+  }
+  return { years: 0, year: hiringYear || null, valid: false };
+}
+
+function getCandidateAgeInfo(c, refYear) {
+  let birthYear = parseInt(c.birth_date);
+  if (!birthYear && c.birth_date) {
+    const m = String(c.birth_date).match(/(\d{4})/);
+    if (m) birthYear = parseInt(m[1]);
+  }
+  if (birthYear && birthYear > 1930 && birthYear <= refYear) {
+    return { age: refYear - birthYear, birthYear: birthYear, valid: true };
+  }
+  return { age: 0, birthYear: birthYear || null, valid: false };
+}
+
+function getCandidateContinuityVal(c) {
+  return c.continuity || (c.customValues && (c.customValues.continuity || c.customValues['استمرارية'])) || 'متاح';
+}
+
+function setCriterionReportActiveCriterion(crit) {
+  criterionReportState.activeCriterion = crit;
+  criterionReportState.sortOrder = 'default';
+  renderCriterionReportScreen();
+}
+
+function setCriterionReportDegree(deg) {
+  criterionReportState.degreeFilter = deg;
+  renderCriterionReportScreen();
+}
+
+function setCriterionReportSearch(val) {
+  criterionReportState.searchQuery = val.trim();
+  renderCriterionReportScreen(false); // don't redraw the toolbar while typing
+}
+
+function setCriterionReportSort(sort) {
+  criterionReportState.sortOrder = sort;
+  renderCriterionReportScreen();
+}
+
+function resetCriterionFilters() {
+  criterionReportState = {
+    activeCriterion: 'seniority',
+    degreeFilter: 'الكل',
+    searchQuery: '',
+    seniorityFilterType: 'all',
+    seniorityExactYears: 'all',
+    seniorityMinYears: 10,
+    seniorityMaxYears: 35,
+    ageFilterType: 'all',
+    ageExact: 'all',
+    ageMin: 25,
+    ageMax: 60,
+    selectedSpecialization: 'الكل',
+    selectedGrade: 'الكل',
+    selectedContinuity: 'الكل',
+    scoreFilterType: 'all',
+    scoreMin: 15,
+    scoreMax: 30,
+    sortOrder: 'default'
+  };
+  renderCriterionReportScreen();
+}
+
+function getCriterionFilteredCandidates() {
+  const refYear = state.settings.referenceYear || 2026;
+  const allRanked = getRankedCandidates('الكل');
+
+  // 1. فلترة الدرجة والبحث
+  let list = allRanked.filter(c => {
+    if (criterionReportState.degreeFilter !== 'الكل' && c.degree !== criterionReportState.degreeFilter) {
+      return false;
+    }
+    if (criterionReportState.searchQuery) {
+      const q = criterionReportState.searchQuery.toLowerCase();
+      const name = (c.name || '').toLowerCase();
+      const spec = (c.specialization || '').toLowerCase();
+      if (!name.includes(q) && !spec.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // 2. فلترة بحسب المعيار المختار
+  const crit = criterionReportState.activeCriterion;
+
+  if (crit === 'seniority') {
+    const sType = criterionReportState.seniorityFilterType;
+    if (sType === 'exact' && criterionReportState.seniorityExactYears !== 'all') {
+      const targetYears = parseInt(criterionReportState.seniorityExactYears);
+      list = list.filter(c => {
+        const info = getCandidateSeniorityYears(c, refYear);
+        return info.valid && info.years === targetYears;
+      });
+    } else if (sType === 'gte') {
+      const minYears = parseInt(criterionReportState.seniorityMinYears) || 0;
+      list = list.filter(c => {
+        const info = getCandidateSeniorityYears(c, refYear);
+        return info.valid && info.years >= minYears;
+      });
+    } else if (sType === 'lte') {
+      const maxYears = parseInt(criterionReportState.seniorityMaxYears) || 0;
+      list = list.filter(c => {
+        const info = getCandidateSeniorityYears(c, refYear);
+        return info.valid && info.years <= maxYears;
+      });
+    } else if (sType === 'range') {
+      const minYears = parseInt(criterionReportState.seniorityMinYears) || 0;
+      const maxYears = parseInt(criterionReportState.seniorityMaxYears) || 100;
+      list = list.filter(c => {
+        const info = getCandidateSeniorityYears(c, refYear);
+        return info.valid && info.years >= minYears && info.years <= maxYears;
+      });
+    }
+  } else if (crit === 'age') {
+    const aType = criterionReportState.ageFilterType;
+    if (aType === 'exact' && criterionReportState.ageExact !== 'all') {
+      const targetAge = parseInt(criterionReportState.ageExact);
+      list = list.filter(c => {
+        const info = getCandidateAgeInfo(c, refYear);
+        return info.valid && info.age === targetAge;
+      });
+    } else if (aType === 'bracket_under35') {
+      list = list.filter(c => {
+        const info = getCandidateAgeInfo(c, refYear);
+        return info.valid && info.age < 35;
+      });
+    } else if (aType === 'bracket_35_45') {
+      list = list.filter(c => {
+        const info = getCandidateAgeInfo(c, refYear);
+        return info.valid && info.age >= 35 && info.age <= 45;
+      });
+    } else if (aType === 'bracket_over45') {
+      list = list.filter(c => {
+        const info = getCandidateAgeInfo(c, refYear);
+        return info.valid && info.age > 45;
+      });
+    } else if (aType === 'range') {
+      const minAge = parseInt(criterionReportState.ageMin) || 0;
+      const maxAge = parseInt(criterionReportState.ageMax) || 120;
+      list = list.filter(c => {
+        const info = getCandidateAgeInfo(c, refYear);
+        return info.valid && info.age >= minAge && info.age <= maxAge;
+      });
+    }
+  } else if (crit === 'specialization') {
+    if (criterionReportState.selectedSpecialization !== 'الكل') {
+      list = list.filter(c => {
+        const cleanSpec = getCleanSpecializationName(c.specialization, c);
+        return cleanSpec === criterionReportState.selectedSpecialization;
+      });
+    }
+  } else if (crit === 'grade') {
+    if (criterionReportState.selectedGrade !== 'الكل') {
+      list = list.filter(c => {
+        const gNorm = normalizeGradeText(c.grade);
+        if (criterionReportState.selectedGrade === 'بدون') {
+          return gNorm === 'بدون' || isInvalidGradeValue(c.grade);
+        }
+        return gNorm === criterionReportState.selectedGrade;
+      });
+    }
+  } else if (crit === 'continuity') {
+    if (criterionReportState.selectedContinuity !== 'الكل') {
+      list = list.filter(c => {
+        const cont = getCandidateContinuityVal(c);
+        return cont === criterionReportState.selectedContinuity;
+      });
+    }
+  } else if (crit === 'totalScore') {
+    const scType = criterionReportState.scoreFilterType;
+    if (scType === 'gte') {
+      const minScore = parseFloat(criterionReportState.scoreMin) || 0;
+      list = list.filter(c => (c.scores ? c.scores.totalScore : 0) >= minScore);
+    } else if (scType === 'range') {
+      const minScore = parseFloat(criterionReportState.scoreMin) || 0;
+      const maxScore = parseFloat(criterionReportState.scoreMax) || 100;
+      list = list.filter(c => {
+        const sc = c.scores ? c.scores.totalScore : 0;
+        return sc >= minScore && sc <= maxScore;
+      });
+    }
+  }
+
+  // 3. الترتيب والفرز (Sorting)
+  const sort = criterionReportState.sortOrder;
+  const sType = criterionReportState.seniorityFilterType;
+  const aType = criterionReportState.ageFilterType;
+  const scType = criterionReportState.scoreFilterType;
+
+  list.sort((a, b) => {
+    // الأقدمية
+    if (crit === 'seniority' && (sort === 'criterion_desc' || sType === 'all_desc')) {
+      const aY = getCandidateSeniorityYears(a, refYear).years;
+      const bY = getCandidateSeniorityYears(b, refYear).years;
+      return bY - aY;
+    }
+    if (crit === 'seniority' && (sort === 'criterion_asc' || sType === 'all_asc')) {
+      const aY = getCandidateSeniorityYears(a, refYear).years;
+      const bY = getCandidateSeniorityYears(b, refYear).years;
+      return aY - bY;
+    }
+
+    // العمر
+    if (crit === 'age' && (sort === 'criterion_desc' || aType === 'all_desc')) {
+      const aAge = getCandidateAgeInfo(a, refYear).age;
+      const bAge = getCandidateAgeInfo(b, refYear).age;
+      return bAge - aAge;
+    }
+    if (crit === 'age' && (sort === 'criterion_asc' || aType === 'all_asc')) {
+      const aAge = getCandidateAgeInfo(a, refYear).age;
+      const bAge = getCandidateAgeInfo(b, refYear).age;
+      return aAge - bAge;
+    }
+
+    // المجموع الكلي
+    if (crit === 'totalScore' && (sort === 'criterion_desc' || scType === 'all_desc')) {
+      return (b.scores?.totalScore || 0) - (a.scores?.totalScore || 0);
+    }
+    if (crit === 'totalScore' && (sort === 'criterion_asc' || scType === 'all_asc')) {
+      return (a.scores?.totalScore || 0) - (b.scores?.totalScore || 0);
+    }
+
+    // الاسم أبجدياً
+    if (sort === 'name_asc') {
+      return (a.name || '').localeCompare(b.name || '', 'ar');
+    }
+
+    // الافتراضي: الترتيب العام في المفاضلة
+    return (a.rank || 9999) - (b.rank || 9999);
+  });
+
+  return list;
+}
+
+function renderCriterionReportScreen(redrawToolbar = true) {
+  const container = document.getElementById('criterion-report-content');
+  const controlsBox = document.getElementById('criterion-filter-controls-box');
+  if (!container) return;
+
+  const refYear = state.settings.referenceYear || 2026;
+  const allRanked = getRankedCandidates('الكل');
+  const grandTotal = allRanked.length || 1;
+
+  // ── استخراج ديناميكي للتخصصات والأقدميات والأعمار والاستمراريات ──
+  const specCounts = {};
+  allRanked.forEach(c => {
+    const s = getCleanSpecializationName(c.specialization, c);
+    specCounts[s] = (specCounts[s] || 0) + 1;
+  });
+  const uniqueSpecs = Object.keys(specCounts).sort((a, b) => specCounts[b] - specCounts[a]);
+
+  const seniorityYearsSet = new Set();
+  allRanked.forEach(c => {
+    const info = getCandidateSeniorityYears(c, refYear);
+    if (info.valid && info.years > 0) seniorityYearsSet.add(info.years);
+  });
+  const uniqueSeniorityYears = Array.from(seniorityYearsSet).sort((a, b) => b - a);
+
+  const agesSet = new Set();
+  allRanked.forEach(c => {
+    const info = getCandidateAgeInfo(c, refYear);
+    if (info.valid && info.age > 0) agesSet.add(info.age);
+  });
+  const uniqueAges = Array.from(agesSet).sort((a, b) => b - a);
+
+  const continuitySet = new Set(['متاح', 'مستمر']);
+  allRanked.forEach(c => {
+    const cont = getCandidateContinuityVal(c);
+    if (cont) continuitySet.add(cont);
+  });
+  const uniqueContinuity = Array.from(continuitySet);
+
+  const ac = criterionReportState.activeCriterion;
+
+  // ── رسم لوحة التحكم العلوية ──
+  if (controlsBox && redrawToolbar) {
+    const critMeta = [
+      { key: 'seniority',      icon: '📅', label: 'الأقدمية' },
+      { key: 'age',            icon: '🎂', label: 'العمر' },
+      { key: 'specialization', icon: '🎓', label: 'التخصص', count: uniqueSpecs.length },
+      { key: 'grade',          icon: '🏅', label: 'التقدير' },
+      { key: 'continuity',     icon: '💼', label: 'الاستمرارية' },
+      { key: 'totalScore',     icon: '🏆', label: 'المجموع الكلي' }
+    ];
+
+    controlsBox.innerHTML = `
+      <!-- ══ 1. لوحة اختيار المعيار ══ -->
+      <div class="cr-criteria-bar no-print">
+        ${critMeta.map(m => `
+          <div class="cr-crit-card ${ac === m.key ? 'active' : ''}"
+               onclick="setCriterionReportActiveCriterion('${m.key}')" role="button">
+            <span class="cr-crit-icon">${m.icon}</span>
+            <span class="cr-crit-label">${m.label}${m.count ? `<br><small style="opacity:.7;font-size:0.62rem">${m.count} تخصص</small>` : ''}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- ══ 2. شريط الأدوات العام ══ -->
+      <div class="cr-toolbar no-print">
+        <div class="cr-toolbar-group">
+          <span class="cr-toolbar-label">🎓 الدرجة:</span>
+          <select style="width:165px" onchange="setCriterionReportDegree(this.value)">
+            <option value="الكل"     ${criterionReportState.degreeFilter === 'الكل'     ? 'selected' : ''}>الكل (ماجستير ودكتوراه)</option>
+            <option value="ماجستير" ${criterionReportState.degreeFilter === 'ماجستير' ? 'selected' : ''}>ماجستير فقط</option>
+            <option value="دكتوراه" ${criterionReportState.degreeFilter === 'دكتوراه' ? 'selected' : ''}>دكتوراه فقط</option>
+          </select>
+        </div>
+
+        <div class="cr-toolbar-sep"></div>
+
+        <div class="cr-toolbar-group" style="flex:1;min-width:200px">
+          <span class="cr-toolbar-label">🔍</span>
+          <input type="text" placeholder="ابحث بالاسم أو التخصص..." value="${criterionReportState.searchQuery || ''}"
+                 style="flex:1" oninput="setCriterionReportSearch(this.value)">
+        </div>
+
+        <div class="cr-toolbar-sep"></div>
+
+        <div class="cr-toolbar-group">
+          <span class="cr-toolbar-label">↕ الترتيب:</span>
+          <select style="width:180px" onchange="setCriterionReportSort(this.value)">
+            <option value="default"      ${criterionReportState.sortOrder === 'default'      ? 'selected' : ''}>الترتيب العام بالمفاضلة</option>
+            <option value="criterion_desc" ${criterionReportState.sortOrder === 'criterion_desc' ? 'selected' : ''}>المعيار — تنازلي (الأعلى)</option>
+            <option value="criterion_asc"  ${criterionReportState.sortOrder === 'criterion_asc'  ? 'selected' : ''}>المعيار — تصاعدي (الأقل)</option>
+            <option value="name_asc"     ${criterionReportState.sortOrder === 'name_asc'     ? 'selected' : ''}>أبجدياً حسب الاسم</option>
+          </select>
+        </div>
+
+        <div class="cr-toolbar-sep"></div>
+        <button class="cr-reset-btn" onclick="resetCriterionFilters()">🔄 تصفير</button>
+      </div>
+
+      <!-- ══ 3. لوحة فلتر المعيار المختار ══ -->
+      <div class="cr-filter-zone no-print">
+        ${renderSpecificCriterionControlsNew(ac, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear)}
+      </div>
+    `;
+  }
+
+  // ── جلب البيانات المفلترة وإحصاؤها ──
+  const filteredList = getCriterionFilteredCandidates();
+  const filteredCount = filteredList.length;
+  const matchPercent = ((filteredCount / grandTotal) * 100).toFixed(1);
+  const mastersCount = filteredList.filter(c => c.degree === 'ماجستير').length;
+  const phdCount     = filteredList.filter(c => c.degree === 'دكتوراه').length;
+  let totalScoreSum = 0;
+  filteredList.forEach(c => { totalScoreSum += c.scores ? c.scores.totalScore : 0; });
+  const avgScore = filteredCount > 0 ? (totalScoreSum / filteredCount).toFixed(1) : '0';
+  const criterionTitleInfo = getCriterionReportHeaderTitle(criterionReportState, refYear);
+
+  // ── رسم المحتوى الرئيسي ──
+  container.innerHTML = `
+    <!-- ══ بطاقات الإحصاء ══ -->
+    <div class="cr-stats-row no-print">
+      <div class="cr-stat-card c-blue">
+        <span class="cr-stat-icon">👥</span>
+        <span class="cr-stat-num">${filteredCount}</span>
+        <span class="cr-stat-sub">المطابقون مع المعيار</span>
+      </div>
+      <div class="cr-stat-card c-green">
+        <span class="cr-stat-icon">📊</span>
+        <span class="cr-stat-num">${matchPercent}%</span>
+        <span class="cr-stat-sub">من إجمالي المتقدمين (${grandTotal})</span>
+      </div>
+      <div class="cr-stat-card c-indigo">
+        <span class="cr-stat-icon">🎓</span>
+        <span class="cr-stat-num">${mastersCount}</span>
+        <span class="cr-stat-sub">متقدمو الماجستير</span>
+      </div>
+      <div class="cr-stat-card c-teal">
+        <span class="cr-stat-icon">🔬</span>
+        <span class="cr-stat-num">${phdCount}</span>
+        <span class="cr-stat-sub">متقدمو الدكتوراه</span>
+      </div>
+      <div class="cr-stat-card c-amber">
+        <span class="cr-stat-icon">⭐</span>
+        <span class="cr-stat-num">${avgScore}</span>
+        <span class="cr-stat-sub">متوسط نقاط المفاضلة</span>
+      </div>
+    </div>
+
+    <!-- ══ بانر المعيار المطبق ══ -->
+    <div class="cr-active-banner">
+      <div>
+        <span class="cr-active-banner-title">📌 ${criterionTitleInfo.title}</span>
+        <span class="cr-active-banner-desc" style="margin-right:10px">— ${criterionTitleInfo.description}</span>
+      </div>
+      <span class="cr-active-banner-pct">${matchPercent}% من إجمالي المتقدمين</span>
+    </div>
+
+    <!-- ══ ترويسة الطباعة الرسمية ══ -->
+    <div class="cr-print-header">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-weight:900;font-size:0.95rem">الجمهورية اليمنية</div>
+          <div style="font-weight:800;font-size:0.9rem">جامعة صنعاء — الأمانة العامة</div>
+          <div style="font-size:0.8rem;color:#475569">مجلس الجامعة / لجنة المفاضلة الإلكترونية</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-weight:900;font-size:1rem;border:2px solid #0f172a;padding:6px 14px;border-radius:8px">🏛️ تقرير المفاضلة بحسب المعيار</div>
+          <div style="font-size:0.8rem;font-weight:800;color:#1e3a8a;margin-top:4px">للعام الجامعي ${refYear}م</div>
+        </div>
+        <div style="text-align:left;font-size:0.78rem;color:#475569">
+          <div>التاريخ: ${new Date().toLocaleDateString('ar-YE')}</div>
+          <div>الدرجة: ${criterionReportState.degreeFilter}</div>
+          <div style="color:#16a34a;font-weight:800">إجمالي النتائج: ${filteredCount} متنافس</div>
+        </div>
+      </div>
+      <div style="background:#f1f5f9;padding:7px 12px;border-radius:6px;border-right:4px solid #0284c7;font-size:0.82rem;color:#0f172a">
+        <strong>المعيار المطبق:</strong>
+        <span style="color:#0369a1;font-weight:800;margin-right:6px">${criterionTitleInfo.title}</span>
+        <span style="color:#475569">(${criterionTitleInfo.description})</span>
+      </div>
+    </div>
+
+    <!-- ══ الجدول الرئيسي ══ -->
+    <div class="cr-table-wrap">
+      <table class="cr-table">
+        <thead>
+          <tr>
+            <th style="width:4%">#</th>
+            <th style="width:24%;text-align:right">اسم المتنافس / الموظف</th>
+            <th style="width:7%">الدرجة</th>
+            <th style="width:20%">القيمة المعيارية</th>
+            <th style="width:18%;text-align:right">التخصص</th>
+            <th style="width:8%">التقدير</th>
+            <th style="width:8%">الاستمرارية</th>
+            <th style="width:6%">نقاط المعيار</th>
+            <th style="width:5%">المجموع</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filteredCount === 0 ? `
+            <tr>
+              <td colspan="9">
+                <div class="cr-empty-state">
+                  <div class="cr-empty-icon">🔍</div>
+                  <div class="cr-empty-title">لا يوجد متنافسون مطابقون للفلتر المحدد</div>
+                  <div class="cr-empty-sub">يرجى تعديل خيارات المعيار أو الضغط على "تصفير"</div>
+                </div>
+              </td>
+            </tr>
+          ` : filteredList.map((c, idx) => {
+            const specClean = getCleanSpecializationName(c.specialization, c);
+            const grade = normalizeGradeText(c.grade) || 'بدون';
+            const cont  = getCandidateContinuityVal(c);
+            const totalScore = c.scores ? c.scores.totalScore : 0;
+            const criterionPoints = getSpecificCriterionPoints(c, ac);
+            const criterionBadge  = buildCriterionValueBadgeNew(c, ac, refYear);
+            const isWinner = c.status && (c.status.includes('فائز') || c.status.includes('مقبول'));
+
+            const contColor = cont === 'مستمر'
+              ? 'background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3)'
+              : 'background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)';
+
+            return `
+              <tr class="${isWinner ? 'is-winner' : ''}">
+                <td><span style="font-weight:800;color:#64748b">${idx + 1}</span></td>
+                <td class="td-name">
+                  <span style="font-weight:800;font-size:0.88rem">${c.name}</span>
+                  ${isWinner ? `<span class="cr-winner-badge">★ فائز</span>` : ''}
+                </td>
+                <td>
+                  <span class="badge-degree" style="font-size:0.73rem;padding:2px 7px">${c.degree}</span>
+                </td>
+                <td>${criterionBadge}</td>
+                <td class="td-name" style="font-size:0.82rem">${specClean}</td>
+                <td style="font-size:0.82rem;font-weight:700">${grade}</td>
+                <td>
+                  <span style="padding:2px 8px;border-radius:6px;font-size:0.76rem;font-weight:800;${contColor}">${cont}</span>
+                </td>
+                <td><span class="cr-points-badge">${criterionPoints}</span></td>
+                <td><span class="cr-total-badge">${totalScore}</span></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ تذييل التوقيعات (للطباعة) ══ -->
+    <div class="cr-print-footer">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;text-align:center;font-size:0.85rem;font-weight:800;color:#0f172a">
+        <div style="width:28%">
+          <div>عضو ومقرر اللجنة</div>
+          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
+        </div>
+        <div style="width:28%">
+          <div>أعضاء لجنة المفاضلة</div>
+          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">التوقيع: ..........................</div>
+        </div>
+        <div style="width:28%">
+          <div>رئيس لجنة المفاضلة / نائب رئيس الجامعة</div>
+          <div style="margin-top:36px;border-top:1px solid #0f172a;padding-top:4px">أ.د / ..................................</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+// ══════════════════════════════════════════════════════
+// دوال مساعدة للتصميم الجديد (Luxury Edition)
+// ══════════════════════════════════════════════════════
+
+function renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear) {
+
+  if (crit === 'seniority') {
+    const sType = criterionReportState.seniorityFilterType;
+    const sTypeOptions = [
+      { v: 'all',      l: 'جميع سنوات الأقدمية' },
+      { v: 'all_desc', l: '⬇ الأعلى أقدمية أولاً' },
+      { v: 'all_asc',  l: '⬆ الأقل أقدمية أولاً' },
+      { v: 'exact',    l: 'سنة بعينها (بالضبط)' },
+      { v: 'gte',      l: 'أقدمية ≥ عدد سنوات' },
+      { v: 'lte',      l: 'أقدمية ≤ عدد سنوات' },
+      { v: 'range',    l: 'نطاق بين سنتين' }
+    ];
+    return `
+      <span class="cr-filter-zone-label">📅 نمط الأقدمية:</span>
+      <select onchange="criterionReportState.seniorityFilterType=this.value; renderCriterionReportScreen();" style="min-width:200px">
+        ${sTypeOptions.map(o => `<option value="${o.v}" ${sType===o.v?'selected':''}>${o.l}</option>`).join('')}
+      </select>
+      ${sType === 'exact' ? `
+        <span class="cr-filter-zone-label">📌 الأقدمية بالضبط:</span>
+        <select onchange="criterionReportState.seniorityExactYears=this.value; renderCriterionReportScreen(false);" style="min-width:230px">
+          <option value="all">اختر عدد السنوات...</option>
+          ${uniqueSeniorityYears.map(yr => {
+            const cnt = getRankedCandidates('الكل').filter(c => getCandidateSeniorityYears(c, refYear).years === yr).length;
+            return `<option value="${yr}" ${criterionReportState.seniorityExactYears==yr?'selected':''}>${yr} سنة (تعيين ${refYear-yr}م) — ${cnt} متنافس</option>`;
+          }).join('')}
+        </select>
+      ` : ''}
+      ${sType === 'gte' ? `
+        <span class="cr-filter-zone-label">الحد الأدنى:</span>
+        <input type="number" min="1" max="50" value="${criterionReportState.seniorityMinYears||10}" style="width:75px"
+               onchange="criterionReportState.seniorityMinYears=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">سنة فأكثر</span>
+      ` : ''}
+      ${sType === 'lte' ? `
+        <span class="cr-filter-zone-label">الحد الأقصى:</span>
+        <input type="number" min="1" max="50" value="${criterionReportState.seniorityMaxYears||10}" style="width:75px"
+               onchange="criterionReportState.seniorityMaxYears=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">سنة فأقل</span>
+      ` : ''}
+      ${sType === 'range' ? `
+        <span class="cr-filter-zone-label">من:</span>
+        <input type="number" min="1" max="50" value="${criterionReportState.seniorityMinYears||5}" style="width:65px"
+               onchange="criterionReportState.seniorityMinYears=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">إلى:</span>
+        <input type="number" min="1" max="50" value="${criterionReportState.seniorityMaxYears||20}" style="width:65px"
+               onchange="criterionReportState.seniorityMaxYears=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">سنة</span>
+      ` : ''}
+    `;
+  }
+
+  if (crit === 'age') {
+    const aType = criterionReportState.ageFilterType;
+    const aOptions = [
+      { v: 'all',            l: 'جميع الأعمار' },
+      { v: 'all_desc',       l: '⬇ الأكبر عمراً أولاً' },
+      { v: 'all_asc',        l: '⬆ الأصغر عمراً أولاً' },
+      { v: 'exact',          l: 'عمر محدد بالضبط' },
+      { v: 'bracket_under35',l: 'الشباب (أقل من 35)' },
+      { v: 'bracket_35_45',  l: 'المتوسط (35 — 45)' },
+      { v: 'bracket_over45', l: 'الخبرات (فوق 45)' },
+      { v: 'range',          l: 'نطاق عمري مخصص' }
+    ];
+    return `
+      <span class="cr-filter-zone-label">🎂 نمط العمر:</span>
+      <select onchange="criterionReportState.ageFilterType=this.value; renderCriterionReportScreen();" style="min-width:200px">
+        ${aOptions.map(o => `<option value="${o.v}" ${aType===o.v?'selected':''}>${o.l}</option>`).join('')}
+      </select>
+      ${aType === 'exact' ? `
+        <span class="cr-filter-zone-label">📌 العمر بالضبط:</span>
+        <select onchange="criterionReportState.ageExact=this.value; renderCriterionReportScreen(false);" style="min-width:230px">
+          <option value="all">اختر السن...</option>
+          ${uniqueAges.map(ag => {
+            const cnt = getRankedCandidates('الكل').filter(c => getCandidateAgeInfo(c, refYear).age === ag).length;
+            return `<option value="${ag}" ${criterionReportState.ageExact==ag?'selected':''}>${ag} سنة (مواليد ${refYear-ag}م) — ${cnt} متنافس</option>`;
+          }).join('')}
+        </select>
+      ` : ''}
+      ${aType === 'range' ? `
+        <span class="cr-filter-zone-label">من سن:</span>
+        <input type="number" min="20" max="80" value="${criterionReportState.ageMin||30}" style="width:65px"
+               onchange="criterionReportState.ageMin=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">إلى:</span>
+        <input type="number" min="20" max="80" value="${criterionReportState.ageMax||45}" style="width:65px"
+               onchange="criterionReportState.ageMax=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">سنة</span>
+      ` : ''}
+    `;
+  }
+
+  if (crit === 'specialization') {
+    const selSpec = criterionReportState.selectedSpecialization;
+    return `
+      <span class="cr-filter-zone-label">🎓 التخصص:</span>
+      <select onchange="criterionReportState.selectedSpecialization=this.value; renderCriterionReportScreen();" style="min-width:280px">
+        <option value="الكل" ${selSpec==='الكل'?'selected':''}>— جميع التخصصات (${uniqueSpecs.length}) —</option>
+        ${uniqueSpecs.map(sp => {
+          const cnt = getRankedCandidates('الكل').filter(c => getCleanSpecializationName(c.specialization,c) === sp).length;
+          return `<option value="${sp}" ${selSpec===sp?'selected':''}>${sp}  (${cnt})</option>`;
+        }).join('')}
+      </select>
+      <div class="cr-quick-btns" style="margin-right:4px">
+        <button class="cr-quick-btn ${selSpec==='الكل'?'active':''}" onclick="criterionReportState.selectedSpecialization='الكل'; renderCriterionReportScreen()">الكل</button>
+        ${uniqueSpecs.slice(0, 8).map(sp => {
+          const cnt = getRankedCandidates('الكل').filter(c => getCleanSpecializationName(c.specialization,c) === sp).length;
+          return `<button class="cr-quick-btn ${selSpec===sp?'active':''}" onclick="criterionReportState.selectedSpecialization='${sp}'; renderCriterionReportScreen()">${sp} (${cnt})</button>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  if (crit === 'grade') {
+    const selGrade = criterionReportState.selectedGrade;
+    const grades = ['الكل', 'ممتاز', 'جيد جداً', 'جيد', 'مقبول', 'بدون'];
+    return `
+      <span class="cr-filter-zone-label">🏅 التقدير العلمي:</span>
+      <div class="cr-quick-btns">
+        ${grades.map(g => {
+          const cnt = g === 'الكل'
+            ? getRankedCandidates('الكل').length
+            : getRankedCandidates('الكل').filter(c => {
+                const gn = normalizeGradeText(c.grade);
+                return g === 'بدون' ? (gn === 'بدون' || isInvalidGradeValue(c.grade)) : (gn === g);
+              }).length;
+          return `<button class="cr-quick-btn ${selGrade===g?'active':''}" onclick="criterionReportState.selectedGrade='${g}'; renderCriterionReportScreen()">${g} (${cnt})</button>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  if (crit === 'continuity') {
+    const selCont = criterionReportState.selectedContinuity;
+    const all = getRankedCandidates('الكل');
+    return `
+      <span class="cr-filter-zone-label">💼 حالة الاستمرارية:</span>
+      <div class="cr-quick-btns">
+        <button class="cr-quick-btn ${selCont==='الكل'?'active':''}" onclick="criterionReportState.selectedContinuity='الكل'; renderCriterionReportScreen()">الكل (${all.length})</button>
+        ${uniqueContinuity.map(cnt => {
+          const count = all.filter(c => getCandidateContinuityVal(c) === cnt).length;
+          return `<button class="cr-quick-btn ${selCont===cnt?'active':''}" onclick="criterionReportState.selectedContinuity='${cnt}'; renderCriterionReportScreen()">${cnt} (${count})</button>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  if (crit === 'totalScore') {
+    const scType = criterionReportState.scoreFilterType;
+    const scOptions = [
+      { v: 'all',      l: 'جميع المتنافسين' },
+      { v: 'all_desc', l: '⬇ الأعلى نقاطاً أولاً' },
+      { v: 'all_asc',  l: '⬆ الأقل نقاطاً أولاً' },
+      { v: 'gte',      l: 'نقاط ≥ حد أدنى' },
+      { v: 'range',    l: 'نطاق نقاط محدد' }
+    ];
+    return `
+      <span class="cr-filter-zone-label">🏆 نمط النقاط:</span>
+      <select onchange="criterionReportState.scoreFilterType=this.value; renderCriterionReportScreen();" style="min-width:200px">
+        ${scOptions.map(o => `<option value="${o.v}" ${scType===o.v?'selected':''}>${o.l}</option>`).join('')}
+      </select>
+      ${scType === 'gte' ? `
+        <span class="cr-filter-zone-label">الحد الأدنى:</span>
+        <input type="number" min="0" max="50" value="${criterionReportState.scoreMin||20}" style="width:70px"
+               onchange="criterionReportState.scoreMin=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">نقطة فأكثر</span>
+      ` : ''}
+      ${scType === 'range' ? `
+        <span class="cr-filter-zone-label">من:</span>
+        <input type="number" min="0" max="50" value="${criterionReportState.scoreMin||15}" style="width:65px"
+               onchange="criterionReportState.scoreMin=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">إلى:</span>
+        <input type="number" min="0" max="50" value="${criterionReportState.scoreMax||25}" style="width:65px"
+               onchange="criterionReportState.scoreMax=this.value; renderCriterionReportScreen(false);">
+        <span style="font-size:0.8rem;color:#64748b;font-weight:700">نقطة</span>
+      ` : ''}
+    `;
+  }
+  return '';
+}
+
+function buildCriterionValueBadgeNew(c, crit, refYear) {
+  if (crit === 'seniority') {
+    const s = getCandidateSeniorityYears(c, refYear);
+    if (!s.valid) return `<span style="color:#ef4444;font-size:0.78rem;font-weight:800">غير محدد</span>`;
+    return `<span class="cr-crit-val-badge" style="background:rgba(2,132,199,0.14);color:#38bdf8;border:1px solid rgba(2,132,199,0.3)">📅 ${s.years} سنة — تعيين ${s.year}م</span>`;
+  }
+  if (crit === 'age') {
+    const a = getCandidateAgeInfo(c, refYear);
+    if (!a.valid) return `<span style="color:#ef4444;font-size:0.78rem;font-weight:800">غير محدد</span>`;
+    return `<span class="cr-crit-val-badge" style="background:rgba(217,119,6,0.14);color:#fbbf24;border:1px solid rgba(217,119,6,0.3)">🎂 ${a.age} سنة — مواليد ${a.birthYear}م</span>`;
+  }
+  if (crit === 'specialization') {
+    const sp = getCleanSpecializationName(c.specialization, c);
+    return `<span class="cr-crit-val-badge" style="background:rgba(13,148,136,0.14);color:#2dd4bf;border:1px solid rgba(13,148,136,0.3)">🎓 ${sp}</span>`;
+  }
+  if (crit === 'grade') {
+    const g = normalizeGradeText(c.grade) || 'بدون';
+    return `<span class="cr-crit-val-badge" style="background:rgba(124,58,237,0.14);color:#a78bfa;border:1px solid rgba(124,58,237,0.3)">🏅 ${g}</span>`;
+  }
+  if (crit === 'continuity') {
+    const cont = getCandidateContinuityVal(c);
+    const col = cont === 'مستمر' ? 'rgba(16,185,129,0.14);color:#10b981;border:1px solid rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.14);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)';
+    return `<span class="cr-crit-val-badge" style="background:${col}">💼 ${cont}</span>`;
+  }
+  const sc = c.scores ? c.scores.totalScore : 0;
+  return `<span class="cr-crit-val-badge" style="background:rgba(15,23,42,0.5);color:#e2e8f0;border:1px solid rgba(100,116,139,0.3)">🏆 ${sc} نقطة</span>`;
+}
+
+function renderSpecificCriterionControls(crit, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear) {
+  // الدالة القديمة — تُعيد الجديدة
+  return renderSpecificCriterionControlsNew(crit, uniqueSeniorityYears, uniqueAges, uniqueSpecs, uniqueContinuity, refYear);
+}
+
+function buildCriterionValueBadge(c, crit, refYear) {
+  // الدالة القديمة — تُعيد الجديدة
+  return buildCriterionValueBadgeNew(c, crit, refYear);
+}
+
+
+function getSpecificCriterionPoints(c, crit) {
+  if (!c.scores) return 0;
+  if (crit === 'seniority') return c.scores.seniorityScore || 0;
+  if (crit === 'age') return c.scores.ageScore || 0;
+  if (crit === 'specialization') return c.scores.specScore || 0;
+  if (crit === 'grade') return c.scores.gradeScore || 0;
+  if (crit === 'continuity') {
+    const custom = c.scores.customScores || {};
+    return custom.work_practice !== undefined ? custom.work_practice : (getCandidateContinuityVal(c) === 'مستمر' ? 5 : 3);
+  }
+  return c.scores.totalScore || 0;
+}
+
+function buildCriterionValueBadge(c, crit, refYear) {
+  if (crit === 'seniority') {
+    const s = getCandidateSeniorityYears(c, refYear);
+    if (!s.valid) {
+      return `<span style="color: #ef4444; font-weight: 800; font-size: 0.82rem;">غير محدد / ناقص</span>`;
+    }
+    return `
+      <span style="background: rgba(2, 132, 199, 0.15); color: #0284c7; border: 1px solid #0284c7; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+        📅 ${s.years} سنة أقدمية (تعيين ${s.year}م)
+      </span>
+    `;
+  }
+  if (crit === 'age') {
+    const a = getCandidateAgeInfo(c, refYear);
+    if (!a.valid) {
+      return `<span style="color: #ef4444; font-weight: 800; font-size: 0.82rem;">غير محدد / ناقص</span>`;
+    }
+    return `
+      <span style="background: rgba(217, 119, 6, 0.15); color: #d97706; border: 1px solid #d97706; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+        🎂 ${a.age} سنة (مواليد ${a.birthYear}م)
+      </span>
+    `;
+  }
+  if (crit === 'specialization') {
+    const sp = getCleanSpecializationName(c.specialization, c);
+    return `
+      <span style="background: rgba(13, 148, 136, 0.15); color: #0d9488; border: 1px solid #0d9488; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+        🎓 ${sp}
+      </span>
+    `;
+  }
+  if (crit === 'grade') {
+    const g = normalizeGradeText(c.grade) || 'بدون';
+    return `
+      <span style="background: rgba(124, 58, 237, 0.15); color: #7c3aed; border: 1px solid #7c3aed; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+        🏅 تقدير: ${g}
+      </span>
+    `;
+  }
+  if (crit === 'continuity') {
+    const cont = getCandidateContinuityVal(c);
+    return `
+      <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+        💼 حالة العمل: ${cont}
+      </span>
+    `;
+  }
+  return `
+    <span style="background: rgba(15, 23, 42, 0.2); color: var(--text-main); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.84rem;">
+      ⭐ ${c.scores ? c.scores.totalScore : 0} نقطة
+    </span>
+  `;
+}
+
+function getCriterionReportHeaderTitle(st, refYear) {
+  const crit = st.activeCriterion;
+  if (crit === 'seniority') {
+    const sType = st.seniorityFilterType;
+    let desc = 'عرض بحسب سنوات الخدمة والتعيين';
+    if (sType === 'exact') desc = `المتنافسون الحاصلون على ${st.seniorityExactYears} سنة أقدمية بالضبط (تعيين ${refYear - parseInt(st.seniorityExactYears)}م)`;
+    else if (sType === 'gte') desc = `المتنافسون أصحاب أقدمية ${st.seniorityMinYears} سنة فأكثر`;
+    else if (sType === 'lte') desc = `المتنافسون أصحاب أقدمية ${st.seniorityMaxYears} سنة فأقل`;
+    else if (sType === 'range') desc = `المتنافسون ضمن شريحة أقدمية بين ${st.seniorityMinYears} و ${st.seniorityMaxYears} سنة`;
+    else if (sType === 'all_desc') desc = 'ترتيب المتنافسين تنازلياً من الأعلى أقدمية إلى الأقل';
+    else if (sType === 'all_asc') desc = 'ترتيب المتنافسين تصاعدياً من الأقل أقدمية إلى الأعلى';
+    return { title: 'معيار الأقدمية (سنوات الخدمة)', description: desc };
+  }
+
+  if (crit === 'age') {
+    const aType = st.ageFilterType;
+    let desc = 'عرض بحسب العمر وتاريخ الميلاد';
+    if (aType === 'exact') desc = `المتنافسون بعمر ${st.ageExact} سنة بالضبط (مواليد ${refYear - parseInt(st.ageExact)}م)`;
+    else if (aType === 'bracket_under35') desc = 'المتنافسون الشباب (أقل من 35 سنة)';
+    else if (aType === 'bracket_35_45') desc = 'المتنافسون في الفئة المتوسطة (35 إلى 45 سنة)';
+    else if (aType === 'bracket_over45') desc = 'المتنافسون ذوو الخبرة (أكبر من 45 سنة)';
+    else if (aType === 'range') desc = `المتنافسون ضمن الفئة العمرية بين ${st.ageMin} و ${st.ageMax} سنة`;
+    else if (aType === 'all_desc') desc = 'ترتيب المتنافسين تنازلياً من الأكبر عمراً إلى الأصغر';
+    else if (aType === 'all_asc') desc = 'ترتيب المتنافسين تصاعدياً من الأصغر عمراً إلى الأكبر';
+    return { title: 'معيار العمر (سنة الميلاد)', description: desc };
+  }
+
+  if (crit === 'specialization') {
+    const sp = st.selectedSpecialization;
+    const desc = (sp === 'الكل') ? 'حصر شامل لكافة التخصصات والمجالات المتقدم لها' : `حصر جميع المتقدمين لتخصص: "${sp}"`;
+    return { title: 'معيار التخصص الأكاديمي', description: desc };
+  }
+
+  if (crit === 'grade') {
+    const g = st.selectedGrade;
+    const desc = (g === 'الكل') ? 'كافة التقديرات العلمية' : `جميع المتنافسين الحاصلين على تقدير: "${g}"`;
+    return { title: 'معيار التقدير العلمي', description: desc };
+  }
+
+  if (crit === 'continuity') {
+    const cont = st.selectedContinuity;
+    const desc = (cont === 'الكل') ? 'كافة حالات الاستمرارية' : `جميع المتنافسين بحالة: "${cont}"`;
+    return { title: 'معيار الاستمرارية وطبيعة العمل', description: desc };
+  }
+
+  return { title: 'المجموع الكلي ونقاط المفاضلة', description: 'تصفية وترتيب المتنافسين بحسب النقاط المحرزة' };
+}
+
+function exportCriterionReportToExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('مكتبة تصدير الإكسل غير محملة');
+    return;
+  }
+  const refYear = state.settings.referenceYear || 2026;
+  const filteredList = getCriterionFilteredCandidates();
+  const crit = criterionReportState.activeCriterion;
+
+  if (filteredList.length === 0) {
+    alert('لا توجد بيانات مطابقة لتصديرها');
+    return;
+  }
+
+  const exportData = filteredList.map((c, idx) => {
+    const s = getCandidateSeniorityYears(c, refYear);
+    const a = getCandidateAgeInfo(c, refYear);
+    const spec = getCleanSpecializationName(c.specialization, c);
+    const grade = normalizeGradeText(c.grade) || '-';
+    const cont = getCandidateContinuityVal(c);
+    const criterionPoints = getSpecificCriterionPoints(c, crit);
+
+    return {
+      'م': idx + 1,
+      'الترتيب العام': c.rank || idx + 1,
+      'اسم الموظف المتنافس': c.name,
+      'الدرجة': c.degree,
+      'التخصص': spec,
+      'سنوات الأقدمية': s.valid ? s.years : '-',
+      'تاريخ التعيين': s.year || '-',
+      'العمر': a.valid ? a.age : '-',
+      'سنة الميلاد': a.birthYear || '-',
+      'التقدير العلمي': grade,
+      'الاستمرارية': cont,
+      'نقاط المعيار المختار': criterionPoints,
+      'المجموع الكلي': c.scores ? c.scores.totalScore : 0,
+      'الحالة': c.status || 'خارج خط المنح'
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const sheetName = ("تقرير_" + criterionReportState.activeCriterion).substring(0, 31);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, `تقرير_المفاضلة_بحسب_المعيار_${criterionReportState.activeCriterion}_${refYear}.xlsx`);
+}
+
+function printCriterionReport() {
+  window.print();
+}
+
+
+
+// ====================================================
 // شاشة المحضر الرسمي لنتائج المفاضلة (رئيس اللجنة فقط)
 // Official Minutes of the Scholarship Competition Session
 // ====================================================
@@ -7260,12 +8293,12 @@ function renderMinutes() {
 
   // -- بناء بطاقات توقيع الأعضاء العاديين (ترتيب عكسي) --
   const regularMemberCards = regularMembers.map(m => `
-    <div style="border: 1px solid #fcd34d; padding: 5px 6px; border-radius: 5px; background: #fffbeb; text-align: center; min-width: 120px;">
-      <p style="font-weight: 800; color: #92400e; font-size: 0.7rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
-      <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${m.name}</p>
-      <p style="color: #78350f; font-size: 0.62rem; margin: 0 0 5px 0;">${m.adminTitle || ''}</p>
-      <div style="height: 14px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
-      <p style="font-size: 0.56rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
+    <div style="border: 1px solid #fcd34d; padding: 3px 5px; border-radius: 4px; background: #fffbeb; text-align: center; min-width: 100px; flex: 1;">
+      <p style="font-weight: 800; color: #92400e; font-size: 0.65rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #1a1a00; font-size: 0.72rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #78350f; font-size: 0.58rem; margin: 0 0 2px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 10px; border-bottom: 1px dashed #d97706; margin-bottom: 2px;"></div>
+      <p style="font-size: 0.52rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم</p>
     </div>
   `).join('');
 
@@ -7394,52 +8427,48 @@ function renderMinutes() {
 
       <!-- ====== توقيعات أعضاء اللجنة (الصف الأول: الأعضاء بترتيب عكسي) ====== -->
       <div style="border-top: 2px solid #d97706; padding-top: 10px; margin-top: 4px; page-break-inside: avoid;">
-        <h4 style="text-align: center; color: #92400e; font-size: 0.85rem; font-weight: 900; margin: 0 0 8px 0;">
+        <h4 style="text-align: center; color: #92400e; font-size: 0.78rem; font-weight: 900; margin: 0 0 4px 0;">
           توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
         </h4>
 
         <!-- الصف الأول: الأعضاء العاديون بترتيب عكسي -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 4px;">
           ${regularMemberCards}
         </div>
 
         <!-- الصف الثاني: رئيس اللجنة + تعميد رئيس الجامعة -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 85%; margin: 0 auto; text-align: center;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 85%; margin: 0 auto; text-align: center;">
 
           <!-- رئيس اللجنة -->
-          <div style="border: 1.5px solid #d97706; padding: 7px; border-radius: 7px; background: #fffbeb;">
-            <p style="font-weight: 900; color: #92400e; font-size: 0.8rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
-            <p style="font-weight: 900; color: #1a1a00; font-size: 0.85rem; margin: 0 0 1px 0;">${chairman.name}</p>
-            <p style="color: #78350f; font-size: 0.68rem; margin: 0 0 6px 0;">${chairman.adminTitle || ''}</p>
-            <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
-            <p style="font-size: 0.6rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          <div style="border: 1px solid #d97706; padding: 4px 6px; border-radius: 5px; background: #fffbeb;">
+            <p style="font-weight: 900; color: #92400e; font-size: 0.72rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${chairman.name}</p>
+            <p style="color: #78350f; font-size: 0.58rem; margin: 0 0 2px 0;">${chairman.adminTitle || ''}</p>
+            <div style="height: 10px; border-bottom: 1px dashed #d97706; margin-bottom: 2px;"></div>
+            <p style="font-size: 0.52rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
           </div>
 
           <!-- يعتمد رئيس الجامعة -->
-          <div style="border: 2px solid #16a34a; padding: 7px; border-radius: 7px; background: #f0fdf4;">
-            <p style="font-weight: 900; color: #15803d; font-size: 0.8rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
-            <p style="font-weight: 900; color: #14532d; font-size: 0.85rem; margin: 0 0 1px 0;">${rectorName}</p>
-            <p style="color: #166534; font-size: 0.68rem; margin: 0 0 6px 0;">رئيس ${univName}</p>
-            <div style="height: 18px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 3px;"></div>
-            <p style="font-size: 0.6rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          <div style="border: 1.5px solid #16a34a; padding: 4px 6px; border-radius: 5px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.72rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.76rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #166534; font-size: 0.58rem; margin: 0 0 2px 0;">رئيس ${univName}</p>
+            <div style="height: 10px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 2px;"></div>
+            <p style="font-size: 0.52rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
           </div>
         </div>
       </div>
 
-      <!-- ====== تذييل MAQATECH ====== -->
-      <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569;">
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 1px 5px; border-radius: 3px; font-family: sans-serif;">MT</span>
-          <strong>MAQATECH SOFTWARE SOLUTIONS</strong>
-        </div>
-        <span>جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك © 2026</span>
-      </div>
+      <!-- ====== تذييل التوثيق والترقيم الرسمي ====== -->
+      ${getOfficialPrintFooterHTML(dateStr)}
     </div>
   `;
 }
 
 // طباعة المحضر الرسمي النهائي
 function printMinutesFinal() {
+  const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
+  setPrintPageDate(dateStr);
   document.body.classList.add('is-minutes-print');
   document.body.classList.remove('is-draft-print');
   const watermarkEl = document.getElementById('minutes-print-watermark');
@@ -7453,6 +8482,8 @@ function printMinutesFinal() {
 
 // طباعة مسودة المحضر الرسمي للمراجعة والتنقيح
 function printMinutesDraft() {
+  const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
+  setPrintPageDate(dateStr);
   document.body.classList.add('is-minutes-print');
   document.body.classList.add('is-draft-print');
   const watermarkEl = document.getElementById('minutes-print-watermark');
@@ -7487,12 +8518,12 @@ function renderCriteriaDoc() {
   const regularMembers = committee.filter(m => m !== chairman).reverse();
 
   const regularMemberCards = regularMembers.map(m => `
-    <div style="border: 1px solid #fcd34d; padding: 5px 6px; border-radius: 5px; background: #fffbeb; text-align: center; min-width: 120px;">
-      <p style="font-weight: 800; color: #92400e; font-size: 0.7rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
-      <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${m.name}</p>
-      <p style="color: #78350f; font-size: 0.62rem; margin: 0 0 5px 0;">${m.adminTitle || ''}</p>
-      <div style="height: 14px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
-      <p style="font-size: 0.56rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم الرسمي</p>
+    <div style="border: 1px solid #fcd34d; padding: 3px 5px; border-radius: 4px; background: #fffbeb; text-align: center; min-width: 100px; flex: 1;">
+      <p style="font-weight: 800; color: #92400e; font-size: 0.65rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #1a1a00; font-size: 0.72rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #78350f; font-size: 0.58rem; margin: 0 0 2px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 10px; border-bottom: 1px dashed #d97706; margin-bottom: 2px;"></div>
+      <p style="font-size: 0.52rem; color: #b45309; margin: 0; font-weight: 600;">التوقيع والختم</p>
     </div>
   `).join('');
 
@@ -7744,6 +8775,68 @@ function renderCriteriaDoc() {
     `;
   }).join('');
 
+  // 6. الضوابط والمعايير الاستثنائية وتراتبية كسر التعادل
+  ensureTiebreakerRules();
+  const activeTbRules = getActiveTiebreakerRules();
+  const tbBehavior = (state.tiebreakerOptions && state.tiebreakerOptions.tiebreakBehavior === 'all_accept')
+    ? 'قبول الجميع (توسعة المقاعد استثنائياً بقرار اللجنة)'
+    : 'إحالة القرار للجنة المفاضلة ومجلس الجامعة للبت النهائي بمحضر رسمي';
+
+  const tbRows = activeTbRules.map((r, i) => {
+    const scopeLabel = r.targetDegree === 'master' ? 'منح الماجستير فقط' : (r.targetDegree === 'phd' ? 'منح الدكتوراه فقط' : 'كافة الدرجات');
+    const weightLabel = r.weight ? `${r.weight} درجات ترجيحية` : 'أسبقية ترجيحية مباشرة';
+    return `
+      <tr style="border-bottom: 1px solid #fed7aa;">
+        <td style="padding: 6px 8px; font-weight: 900; color: #c2410c; text-align: center; background: #fff7ed;">${i + 1}</td>
+        <td style="padding: 6px 10px; font-weight: 700; color: #1e293b;">
+          <span style="margin-left: 5px;">${r.icon || '⚖️'}</span>
+          <strong style="color: #9a3412;">${r.name}</strong>
+          <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 2px;">${r.description || ''}</div>
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-weight: 800; color: #c2410c; background: #fff7ed; font-size: 0.75rem;">
+          ${weightLabel}
+        </td>
+        <td style="padding: 6px 8px; text-align: center; font-size: 0.73rem; font-weight: 700; color: #0369a1;">
+          ${scopeLabel}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const tiebreakerSection = `
+    <div style="margin-bottom: 14px; background: #fffaf0; border: 1.5px solid #f97316; border-radius: 8px; overflow: hidden; page-break-inside: avoid;">
+      <h3 style="background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; padding: 6px 12px; font-size: 0.88rem; font-weight: 900; margin: 0; display: flex; justify-content: space-between; align-items: center;">
+        <span>⚖️ ملحق الضوابط والمعايير الاستثنائية وتراتبية كسر التعادل</span>
+        <span style="background: rgba(255,255,255,0.25); color: #fff; padding: 1px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">إجراءات الحسم القانوني المعتمدة</span>
+      </h3>
+      
+      <div style="padding: 7px 12px; font-size: 0.76rem; color: #7c2d12; line-height: 1.6; background: #fff7ed; border-bottom: 1px solid #fed7aa;">
+        📌 <strong>الضابط والنطاق الإجرائي:</strong> تُطبّق هذه المعايير التراتبية حصرياً وبشكل تلقائي عند <strong>تساوي متنافسين أو أكثر في مجموع درجات المفاضلة التراكمية على الحد الفاصل للمقعد الأخير المتاح</strong> (لبرنامج الماجستير أو الدكتوراه)، لضمان النزاهة والشفافية وتكافؤ الفرص التام وفق التراتبية المعتمدة التالية:
+      </div>
+
+      <table style="width:100%; border-collapse: collapse; font-size: 0.78rem; background: #fff;">
+        <thead>
+          <tr style="background: #ffedd5; color: #9a3412; border-bottom: 1.5px solid #fdba74;">
+            <th style="padding: 5px 8px; text-align: center; width: 45px;">الترتيب</th>
+            <th style="padding: 5px 10px; text-align: right;">المعيار الاستثنائي الفاصل / آلية الترجيح</th>
+            <th style="padding: 5px 8px; text-align: center; width: 110px;">وزن الترجيح</th>
+            <th style="padding: 5px 8px; text-align: center; width: 110px;">نطاق التطبيق</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tbRows}
+          <tr style="background: #fef2f2; border-top: 1.5px dashed #fca5a5;">
+            <td style="padding: 6px 8px; font-weight: 900; color: #b91c1c; text-align: center;">★</td>
+            <td colspan="3" style="padding: 6px 10px; color: #991b1b; font-weight: 700; font-size: 0.75rem; line-height: 1.5;">
+              <strong>المرحلة الاستثنائية الختامية (في حال استمرار التعادل التام بعد استنفاد كافة المعايير أعلاه):</strong><br>
+              ← الإجراء المعتمد: <span style="color:#7f1d1d; text-decoration: underline;">${tbBehavior}</span>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
   // حساب أسقف النقاط بدقة متناهية للماجستير والدكتوراه
   const maxSeniority = (sen && sen.enabled !== false) ? (parseFloat(sen.maxPoints) || 10) : 0;
   const maxAge = (age && age.enabled !== false) ? (parseFloat(age.maxPoints) || 5) : 0;
@@ -7917,54 +9010,53 @@ function renderCriteriaDoc() {
       <!-- ====== المعايير المخصصة ====== -->
       ${customSection}
 
+      <!-- ====== المعايير الاستثنائية وتراتبية كسر التعادل ====== -->
+      ${tiebreakerSection}
+
       <!-- ====== توقيعات أعضاء اللجنة ====== -->
       <div style="border-top: 2px solid #d97706; padding-top: 10px; margin-top: 4px; page-break-inside: avoid;">
-        <h4 style="text-align: center; color: #92400e; font-size: 0.85rem; font-weight: 900; margin: 0 0 8px 0;">
+        <h4 style="text-align: center; color: #92400e; font-size: 0.78rem; font-weight: 900; margin: 0 0 4px 0;">
           اعتماد توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
         </h4>
 
         <!-- الصف الأول: الأعضاء العاديون بترتيب عكسي -->
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 4px;">
           ${regularMemberCards}
         </div>
 
         <!-- الصف الثاني: رئيس اللجنة + تعميد رئيس الجامعة -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 85%; margin: 0 auto; text-align: center;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 85%; margin: 0 auto; text-align: center;">
 
           <!-- رئيس اللجنة -->
-          <div style="border: 1.5px solid #d97706; padding: 7px; border-radius: 7px; background: #fffbeb;">
-            <p style="font-weight: 900; color: #92400e; font-size: 0.8rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
-            <p style="font-weight: 900; color: #1a1a00; font-size: 0.85rem; margin: 0 0 1px 0;">${chairman.name}</p>
-            <p style="color: #78350f; font-size: 0.68rem; margin: 0 0 6px 0;">${chairman.adminTitle || ''}</p>
-            <div style="height: 18px; border-bottom: 1px dashed #d97706; margin-bottom: 3px;"></div>
-            <p style="font-size: 0.6rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          <div style="border: 1px solid #d97706; padding: 4px 6px; border-radius: 5px; background: #fffbeb;">
+            <p style="font-weight: 900; color: #92400e; font-size: 0.72rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #1a1a00; font-size: 0.76rem; margin: 0 0 1px 0;">${chairman.name}</p>
+            <p style="color: #78350f; font-size: 0.58rem; margin: 0 0 2px 0;">${chairman.adminTitle || ''}</p>
+            <div style="height: 10px; border-bottom: 1px dashed #d97706; margin-bottom: 2px;"></div>
+            <p style="font-size: 0.52rem; color: #92400e; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
           </div>
 
           <!-- يعتمد رئيس الجامعة -->
-          <div style="border: 2px solid #16a34a; padding: 7px; border-radius: 7px; background: #f0fdf4;">
-            <p style="font-weight: 900; color: #15803d; font-size: 0.8rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
-            <p style="font-weight: 900; color: #14532d; font-size: 0.85rem; margin: 0 0 1px 0;">${rectorName}</p>
-            <p style="color: #166534; font-size: 0.68rem; margin: 0 0 6px 0;">رئيس ${univName}</p>
-            <div style="height: 18px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 3px;"></div>
-            <p style="font-size: 0.6rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          <div style="border: 1.5px solid #16a34a; padding: 4px 6px; border-radius: 5px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.72rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.76rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #166534; font-size: 0.58rem; margin: 0 0 2px 0;">رئيس ${univName}</p>
+            <div style="height: 10px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 2px;"></div>
+            <p style="font-size: 0.52rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
           </div>
         </div>
       </div>
 
-      <!-- ====== تذييل MAQATECH ====== -->
-      <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; color: #475569;">
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 1px 5px; border-radius: 3px; font-family: sans-serif;">MT</span>
-          <strong>MAQATECH SOFTWARE SOLUTIONS</strong>
-        </div>
-        <span>جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك © 2026</span>
-      </div>
+      <!-- ====== تذييل التوثيق والترقيم الرسمي ====== -->
+      ${getOfficialPrintFooterHTML(dateStr)}
     </div>
   `;
 }
 
 // دالة طباعة وثيقة معايير وأوزان المفاضلة المعتمدة
 function printCriteriaDoc() {
+  const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
+  setPrintPageDate(dateStr);
   document.body.classList.add('is-criteria-doc-print');
   window.print();
   setTimeout(() => {
