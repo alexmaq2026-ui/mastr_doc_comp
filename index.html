@@ -6,6 +6,7 @@
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
   <link rel="stylesheet" href="css/style.css?v=82">
   <link rel="stylesheet" href="css/assistant_guide.css?v=95">
+  <link rel="stylesheet" href="css/permissions.css?v=1">
 </head>
 <body>
 
@@ -691,6 +692,41 @@
         </div>
       </div>
 
+      <!-- كارت إدارة الأدوار ومصفوفة الصلاحيات الشجرية المخصصة -->
+      <div class="roles-manager-card">
+        <div class="roles-header">
+          <div>
+            <h2 class="card-title" style="color: #c084fc; display: flex; align-items: center; gap: 8px; margin: 0;">
+              <span>🌳</span>
+              <span>إدارة الأدوار ومصفوفة الصلاحيات الشجرية المخصصة</span>
+            </h2>
+            <p style="color: #94a3b8; font-size: 0.86rem; margin: 4px 0 0 0;">
+              تحكم كامل في إنشاء الأدوار وتحديد الصلاحيات بدقة جراحية على مستوى الشاشات والأزرار والنوافذ التفصيلية.
+            </p>
+          </div>
+          <button class="btn btn-primary" onclick="openRoleModal()" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);">
+            <span>➕</span>
+            <span>إنشاء دور وظيفي جديد</span>
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 30%;">اسم الدور والوصف</th>
+                <th style="width: 15%;">نوع الدور</th>
+                <th style="width: 15%;">المستخدمين المسندين</th>
+                <th style="width: 15%;">مستوى الصلاحيات</th>
+                <th style="width: 20%;">الإجراءات والتحكم</th>
+              </tr>
+            </thead>
+            <tbody id="roles-admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">شاشة إدارة المستخدمين وتعيين الصلاحيات (المدير الأعلى)</h2>
@@ -807,15 +843,30 @@
           <input type="password" id="user-password" class="form-control" placeholder="أدخل كلمة المرور" autocomplete="new-password">
         </div>
       </div>
-      <div class="form-group">
-        <label>تحديد الدور والصلاحيات:</label>
-        <select id="user-role" class="form-control">
-          <option value="super_admin">المدير الأعلى / رئيس اللجنة (صلاحيات كاملة + إدارة المستخدمين)</option>
-          <option value="data_entry">مدخل بيانات (إدخال وتعديل واستيراد دون تهيئة الأوزان)</option>
-          <option value="auditor">مراجع / مطلع (قراءة ومعاينة وطباعة)</option>
-          <option value="committee_member">عضو لجنة المفاضلة (اطلاع على الشاشة فقط - بدون تعديل أو طباعة)</option>
-        </select>
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label style="font-weight: 700;">الدور الوظيفي المعتمد:</label>
+          <select id="user-role" class="form-control" onchange="handleUserRoleChangeInModal(this.value)"></select>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 700;">حالة الحساب:</label>
+          <select id="user-status" class="form-control">
+            <option value="active">🟢 نشط ومفعل</option>
+            <option value="suspended">🔴 معلق / موقوف</option>
+          </select>
+        </div>
       </div>
+
+      <!-- تخصيص استثناءات فردية إضافية لهذا المستخدم -->
+      <div style="margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+        <button type="button" onclick="toggleUserOverridesTree()" class="btn btn-outline btn-sm" style="width: 100%; text-align: center; border-color: #38bdf8; color: #38bdf8; font-weight: 700;">
+          ⚙️ تخصيص استثناءات صلاحيات إضافية خاصة بهذا المستخدم (اختياري)
+        </button>
+        <div id="user-overrides-container" style="display: none; margin-top: 10px;">
+          <div class="perm-tree-container" id="user-overrides-tree" style="max-height: 280px;"></div>
+        </div>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
         <button class="btn btn-outline" onclick="closeModal('modal-user')">إلغاء</button>
         <button class="btn btn-primary" onclick="saveUserForm()">حفظ حساب المستخدم</button>
@@ -1352,8 +1403,9 @@
   <script src="js/xlsx.full.min.js?v=95"></script>
   <script src="js/initial_data.js?v=95"></script>
   <script src="js/supabase_client.js?v=95"></script>
-  <script src="js/assistant_guide.js?v=96"></script>
-  <script src="js/app.js?v=96"></script>
+  <script src="js/permissions_engine.js?v=97"></script>
+  <script src="js/assistant_guide.js?v=97"></script>
+  <script src="js/app.js?v=97"></script>
 
   <!-- زر المساعد العائم السريع -->
   <button class="floating-assistant-fab" id="btn-floating-assistant" onclick="openAssistantGuide()" title="المساعد الذكي ودليل النظام">

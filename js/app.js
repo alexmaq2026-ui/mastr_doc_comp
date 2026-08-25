@@ -13,6 +13,7 @@ function normalizeArabicString(str) {
 // حالة التطبيق العامة (Application State)
 let state = {
   users: [],
+  roles: [],
   currentUser: null,
   settings: {},
   criteria: {},
@@ -42,6 +43,9 @@ function initStore() {
   if (savedState) {
     try {
       state = JSON.parse(savedState);
+      if (!state.roles || state.roles.length === 0) {
+        state.roles = (typeof DEFAULT_ROLES !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_ROLES)) : (typeof INITIAL_SYSTEM_ROLES !== 'undefined' ? JSON.parse(JSON.stringify(INITIAL_SYSTEM_ROLES)) : []);
+      }
       if (!state.committeeMembers || state.committeeMembers.length === 0) {
         state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
       }
@@ -357,6 +361,10 @@ function checkSystemEnabled() {
 }
 
 function getRoleTitle(role) {
+  if (typeof state !== 'undefined' && state.roles) {
+    const r = state.roles.find(item => item.id === role);
+    if (r) return r.name;
+  }
   if (role === 'super_admin') return 'المدير الأعلى / رئيس اللجنة';
   if (role === 'data_entry') return 'مُدخل بيانات';
   if (role === 'auditor') return 'مراجع مطلع';
@@ -386,6 +394,15 @@ document.addEventListener('click', function(e) {
 });
 
 function switchTab(tabId, label) {
+  // التحقق من الصلاحيات للشاشة
+  if (typeof hasPermission === 'function' && state.currentUser) {
+    const isAllowed = hasPermission('screen:' + tabId, state.currentUser);
+    if (!isAllowed) {
+      alert('⚠️ ليس لديك صلاحية للوصول إلى هذه الشاشة.');
+      return;
+    }
+  }
+
   // أخفِ كل المحتوى
   document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
   // أظهر المطلوب
@@ -429,105 +446,9 @@ function initDropdownNav() {
 }
 
 function renderTabsByRole() {
-  const currentRole = state.currentUser ? state.currentUser.role : 'auditor';
-
-  // تعريف التبويبات لكل دور
-  const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog'];
-
-  // الخريطة: ما يُظهر لكل دور
-  const visibilityMap = {
-    super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog'],
-    data_entry:  ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
-    auditor:     ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
-    committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                       'tab-btn-report','tab-btn-criterion-report','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria']
-  };
-
-  const allowed = visibilityMap[currentRole] || visibilityMap['auditor'];
-
-  allTabs.forEach(tabId => {
-    const el = document.getElementById(tabId);
-    if (el) el.style.display = allowed.includes(tabId) ? 'flex' : 'none';
-  });
-
-  // إخفاء المجموعات التي لا تحتوي على أي تبويب مسموح به
-  const groups = {
-    'navgroup-data':    ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring','tab-btn-minutes'],
-    'navgroup-reports': ['tab-btn-report','tab-btn-criterion-report','tab-btn-analytics','tab-btn-criteria-doc'],
-    'navgroup-admin':   ['tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog']
-  };
-  Object.entries(groups).forEach(([groupId, tabs]) => {
-    const groupEl = document.getElementById(groupId);
-    if (groupEl) {
-      const hasVisible = tabs.some(t => allowed.includes(t));
-      groupEl.style.display = hasVisible ? 'block' : 'none';
-    }
-  });
-
-  // أزرار الإضافة والاستيراد: للمدير الأعلى ومدخل البيانات فقط
-  const canEditCandidates = (currentRole === 'super_admin' || currentRole === 'data_entry');
-  const addCandidateBtn = document.getElementById('btn-add-candidate');
-  const importExcelBtn  = document.getElementById('btn-import-excel');
-  if (addCandidateBtn) addCandidateBtn.style.display = canEditCandidates ? 'inline-flex' : 'none';
-  if (importExcelBtn)  importExcelBtn.style.display  = canEditCandidates ? 'inline-flex' : 'none';
-
-  // زر تنفيذ المفاضلة: يظهر للمدير الأعلى فقط
-  const runNavBtn = document.getElementById('btn-run-nav');
-  if (runNavBtn) {
-    runNavBtn.style.display = (currentRole === 'super_admin') ? 'inline-flex' : 'none';
-  }
-
-  // شريط أزرار التحكم والاعتماد والتصفير في الشاشة الرئيسية: يظهر للمدير الأعلى فقط
-  const bottomActionsBox = document.getElementById('home-bottom-actions-box') || document.querySelector('.bottom-actions-box');
-  if (bottomActionsBox) {
-    bottomActionsBox.style.display = (currentRole === 'super_admin') ? 'flex' : 'none';
-  }
-
-  // تفعيل القيود الصارمة لعضو لجنة المفاضلة (اطلاع فقط بدون طباعة أو تعديل)
-  if (currentRole === 'committee_member') {
-    setTimeout(() => {
-      // تعطيل وقفل كافة مدخلات شاشة تهيئة المعايير تماماً
-      const criteriaContainer = document.getElementById('tab-criteria');
-      if (criteriaContainer) {
-        criteriaContainer.querySelectorAll('input, select, textarea').forEach(inp => {
-          inp.disabled = true;
-        });
-      }
-
-      document.querySelectorAll('button').forEach(btn => {
-        const onclickAttr = btn.getAttribute('onclick') || '';
-        const text = btn.innerText || '';
-        if (
-          onclickAttr.includes('print') ||
-          onclickAttr.includes('export') ||
-          onclickAttr.includes('edit') ||
-          onclickAttr.includes('delete') ||
-          onclickAttr.includes('save') ||
-          onclickAttr.includes('autoGenerate') ||
-          onclickAttr.includes('saveCriteria') ||
-          text.includes('طباعة') ||
-          text.includes('تصدير') ||
-          text.includes('تعديل') ||
-          text.includes('إضافة') ||
-          text.includes('تنفيذ') ||
-          text.includes('حفظ')
-        ) {
-          if (
-            !onclickAttr.includes('handleLogout') &&
-            !onclickAttr.includes('showLoginModal') &&
-            !onclickAttr.includes('closeModal') &&
-            !onclickAttr.includes('toggle') &&
-            !onclickAttr.includes('switch')
-          ) {
-            btn.style.display = 'none';
-          }
-        }
-      });
-
-      document.querySelectorAll('.col-action').forEach(el => el.style.display = 'none');
-    }, 50);
+  if (typeof applyUIPermissions === 'function') {
+    applyUIPermissions(state.currentUser);
+    return;
   }
 }
 
@@ -3903,25 +3824,37 @@ function renderUsersAdminTable() {
     }
   }
 
+  // تحديث جدول الأدوار ومصفوفة الصلاحيات الشجرية
+  if (typeof renderRolesAdminTable === 'function') {
+    renderRolesAdminTable();
+  }
+
   const tbody = document.getElementById('users-admin-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = state.users.map((u, idx) => `
+  tbody.innerHTML = state.users.map((u, idx) => {
+    const roleObj = (state.roles || []).find(r => r.id === u.role);
+    const roleDisplay = roleObj ? roleObj.name : (u.title || getRoleTitle(u.role));
+    const isSuspended = u.status === 'suspended';
+    const statusBadge = isSuspended 
+      ? '<span class="user-status-badge status-suspended">🔴 معلق</span>' 
+      : '<span class="user-status-badge status-active">🟢 نشط</span>';
+
+    return `
     <tr>
       <td>${idx + 1}</td>
       <td><strong>${u.name}</strong></td>
       <td><code>${u.username}</code></td>
       <td><code style="color: var(--primary); font-weight: bold;">${u.password || '••••••'}</code></td>
-      <td><span class="user-role-tag">${u.title || getRoleTitle(u.role)}</span></td>
-      <td>
-        <span class="badge-status badge-accepted">نشط</span>
-      </td>
+      <td><span class="user-role-tag">${roleDisplay}</span></td>
+      <td>${statusBadge}</td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="editUser(${u.id})">تعديل</button>
         ${u.id === 1 ? '' : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">حذف</button>`}
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // أحداث التفاعل والأزرار
@@ -4679,8 +4612,20 @@ function showAddUserModal() {
   document.getElementById('user-fullname').value = '';
   document.getElementById('user-username').value = '';
   document.getElementById('user-password').value = '';
-  document.getElementById('user-role').value = 'data_entry';
-  document.getElementById('modal-user').classList.add('open');
+  if (document.getElementById('user-status')) document.getElementById('user-status').value = 'active';
+
+  if (typeof populateUserRoleSelect === 'function') {
+    populateUserRoleSelect('data_entry');
+  }
+
+  const overridesContainer = document.getElementById('user-overrides-container');
+  if (overridesContainer) overridesContainer.style.display = 'none';
+
+  if (typeof renderPermissionsTreeUI === 'function') {
+    renderPermissionsTreeUI('user-overrides-tree', {});
+  }
+
+  openModal('modal-user');
 }
 
 function editUser(id) {
@@ -4694,8 +4639,37 @@ function editUser(id) {
   document.getElementById('user-fullname').value = user.name || '';
   document.getElementById('user-username').value = user.username || '';
   document.getElementById('user-password').value = user.password || '';
-  document.getElementById('user-role').value = user.role || 'data_entry';
-  document.getElementById('modal-user').classList.add('open');
+  if (document.getElementById('user-status')) document.getElementById('user-status').value = user.status || 'active';
+
+  if (typeof populateUserRoleSelect === 'function') {
+    populateUserRoleSelect(user.role || 'data_entry');
+  }
+
+  const overridesContainer = document.getElementById('user-overrides-container');
+  if (overridesContainer) overridesContainer.style.display = (user.customOverrides && Object.keys(user.customOverrides).length > 0) ? 'block' : 'none';
+
+  if (typeof renderPermissionsTreeUI === 'function') {
+    renderPermissionsTreeUI('user-overrides-tree', user.customOverrides || {});
+  }
+
+  openModal('modal-user');
+}
+
+function toggleUserOverridesTree() {
+  const container = document.getElementById('user-overrides-container');
+  if (!container) return;
+  if (container.style.display === 'none' || container.style.display === '') {
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+  }
+}
+
+function handleUserRoleChangeInModal(roleId) {
+  const roleObj = (state.roles || []).find(r => r.id === roleId);
+  if (roleObj && typeof renderPermissionsTreeUI === 'function') {
+    renderPermissionsTreeUI('user-overrides-tree', roleObj.permissions || {});
+  }
 }
 
 function deleteUser(id) {
@@ -4721,6 +4695,7 @@ function saveUserForm() {
   const username = document.getElementById('user-username').value.trim();
   const password = document.getElementById('user-password').value.trim();
   const role     = document.getElementById('user-role').value;
+  const status   = document.getElementById('user-status') ? document.getElementById('user-status').value : 'active';
 
   if (!name || !username) {
     alert('يرجى كتابة الاسم الكامل واسم المستخدم');
@@ -4742,6 +4717,13 @@ function saveUserForm() {
     return;
   }
 
+  // جمع الاستثناءات الفردية إن وجدت
+  let customOverrides = {};
+  const overridesContainer = document.getElementById('user-overrides-container');
+  if (overridesContainer && overridesContainer.style.display === 'block' && typeof collectPermissionsFromTree === 'function') {
+    customOverrides = collectPermissionsFromTree('user-overrides-tree');
+  }
+
   if (editingUserId) {
     // تعديل مستخدم الحالي
     const userIndex = state.users.findIndex(u => u.id === editingUserId);
@@ -4750,9 +4732,12 @@ function saveUserForm() {
       state.users[userIndex].username = username;
       state.users[userIndex].password = password;
       state.users[userIndex].role = role;
+      state.users[userIndex].status = status;
+      state.users[userIndex].customOverrides = customOverrides;
       state.users[userIndex].title = getRoleTitle(role);
       if (state.currentUser && (state.currentUser.id === editingUserId || state.currentUser.username === username)) {
         state.currentUser = { ...state.users[userIndex] };
+        if (typeof applyUIPermissions === 'function') applyUIPermissions(state.currentUser);
       }
       logAuditEvent('edit_user', { detail: `تعديل بيانات المستخدم: ${name}`, target: name });
       alert(`✅ تم تحديث بيانات وتعديل صلاحيات المستخدم (${name}) بنجاح!`);
@@ -4760,7 +4745,7 @@ function saveUserForm() {
   } else {
     // إضافة مستخدم جديد
     const newId = state.users.length > 0 ? Math.max(...state.users.map(u => u.id)) + 1 : 1;
-    state.users.push({ id: newId, username, password, name, role, title: getRoleTitle(role) });
+    state.users.push({ id: newId, username, password, name, role, status, customOverrides, title: getRoleTitle(role) });
     logAuditEvent('add_user', { detail: `إضافة مستخدم جديد: ${name}`, target: name, role });
     alert(`✅ تم إضافة المستخدم (${name}) بنجاح!`);
   }
@@ -4776,7 +4761,7 @@ function saveUserForm() {
 }
 
 function showLoginModal() {
-  document.getElementById('modal-login').classList.add('open');
+  openModal('modal-login');
 }
 
 function switchUser(role) {

@@ -1177,7 +1177,7 @@ body {
 
 .modal-backdrop.open,
 .modal-overlay.open {
-    display: flex;
+    display: flex !important;
 }
 
 .modal-dialog,

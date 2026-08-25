@@ -1,4 +1,102 @@
 // البيانات الأولية الافتراضية لنظام مفاضلة جامعة صنعاء
+const DEFAULT_ROLES = [
+  {
+    "id": "super_admin",
+    "name": "المدير الأعلى / رئيس اللجنة",
+    "description": "كامل الصلاحيات السيادية والإدارية 100% وإدارة المستخدمين والأدوار والأقفال.",
+    "isSystem": true,
+    "permissions": { "*": true }
+  },
+  {
+    "id": "data_entry",
+    "name": "مُدخل بيانات وسكرتارية",
+    "description": "إدخال وتعديل بيانات المتنافسين، استيراد وتصدير ملفات Excel، وطباعة بطاقات الإقرار.",
+    "isSystem": true,
+    "permissions": {
+      "screen:tab-home": true,
+      "screen:tab-candidates": true,
+      "action:cand-add": true,
+      "action:cand-edit": true,
+      "action:cand-details-modal": true,
+      "action:cand-import-excel": true,
+      "action:cand-export-excel": true,
+      "action:cand-print-pdf": true,
+      "action:cand-print-cards-draft": true,
+      "screen:tab-scoring": true,
+      "action:score-export-excel": true,
+      "screen:tab-report": true,
+      "action:rep-export-excel": true,
+      "screen:tab-criterion-report": true,
+      "action:crit-rep-export-excel": true,
+      "screen:tab-criteria-doc": true
+    }
+  },
+  {
+    "id": "auditor",
+    "name": "مراجع مطلع وتدقيق رقابي",
+    "description": "الاطلاع والمعاينة على كافة الكشوفات، إبداء ملاحظات التدقيق، وطباعة المسودات للتدقيق.",
+    "isSystem": true,
+    "permissions": {
+      "screen:tab-home": true,
+      "screen:tab-dashboard": true,
+      "action:dash-filter": true,
+      "action:dash-print-draft": true,
+      "screen:tab-candidates": true,
+      "action:cand-details-modal": true,
+      "action:cand-export-excel": true,
+      "action:cand-print-pdf": true,
+      "action:cand-print-cards-draft": true,
+      "screen:tab-scoring": true,
+      "action:score-print-draft": true,
+      "action:score-export-excel": true,
+      "action:score-add-annotation": true,
+      "screen:tab-report": true,
+      "action:rep-export-excel": true,
+      "action:rep-print-draft": true,
+      "screen:tab-criterion-report": true,
+      "action:crit-rep-export-excel": true,
+      "action:crit-rep-print-pdf": true,
+      "screen:tab-analytics": true,
+      "action:ana-subtab-strengths": true,
+      "action:ana-subtab-deficiencies": true,
+      "action:ana-subtab-specs": true,
+      "action:ana-subtab-charts": true,
+      "action:ana-export-excel": true,
+      "action:ana-print-pdf": true,
+      "screen:tab-criteria-doc": true,
+      "action:crit-doc-print-pdf": true
+    }
+  },
+  {
+    "id": "committee_member",
+    "name": "عضو لجنة المفاضلة (اطلاع ومعاينة)",
+    "description": "عرض النتائج، المصفوفة، المحضر، والتقارير دون إمكانية التعديل أو الحذف.",
+    "isSystem": true,
+    "permissions": {
+      "screen:tab-home": true,
+      "screen:tab-dashboard": true,
+      "action:dash-filter": true,
+      "action:dash-print-draft": true,
+      "screen:tab-candidates": true,
+      "action:cand-details-modal": true,
+      "action:cand-print-pdf": true,
+      "screen:tab-scoring": true,
+      "action:score-print-draft": true,
+      "screen:tab-minutes": true,
+      "action:min-print-draft": true,
+      "screen:tab-report": true,
+      "action:rep-print-draft": true,
+      "screen:tab-criterion-report": true,
+      "screen:tab-analytics": true,
+      "action:ana-subtab-strengths": true,
+      "action:ana-subtab-deficiencies": true,
+      "action:ana-subtab-specs": true,
+      "action:ana-subtab-charts": true,
+      "screen:tab-criteria-doc": true
+    }
+  }
+];
+
 const DEFAULT_USERS = [
   {
     "id": 1,
