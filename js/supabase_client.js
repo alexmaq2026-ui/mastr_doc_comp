@@ -152,7 +152,16 @@ async function syncCandidatesFromSupabase() {
             }
             const usersSetting = sData.find(s => s.key === 'global_users');
             if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value) && usersSetting.value.length > 0) {
-                state.users = usersSetting.value;
+                const remoteUsers = usersSetting.value;
+                const localUsers = state.users || [];
+                // دمج ذكي: الاحتفاظ بكلمات المرور المعدلة محلياً
+                state.users = remoteUsers.map(ru => {
+                    const localMatch = localUsers.find(lu => lu.id === ru.id || lu.username === ru.username);
+                    if (localMatch && localMatch.password) {
+                        return { ...ru, password: localMatch.password };
+                    }
+                    return ru;
+                });
             }
             const globalSetting = sData.find(s => s.key === 'global_settings');
             if (globalSetting && globalSetting.value) {

@@ -16,7 +16,9 @@ let state = {
   currentUser: null,
   settings: {},
   criteria: {},
-  candidates: []
+  candidates: [],
+  auditLog: [],
+  activeSessions: []
 };
 
 let editingUserId = null;
@@ -163,6 +165,11 @@ function initStore() {
       if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
         state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
       }
+      // ضمان وجود حقول سجل الرقابة عند تحميل الحالة القديمة
+      if (!state.auditLog)       state.auditLog = [];
+      if (!state.activeSessions) state.activeSessions = [];
+      if (state.auditLogEnabled === undefined) state.auditLogEnabled = true;
+
       if (!state.settings) {
         state.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
       } else {
@@ -196,6 +203,8 @@ function loadDefaults() {
     : [];
   state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
   state.currentUser = null; // البدء بشاشة تسجيل الدخول
+  if (!state.auditLog) state.auditLog = [];
+  if (!state.activeSessions) state.activeSessions = [];
   saveStore();
 }
 
@@ -240,6 +249,8 @@ function handleLoginSubmit(event) {
 
     if (foundUser) {
         state.currentUser = foundUser;
+        startSession(foundUser);
+        logAuditEvent('login', { detail: 'تسجيل دخول ناجح' });
         saveStore();
         if (errorMsg) errorMsg.style.display = 'none';
         updateAuthVisibility();
@@ -258,6 +269,8 @@ function quickLogin(username, password) {
     const foundUser = (state.users || []).find(u => u.username === username && u.password === password);
     if (foundUser) {
         state.currentUser = foundUser;
+        startSession(foundUser);
+        logAuditEvent('login', { detail: 'دخول سريع' });
         saveStore();
         updateAuthVisibility();
         renderUserBadge();
@@ -267,10 +280,13 @@ function quickLogin(username, password) {
 }
 
 function handleLogout() {
+    logAuditEvent('logout', { detail: 'تسجيل خروج' });
+    endSession();
     state.currentUser = null;
     saveStore();
     updateAuthVisibility();
 }
+
 
 // نظام شارات المستخدم والصلاحيات
 function renderUserBadge() {
@@ -296,8 +312,10 @@ function renderUserBadge() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
           <span style="font-weight:800;font-size:0.9rem;color:var(--text-main);">${state.currentUser.name}</span>
+          <span style="font-size:0.7rem;color:#94a3b8;">${state.currentUser.title || ''}</span>
         </div>
-        <div class="user-actions">
+        <div class="user-actions" style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-outline btn-xs" onclick="showChangePasswordModal()" title="تغيير كلمة المرور" style="padding:4px 10px;font-size:0.78rem;">⚙️ حسابي</button>
           <button class="btn btn-danger btn-xs" onclick="handleLogout()">تسجيل الخروج</button>
         </div>
       </div>
@@ -315,6 +333,7 @@ function toggleSystemEnabled() {
     ? 'هل تريد 🟢 فتح النظام للتعديل؟\nسيُسمح لجميع المستخدمين بإجراء التعديلات.'
     : 'هل تريد 🔴 تجميد النظام؟\nسيُمنع أي تعديل على البيانات أو الواجهات حتى تعيد الفتح.')) return;
   state.settings.systemEnabled = next;
+  logAuditEvent('system_toggle', { detail: next ? 'تم فتح النظام 🟢' : 'تم تجميد النظام 🔴' });
   saveStore();
   if (typeof syncSettingsToSupabase === 'function') syncSettingsToSupabase(state.settings);
   renderUserBadge();
@@ -387,6 +406,10 @@ function switchTab(tabId, label) {
   if (breadcrumb && label) breadcrumb.textContent = label;
   // أغلق كل القوائم المنسدلة
   document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
+  // إذا تم فتح تبويب الرقابة، يتم تحديث السجل فوراً
+  if (tabId === 'tab-auditlog' && typeof renderAuditLog === 'function') {
+    renderAuditLog();
+  }
 }
 
 // ربط أزرار التبويبات بالقوائم المنسدلة
@@ -405,12 +428,12 @@ function renderTabsByRole() {
 
   // تعريف التبويبات لكل دور
   const allTabs = ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                   'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'];
+                   'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog'];
 
   // الخريطة: ما يُظهر لكل دور
   const visibilityMap = {
     super_admin: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
-                  'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin'],
+                  'tab-btn-report','tab-btn-criterion-report','tab-btn-minutes','tab-btn-criteria-doc','tab-btn-analytics','tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog'],
     data_entry:  ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
     auditor:     ['tab-btn-candidates','tab-btn-analytics','tab-btn-criterion-report'],
     committee_member: ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring',
@@ -428,7 +451,7 @@ function renderTabsByRole() {
   const groups = {
     'navgroup-data':    ['tab-btn-dashboard','tab-btn-candidates','tab-btn-scoring','tab-btn-minutes'],
     'navgroup-reports': ['tab-btn-report','tab-btn-criterion-report','tab-btn-analytics','tab-btn-criteria-doc'],
-    'navgroup-admin':   ['tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin']
+    'navgroup-admin':   ['tab-btn-criteria','tab-btn-tiebreaker','tab-btn-admin','tab-btn-auditlog']
   };
   Object.entries(groups).forEach(([groupId, tabs]) => {
     const groupEl = document.getElementById(groupId);
@@ -4679,6 +4702,7 @@ function deleteUser(id) {
   if (!user) return;
 
   if (confirm(`هل أنت تأكد من رغبتك في حذف المستخدم (${user.name})؟`)) {
+    logAuditEvent('delete_user', { detail: `حذف المستخدم: ${user.name}`, target: user.name });
     state.users = state.users.filter(u => u.id !== id);
     saveStore();
     if (typeof syncUsersToSupabase === 'function') syncUsersToSupabase(state.users);
@@ -4725,12 +4749,14 @@ function saveUserForm() {
       if (state.currentUser && (state.currentUser.id === editingUserId || state.currentUser.username === username)) {
         state.currentUser = { ...state.users[userIndex] };
       }
+      logAuditEvent('edit_user', { detail: `تعديل بيانات المستخدم: ${name}`, target: name });
       alert(`✅ تم تحديث بيانات وتعديل صلاحيات المستخدم (${name}) بنجاح!`);
     }
   } else {
     // إضافة مستخدم جديد
     const newId = state.users.length > 0 ? Math.max(...state.users.map(u => u.id)) + 1 : 1;
     state.users.push({ id: newId, username, password, name, role, title: getRoleTitle(role) });
+    logAuditEvent('add_user', { detail: `إضافة مستخدم جديد: ${name}`, target: name, role });
     alert(`✅ تم إضافة المستخدم (${name}) بنجاح!`);
   }
 
@@ -6651,7 +6677,7 @@ function isInvalidGradeValue(grade) {
   if (g === '' || g === '-' || g === 'ــــــــــــ' || g === '0' || g === '0.00' || g === '0%' || g === 'غير محدد') return true;
   if (/\b(19\d\d|20\d\d)م?\b/.test(g)) return true;
   const norm = normalizeGradeText(g);
-  const validGrades = ['ممتاز', 'جيد جداً', 'جيد', 'مقبول', 'بدون'];
+  const validGrades = ['ممتاز', 'جيد جداً', 'جيد', 'مقبول'];
   if (!validGrades.includes(norm) && (isNaN(parseFloat(g)) || parseFloat(g) <= 0)) return true;
   return false;
 }
@@ -9337,3 +9363,586 @@ function resetTiebreakerToDefaults() {
   renderDashboard();
 }
 
+
+// ══════════════════════════════════════════════════════════════════════
+// ███████╗ █████╗ ██╗     ████████╗     ██╗      ██████╗  ██████╗
+// ██╔════╝██╔══██╗██║        ██╔══╝    ██║     ██╔═══██╗██╔════╝
+// ███████╗███████║██║        ██║       ██║     ██║   ██║██║  ███╗
+// ╚════██║██╔══██║██║        ██║       ██║     ██║   ██║██║   ██║
+// ███████║██║  ██║███████╗   ██║       ███████╗╚██████╔╝╚██████╔╝
+// ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝       ╚══════╝ ╚═════╝  ╚═════╝
+// سجل الرقابة والمراقبة — Audit Log Engine (Local Only)
+// ══════════════════════════════════════════════════════════════════════
+
+// ── دالة تسجيل الحدث المحورية ────────────────────────────────────────
+function logAuditEvent(action, details = {}) {
+  if (!state.currentUser && action !== 'login') return;
+  if (!state.auditLog) state.auditLog = [];
+  // إذا كان السجل مُعطَّلاً لا نُسجِّل — باستثناء أحداث الدخول/الخروج دائماً
+  if (state.auditLogEnabled === false && action !== 'login' && action !== 'logout') return;
+
+  const actionLabels = {
+    login:           'تسجيل دخول',
+    logout:          'تسجيل خروج',
+    add_candidate:   'إضافة مرشح',
+    edit_candidate:  'تعديل مرشح',
+    delete_candidate:'حذف مرشح',
+    add_user:        'إضافة مستخدم',
+    edit_user:       'تعديل مستخدم',
+    delete_user:     'حذف مستخدم',
+    change_password: 'تغيير كلمة المرور',
+    system_toggle:   'تشغيل/تجميد النظام',
+    settings_change: 'تغيير الإعدادات',
+    score_change:    'تغيير تقييم'
+  };
+
+  const user = state.currentUser || (action === 'login' ? details._user : null);
+  const entry = {
+    id:          'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+    userId:      user ? user.id : null,
+    userName:    user ? user.name : 'غير معروف',
+    userRole:    user ? user.role : '',
+    userTitle:   user ? (user.title || '') : '',
+    action:      action,
+    actionLabel: actionLabels[action] || action,
+    detail:      details.detail || '',
+    target:      details.target || '',
+    timestamp:   new Date().toISOString(),
+    sessionId:   state._currentSessionId || null
+  };
+
+  state.auditLog.unshift(entry); // إضافة في البداية (أحدث أولاً)
+
+  // الحد الأقصى: 1000 حدث لتجنب امتلاء localStorage
+  if (state.auditLog.length > 1000) {
+    state.auditLog = state.auditLog.slice(0, 1000);
+  }
+
+  saveStore();
+}
+
+// ── إدارة الجلسات ─────────────────────────────────────────────────────
+function startSession(user) {
+  if (!state.activeSessions) state.activeSessions = [];
+  const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+  state._currentSessionId = sessionId;
+  state.activeSessions.unshift({
+    sessionId:   sessionId,
+    userId:      user.id,
+    userName:    user.name,
+    userRole:    user.role,
+    loginTime:   new Date().toISOString(),
+    logoutTime:  null,
+    duration:    null,
+    actionsCount: 0
+  });
+  // الحد الأقصى: 200 جلسة
+  if (state.activeSessions.length > 200) {
+    state.activeSessions = state.activeSessions.slice(0, 200);
+  }
+}
+
+function endSession() {
+  if (!state._currentSessionId || !state.activeSessions) return;
+  const idx = state.activeSessions.findIndex(s => s.sessionId === state._currentSessionId);
+  if (idx !== -1) {
+    const loginTime = new Date(state.activeSessions[idx].loginTime);
+    const logoutTime = new Date();
+    const diffMs = logoutTime - loginTime;
+    const diffMins = Math.round(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins  = diffMins % 60;
+    state.activeSessions[idx].logoutTime = logoutTime.toISOString();
+    state.activeSessions[idx].duration   = hours > 0
+      ? `${hours} س ${mins} د`
+      : `${mins} دقيقة`;
+    // احسب عدد الأحداث في هذه الجلسة
+    const evtCount = (state.auditLog || []).filter(e => e.sessionId === state._currentSessionId && e.action !== 'logout').length;
+    state.activeSessions[idx].actionsCount = evtCount;
+  }
+  state._currentSessionId = null;
+}
+
+// ── عرض بطاقات الإحصاء ───────────────────────────────────────────────
+function renderAuditStats() {
+  const el = document.getElementById('audit-stats-row');
+  if (!el) return;
+
+  const log          = state.auditLog || [];
+  const sessions     = state.activeSessions || [];
+  const isEnabled    = state.auditLogEnabled !== false;
+  const totalSessions = sessions.length;
+
+  // مستخدمون دخلوا اليوم
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayUsers = new Set(
+    log.filter(e => e.action === 'login' && e.timestamp.startsWith(todayStr)).map(e => e.userId)
+  ).size;
+
+  // آخر دخول
+  const lastLogin = log.find(e => e.action === 'login');
+  const lastLoginTime = lastLogin
+    ? new Date(lastLogin.timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+  const lastLoginUser = lastLogin ? lastLogin.userName.split(' ')[0] + ' ' + (lastLogin.userName.split(' ')[1] || '') : '—';
+
+  const totalEvents = log.length;
+
+  // شريط الحالة + أزرار التحكم
+  const statusBar = `
+    <div style="grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+                background:${isEnabled ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)'};
+                border:1px solid ${isEnabled ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'};
+                border-radius:10px; padding:10px 16px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:12px;height:12px;border-radius:50%;background:${isEnabled ? '#10b981' : '#ef4444'};box-shadow:0 0 8px ${isEnabled ? '#10b981' : '#ef4444'};"></div>
+        <span style="font-weight:800; font-size:0.9rem; color:${isEnabled ? '#10b981' : '#ef4444'};">
+          سجل الرقابة: ${isEnabled ? '🟢 مُفعَّل — يُسجِّل جميع الأحداث' : '🔴 مُوقَف — لا يُسجِّل الأحداث'}
+        </span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button onclick="toggleAuditLog()" style="padding:6px 16px; border-radius:8px; border:none; cursor:pointer; font-weight:800; font-size:0.82rem;
+          background:${isEnabled ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'};
+          color:${isEnabled ? '#ef4444' : '#10b981'};
+          border:1px solid ${isEnabled ? 'rgba(239,68,68,0.4)' : 'rgba(16,185,129,0.4)'};">
+          ${isEnabled ? '🔴 إيقاف السجل' : '🟢 تفعيل السجل'}
+        </button>
+        <button onclick="exportAuditLogPDF()" style="padding:6px 16px; border-radius:8px; border:1px solid rgba(37,99,235,0.4); cursor:pointer; font-weight:800; font-size:0.82rem; background:rgba(37,99,235,0.12); color:#3b82f6;">
+          📄 تصدير PDF
+        </button>
+        <button onclick="exportAuditLogCSV()" style="padding:6px 16px; border-radius:8px; border:1px solid rgba(16,185,129,0.4); cursor:pointer; font-weight:800; font-size:0.82rem; background:rgba(16,185,129,0.1); color:#10b981;">
+          📥 تصدير CSV
+        </button>
+        <button onclick="clearAuditLog()" style="padding:6px 16px; border-radius:8px; border:1px solid rgba(239,68,68,0.4); cursor:pointer; font-weight:800; font-size:0.82rem; background:rgba(239,68,68,0.1); color:#ef4444;">
+          🗑️ مسح السجل
+        </button>
+      </div>
+    </div>`;
+
+  el.innerHTML = statusBar + `
+    <div style="background:linear-gradient(135deg,#1e3a5f,#1e293b);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:rgba(59,130,246,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🗂️</div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:900;color:#fff;">${totalSessions}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;font-weight:600;">إجمالي الجلسات</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#064e3b,#1e293b);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:rgba(16,185,129,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">👥</div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:900;color:#fff;">${todayUsers}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;font-weight:600;">مستخدمون نشطون اليوم</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#3b0764,#1e293b);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:rgba(139,92,246,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🕐</div>
+      <div>
+        <div style="font-size:1rem;font-weight:900;color:#fff;">${lastLoginTime}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;font-weight:600;">آخر دخول (${lastLoginUser})</div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#78350f,#1e293b);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:rgba(245,158,11,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📋</div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:900;color:#fff;">${totalEvents}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;font-weight:600;">إجمالي الأحداث</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── عرض جدول سجل الرقابة ─────────────────────────────────────────────
+function renderAuditLog() {
+  renderAuditStats();
+
+  const tbody = document.getElementById('audit-log-tbody');
+  if (!tbody) return;
+
+  // تحديث قائمة المستخدمين في الفلتر
+  const userFilter = document.getElementById('audit-filter-user');
+  if (userFilter && userFilter.options.length <= 1) {
+    const users = [...new Set((state.auditLog || []).map(e => e.userName))].filter(Boolean);
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u; opt.textContent = u;
+      userFilter.appendChild(opt);
+    });
+  }
+
+  // قراءة قيم الفلاتر
+  const filterDate   = (document.getElementById('audit-filter-date')   || {}).value || '';
+  const filterUser   = (document.getElementById('audit-filter-user')   || {}).value || '';
+  const filterAction = (document.getElementById('audit-filter-action') || {}).value || '';
+  const filterSearch = ((document.getElementById('audit-filter-search') || {}).value || '').toLowerCase().trim();
+
+  let log = state.auditLog || [];
+
+  if (filterDate)   log = log.filter(e => e.timestamp.startsWith(filterDate));
+  if (filterUser)   log = log.filter(e => e.userName === filterUser);
+  if (filterAction) log = log.filter(e => e.action === filterAction);
+  if (filterSearch) log = log.filter(e =>
+    (e.userName   || '').toLowerCase().includes(filterSearch) ||
+    (e.actionLabel|| '').toLowerCase().includes(filterSearch) ||
+    (e.detail     || '').toLowerCase().includes(filterSearch) ||
+    (e.target     || '').toLowerCase().includes(filterSearch)
+  );
+
+  // تحديث العداد
+  const badge = document.getElementById('audit-count-badge');
+  if (badge) badge.textContent = `إجمالي السجلات: ${(state.auditLog||[]).length} | معروض: ${log.length}`;
+
+  if (log.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">لا توجد سجلات مطابقة للفلاتر المحددة</td></tr>`;
+    return;
+  }
+
+  const actionColors = {
+    login:           '#10b981',
+    logout:          '#6b7280',
+    add_candidate:   '#3b82f6',
+    edit_candidate:  '#8b5cf6',
+    delete_candidate:'#ef4444',
+    add_user:        '#06b6d4',
+    edit_user:       '#f59e0b',
+    delete_user:     '#ef4444',
+    change_password: '#ec4899',
+    system_toggle:   '#f97316',
+    settings_change: '#84cc16',
+    score_change:    '#a78bfa'
+  };
+
+  const roleLabels = {
+    super_admin:      'مدير أعلى',
+    admin:            'مدير',
+    data_entry:       'مدخل بيانات',
+    auditor:          'مراجع',
+    committee_member: 'عضو لجنة'
+  };
+
+  tbody.innerHTML = log.map((e, idx) => {
+    const dt = new Date(e.timestamp);
+    const timeStr = dt.toLocaleString('ar-SA', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const color = actionColors[e.action] || '#94a3b8';
+    const isActive = e.action === 'login' && !log.find(x => x.sessionId === e.sessionId && x.action === 'logout');
+    const statusBadge = e.action === 'login'
+      ? (isActive
+          ? `<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">🟢 نشط</span>`
+          : `<span style="background:rgba(107,114,128,0.15);color:#9ca3af;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">انتهت الجلسة</span>`)
+      : `<span style="background:rgba(148,163,184,0.1);color:#94a3b8;padding:3px 10px;border-radius:20px;font-size:0.75rem;">—</span>`;
+
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);${idx%2===0?'background:rgba(255,255,255,0.02)':''}">
+      <td style="padding:10px 12px;color:var(--text-muted);font-size:0.8rem;">${idx+1}</td>
+      <td style="padding:10px 12px;font-weight:700;">${e.userName}</td>
+      <td style="padding:10px 12px;font-size:0.8rem;color:#94a3b8;">${roleLabels[e.userRole] || e.userRole}</td>
+      <td style="padding:10px 12px;">
+        <span style="background:${color}22;color:${color};padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">${e.actionLabel}</span>
+      </td>
+      <td style="padding:10px 12px;font-size:0.8rem;color:var(--text-muted);">${e.detail || e.target || '—'}</td>
+      <td style="padding:10px 12px;font-size:0.78rem;color:#94a3b8;white-space:nowrap;">${timeStr}</td>
+      <td style="padding:10px 12px;">${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function clearAuditFilters() {
+  const d = document.getElementById('audit-filter-date');
+  const u = document.getElementById('audit-filter-user');
+  const a = document.getElementById('audit-filter-action');
+  const s = document.getElementById('audit-filter-search');
+  if (d) d.value = '';
+  if (u) u.value = '';
+  if (a) a.value = '';
+  if (s) s.value = '';
+  renderAuditLog();
+}
+
+// ── تصدير السجل CSV ───────────────────────────────────────────────────
+function exportAuditLogCSV() {
+  const log = state.auditLog || [];
+  if (log.length === 0) { alert('لا توجد سجلات للتصدير'); return; }
+
+  const headers = ['#','المستخدم','الدور','الحدث','التفاصيل','وقت الحدث'];
+  const rows = log.map((e, i) => [
+    i + 1,
+    e.userName,
+    e.userRole,
+    e.actionLabel,
+    (e.detail || e.target || '').replace(/,/g, '؛'),
+    new Date(e.timestamp).toLocaleString('ar-SA')
+  ]);
+
+  const csvContent = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `سجل_الرقابة_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── مسح السجل (super_admin فقط) ──────────────────────────────────────
+// ── تبديل تفعيل/إيقاف سجل الرقابة ──────────────────────────────────
+function toggleAuditLog() {
+  if (!state.currentUser || state.currentUser.role !== 'super_admin') {
+    alert('هذه العملية متاحة للمدير الأعلى فقط');
+    return;
+  }
+  state.auditLogEnabled = (state.auditLogEnabled !== false) ? false : true;
+  saveStore();
+  renderAuditLog();
+  const msg = state.auditLogEnabled
+    ? '🟢 تم تفعيل سجل الرقابة — يُسجَّل الآن جميع الأحداث'
+    : '🔴 تم إيقاف سجل الرقابة — لن تُسجَّل الأحداث (ما عدا الدخول والخروج)';
+  if (typeof showToast === 'function') showToast(msg, state.auditLogEnabled ? 'success' : 'error');
+}
+
+// ── مسح سجل الرقابة (super_admin فقط) ──────────────────────────────
+function clearAuditLog() {
+  if (!state.currentUser || state.currentUser.role !== 'super_admin') {
+    alert('هذه العملية متاحة للمدير الأعلى فقط');
+    return;
+  }
+  if (!confirm('⚠️ هل أنت متأكد من رغبتك في مسح سجل الرقابة كاملاً؟\nلا يمكن التراجع عن هذه العملية!')) return;
+  state.auditLog = [];
+  state.activeSessions = [];
+  saveStore();
+  renderAuditLog();
+  if (typeof showToast === 'function') showToast('🗑️ تم مسح سجل الرقابة بنجاح', 'success');
+}
+
+// ── تصدير السجل PDF عبر طباعة المتصفح ───────────────────────────────
+function exportAuditLogPDF() {
+  const log = state.auditLog || [];
+  if (log.length === 0) { alert('لا توجد سجلات للتصدير'); return; }
+
+  const actionColors = {
+    login:'#10b981', logout:'#6b7280', add_candidate:'#3b82f6', edit_candidate:'#8b5cf6',
+    delete_candidate:'#ef4444', add_user:'#06b6d4', edit_user:'#f59e0b',
+    delete_user:'#ef4444', change_password:'#ec4899', system_toggle:'#f97316',
+    settings_change:'#84cc16', score_change:'#a78bfa'
+  };
+  const roleLabels = {
+    super_admin:'مدير أعلى', admin:'مدير', data_entry:'مدخل بيانات',
+    auditor:'مراجع', committee_member:'عضو لجنة'
+  };
+
+  const rows = log.map((e, i) => {
+    const color = actionColors[e.action] || '#94a3b8';
+    const dt = new Date(e.timestamp).toLocaleString('ar-SA', {
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit'
+    });
+    return `<tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:6px 8px;color:#6b7280;font-size:0.8rem;">${i+1}</td>
+      <td style="padding:6px 8px;font-weight:700;">${e.userName}</td>
+      <td style="padding:6px 8px;color:#6b7280;font-size:0.8rem;">${roleLabels[e.userRole]||e.userRole}</td>
+      <td style="padding:6px 8px;"><span style="background:${color}22;color:${color};padding:2px 8px;border-radius:12px;font-size:0.76rem;font-weight:700;">${e.actionLabel}</span></td>
+      <td style="padding:6px 8px;font-size:0.8rem;color:#475569;">${e.detail||e.target||'—'}</td>
+      <td style="padding:6px 8px;font-size:0.78rem;color:#6b7280;white-space:nowrap;">${dt}</td>
+    </tr>`;
+  }).join('');
+
+  const now = new Date().toLocaleString('ar-SA', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>سجل الرقابة والمراقبة</title>
+  <style>
+    @page { size: A4 landscape; margin: 15mm; }
+    body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #1e293b; direction: rtl; }
+    .header { text-align:center; border-bottom: 2px solid #2563eb; margin-bottom: 16px; padding-bottom: 12px; }
+    .header h1 { color: #1e40af; font-size: 1.2rem; margin: 4px 0; }
+    .header p  { color: #64748b; font-size: 0.8rem; margin: 2px 0; }
+    .stats { display:flex; gap: 16px; margin-bottom: 14px; justify-content: center; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; text-align:center; }
+    .stat-box strong { display:block; font-size:1.3rem; color:#1e40af; }
+    .stat-box span   { font-size:0.75rem; color:#64748b; }
+    table { width:100%; border-collapse:collapse; font-size: 0.82rem; }
+    thead tr { background: #1e40af; color: white; }
+    thead th { padding: 8px 10px; text-align:right; font-weight:700; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .footer { margin-top: 16px; text-align:center; color:#94a3b8; font-size:0.72rem; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ سجل الرقابة والمراقبة</h1>
+    <p>نظام المفاضلة والتنافس الإلكتروني للكادر الإداري — جامعة صنعاء</p>
+    <p>تاريخ التصدير: ${now}</p>
+  </div>
+  <div class="stats">
+    <div class="stat-box"><strong>${(state.activeSessions||[]).length}</strong><span>إجمالي الجلسات</span></div>
+    <div class="stat-box"><strong>${log.length}</strong><span>إجمالي الأحداث</span></div>
+    <div class="stat-box"><strong>${new Set(log.map(e=>e.userId)).size}</strong><span>عدد المستخدمين</span></div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>المستخدم</th><th>الدور</th><th>الحدث</th><th>التفاصيل</th><th>وقت الحدث</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="footer">إجمالي السجلات: ${log.length} — ماقتك للحلول البرمجية (MAQATECH) © 2026</div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=1100,height=750');
+  if (!win) { alert('يرجى السماح للنوافذ المنبثقة في المتصفح لتصدير PDF'); return; }
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ██████╗  █████╗ ███████╗███████╗██╗    ██╗ ██████╗ ██████╗ ██████╗
+// ██╔══██╗██╔══██╗██╔════╝██╔════╝██║    ██║██╔═══██╗██╔══██╗██╔══██╗
+// ██████╔╝███████║███████╗███████╗██║ █╗ ██║██║   ██║██████╔╝██║  ██║
+// ██╔═══╝ ██╔══██║╚════██║╚════██║██║███╗██║██║   ██║██╔══██╗██║  ██║
+// ██║     ██║  ██║███████║███████║╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝
+// ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝ ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝
+// تغيير كلمة المرور الذاتي — Self-Service Password Change (Local Only)
+// ══════════════════════════════════════════════════════════════════════
+
+function showChangePasswordModal() {
+  if (!state.currentUser) return;
+  const modal   = document.getElementById('modal-change-password');
+  if (!modal) return;
+
+  // إعادة ضبط الحقول
+  const cpCurrent = document.getElementById('cp-current');
+  const cpNew     = document.getElementById('cp-new');
+  const cpConfirm = document.getElementById('cp-confirm');
+  const cpError   = document.getElementById('cp-error-msg');
+  const bar       = document.getElementById('pw-strength-bar');
+  const label     = document.getElementById('pw-strength-label');
+  if (cpCurrent) { cpCurrent.value = ''; cpCurrent.type = 'password'; }
+  if (cpNew)     { cpNew.value = '';     cpNew.type = 'password'; }
+  if (cpConfirm) { cpConfirm.value = ''; cpConfirm.type = 'password'; }
+  // إعادة أيقونات العين
+  const e1 = document.getElementById('cp-eye-current');
+  const e2 = document.getElementById('cp-eye-new');
+  const e3 = document.getElementById('cp-eye-confirm');
+  if (e1) e1.textContent = '👁'; if (e2) e2.textContent = '👁'; if (e3) e3.textContent = '👁';
+  if (cpError) { cpError.style.display = 'none'; cpError.textContent = ''; }
+  if (bar)     { bar.style.width = '0%'; bar.style.background = '#e2e8f0'; }
+  if (label)   { label.textContent = ''; }
+
+  openModal('modal-change-password');
+}
+
+function togglePwVisibility(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (btn) btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    if (btn) btn.textContent = '👁';
+  }
+}
+
+function checkPasswordStrength(pw) {
+  if (!pw || pw.length < 4) return { score: 0, label: 'ضعيفة جداً', color: '#ef4444', width: '15%' };
+  let score = 0;
+  if (pw.length >= 6)  score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw) || /[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (score <= 1) return { score, label: 'ضعيفة',   color: '#ef4444', width: '25%' };
+  if (score <= 2) return { score, label: 'متوسطة',  color: '#f59e0b', width: '55%' };
+  if (score <= 3) return { score, label: 'جيدة',    color: '#10b981', width: '75%' };
+  return              { score, label: 'قوية جداً', color: '#3b82f6', width: '100%' };
+}
+
+function updatePasswordStrengthBar() {
+  const pw    = (document.getElementById('cp-new') || {}).value || '';
+  const bar   = document.getElementById('pw-strength-bar');
+  const label = document.getElementById('pw-strength-label');
+  if (!bar || !label) return;
+  if (!pw) {
+    bar.style.width = '0%'; bar.style.background = '';
+    label.textContent = ''; return;
+  }
+  const result = checkPasswordStrength(pw);
+  bar.style.width      = result.width;
+  bar.style.background = result.color;
+  label.style.color    = result.color;
+  label.textContent    = `قوة كلمة المرور: ${result.label}`;
+}
+
+function handleChangePassword() {
+  if (!state.currentUser) return;
+
+  const currentPw = (document.getElementById('cp-current') || {}).value || '';
+  const newPw     = (document.getElementById('cp-new')     || {}).value || '';
+  const confirmPw = (document.getElementById('cp-confirm') || {}).value || '';
+  const errorEl   = document.getElementById('cp-error-msg');
+
+  const showError = (msg) => {
+    if (errorEl) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+  };
+  if (errorEl) errorEl.style.display = 'none';
+
+  // 1. التحقق من كلمة المرور الحالية
+  if (!currentPw) { showError('❌ يرجى إدخال كلمة مرورك الحالية'); return; }
+  const userInState = state.users.find(u => u.id === state.currentUser.id);
+  if (!userInState || userInState.password !== currentPw) {
+    showError('❌ كلمة المرور الحالية غير صحيحة'); return;
+  }
+
+  // 2. التحقق من كلمة المرور الجديدة
+  if (!newPw) { showError('❌ يرجى إدخال كلمة المرور الجديدة'); return; }
+  if (newPw.length < 6) { showError('❌ كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'); return; }
+  if (newPw === currentPw) { showError('❌ كلمة المرور الجديدة يجب أن تختلف عن الحالية'); return; }
+
+  // 3. تطابق التأكيد
+  if (newPw !== confirmPw) { showError('❌ كلمة المرور الجديدة وتأكيدها غير متطابقتين'); return; }
+
+  // ✅ حفظ كلمة المرور الجديدة في LocalStorage فقط — الحفظ يتم أولاً
+  const userIndex = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (userIndex === -1) { showError('❌ خطأ داخلي: لم يُعثر على حسابك'); return; }
+
+  state.users[userIndex].password = newPw;
+  // تحديث currentUser بنسخة جديدة من المستخدم بكلمة المرور الجديدة
+  state.currentUser = JSON.parse(JSON.stringify(state.users[userIndex]));
+
+  // الحفظ الفوري قبل أي شيء آخر
+  try {
+    localStorage.setItem('sanaa_univ_competition_state', JSON.stringify(state));
+  } catch (e) {
+    console.error('خطأ في حفظ كلمة المرور:', e);
+  }
+
+  // تسجيل الحدث (يستدعي saveStore داخلياً أيضاً)
+  logAuditEvent('change_password', { detail: 'تغيير كلمة المرور بنجاح' });
+
+  // إغلاق النافذة
+  closeModal('modal-change-password');
+
+  if (typeof showToast === 'function') {
+    showToast('✅ تم تغيير كلمة المرور بنجاح — ستُطبَّق عند تسجيل الدخول القادم', 'success');
+  } else {
+    alert('✅ تم تغيير كلمة المرور بنجاح!');
+  }
+}
+
+// ── تعديل refreshAllViews لإعادة رسم لوحة الرقابة عند فتحها ──────────
+const _origRefreshAllViews = typeof refreshAllViews === 'function' ? refreshAllViews : null;
+// يتم استدعاء renderAuditLog عند التبويب عبر initDropdownNav (data-tab)
+// ونضيف هنا ربط الحدث عند النقر على تبويب الرقابة
+document.addEventListener('DOMContentLoaded', () => {
+  const auditBtn = document.getElementById('tab-btn-auditlog');
+  if (auditBtn) {
+    auditBtn.addEventListener('click', () => {
+      setTimeout(() => { renderAuditLog(); }, 50);
+    });
+  }
+});

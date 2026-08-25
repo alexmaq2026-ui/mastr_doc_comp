@@ -120,7 +120,9 @@
         <button class="tab-btn" id="tab-btn-criteria" data-tab="tab-criteria">تهيئة المعايير والأوزان</button>
         <button class="tab-btn" id="tab-btn-tiebreaker" data-tab="tab-tiebreaker">⚖️ كسر التعادل</button>
         <button class="tab-btn" id="tab-btn-admin" data-tab="tab-admin">إدارة النظام والصلاحيات</button>
+        <button class="tab-btn" id="tab-btn-auditlog" data-tab="tab-auditlog">🛡️ سجل الرقابة</button>
       </div>
+
     </div>
 
     <!-- مؤشر الشاشة الحالية -->
@@ -1219,6 +1221,126 @@
 
   <!-- حاوية الطباعة الرسمية لإفادة كسر التعادل (A4 Single Page Certificate) -->
   <div id="tie-breaker-print-certificate" style="display: none;"></div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- شاشة سجل الرقابة والمراقبة (super_admin فقط)                  -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-auditlog">
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+        <span style="font-size:1.5rem;">🛡️</span>
+        <div>
+          <h2 class="card-title" style="margin:0; color:#2dd4bf;">سجل الرقابة والمراقبة</h2>
+          <p style="margin:0; font-size:0.82rem; color:var(--text-muted);">نظام المفاضلة والتنافس الإلكتروني للكادر الإداري — جامعة صنعاء</p>
+        </div>
+      </div>
+
+      <!-- بطاقات الإحصاء الأربع -->
+      <div id="audit-stats-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:18px 0;"></div>
+
+      <!-- شريط الفلترة -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; padding:12px; background:var(--card-bg); border-radius:10px; border:1px solid var(--border);">
+        <input type="date" id="audit-filter-date" class="form-control" style="width:160px;" oninput="renderAuditLog()">
+        <select id="audit-filter-user" class="form-control" style="width:180px;" onchange="renderAuditLog()">
+          <option value="">👤 جميع المستخدمين</option>
+        </select>
+        <select id="audit-filter-action" class="form-control" style="width:170px;" onchange="renderAuditLog()">
+          <option value="">📋 جميع الأحداث</option>
+          <option value="login">تسجيل دخول</option>
+          <option value="logout">تسجيل خروج</option>
+          <option value="add_candidate">إضافة مرشح</option>
+          <option value="edit_candidate">تعديل مرشح</option>
+          <option value="delete_candidate">حذف مرشح</option>
+          <option value="add_user">إضافة مستخدم</option>
+          <option value="edit_user">تعديل مستخدم</option>
+          <option value="delete_user">حذف مستخدم</option>
+          <option value="change_password">تغيير كلمة المرور</option>
+          <option value="system_toggle">تشغيل/تجميد النظام</option>
+          <option value="settings_change">تغيير الإعدادات</option>
+        </select>
+        <input type="text" id="audit-filter-search" class="form-control" placeholder="🔍 بحث..." style="flex:1; min-width:140px;" oninput="renderAuditLog()">
+        <button class="btn btn-outline btn-sm" onclick="clearAuditFilters()">مسح الفلاتر</button>
+      </div>
+
+      <!-- جدول السجل -->
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:var(--primary); color:#fff;">
+              <th style="padding:10px 12px; text-align:right;">#</th>
+              <th style="padding:10px 12px; text-align:right;">المستخدم</th>
+              <th style="padding:10px 12px; text-align:right;">الدور</th>
+              <th style="padding:10px 12px; text-align:right;">الحدث</th>
+              <th style="padding:10px 12px; text-align:right;">التفاصيل</th>
+              <th style="padding:10px 12px; text-align:right;">وقت الحدث</th>
+              <th style="padding:10px 12px; text-align:right;">الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="audit-log-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- أزرار التحكم -->
+      <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="exportAuditLogPDF()">📄 تصدير تقرير PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="exportAuditLogCSV()">📥 تصدير CSV</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ مسح السجل كاملاً</button>
+        <span id="audit-count-badge" style="font-size:0.8rem; color:var(--text-muted); align-self:center;"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- نافذة تغيير كلمة المرور الذاتي                               -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modal-change-password">
+    <div class="modal-dialog" style="max-width:440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 تغيير كلمة المرور</h3>
+        <button class="close-btn" onclick="closeModal('modal-change-password')">&times;</button>
+      </div>
+      <div style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <!-- كلمة المرور الحالية -->
+        <div class="form-group" style="margin:0;">
+          <label style="font-weight:700; font-size:0.88rem;">كلمة المرور الحالية</label>
+          <div style="position:relative;">
+            <input type="password" id="cp-current" class="form-control" placeholder="أدخل كلمة مرورك الحالية" style="padding-left:40px;">
+            <button type="button" onclick="togglePwVisibility('cp-current','cp-eye-current')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;" id="cp-eye-current">👁</button>
+          </div>
+        </div>
+        <!-- كلمة المرور الجديدة -->
+        <div class="form-group" style="margin:0;">
+          <label style="font-weight:700; font-size:0.88rem;">كلمة المرور الجديدة</label>
+          <div style="position:relative;">
+            <input type="password" id="cp-new" class="form-control" placeholder="6 أحرف على الأقل" style="padding-left:40px;" oninput="updatePasswordStrengthBar()">
+            <button type="button" onclick="togglePwVisibility('cp-new','cp-eye-new')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;" id="cp-eye-new">👁</button>
+          </div>
+          <!-- شريط القوة -->
+          <div style="margin-top:6px;">
+            <div style="height:5px; background:#e2e8f0; border-radius:10px; overflow:hidden;">
+              <div id="pw-strength-bar" style="height:100%; width:0%; border-radius:10px; transition:width 0.3s, background 0.3s;"></div>
+            </div>
+            <span id="pw-strength-label" style="font-size:0.72rem; color:var(--text-muted);"></span>
+          </div>
+        </div>
+        <!-- تأكيد كلمة المرور -->
+        <div class="form-group" style="margin:0;">
+          <label style="font-weight:700; font-size:0.88rem;">تأكيد كلمة المرور الجديدة</label>
+          <div style="position:relative;">
+            <input type="password" id="cp-confirm" class="form-control" placeholder="أعد كتابة كلمة المرور الجديدة" style="padding-left:40px;">
+            <button type="button" onclick="togglePwVisibility('cp-confirm','cp-eye-confirm')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;" id="cp-eye-confirm">👁</button>
+          </div>
+        </div>
+        <!-- رسالة الخطأ -->
+        <div id="cp-error-msg" style="display:none; color:#ef4444; font-size:0.84rem; font-weight:600; padding:8px 12px; background:rgba(239,68,68,0.1); border-radius:6px; border-right:3px solid #ef4444;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-change-password')">إلغاء</button>
+        <button class="btn btn-primary" onclick="handleChangePassword()">💾 حفظ التغيير</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- المحركات والسكربتات -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

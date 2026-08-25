@@ -3558,3 +3558,79 @@ body.is-winners-list-print #winners-print-area {
     }
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   🛡️ سجل الرقابة والمراقبة — Audit Log Styles
+   ══════════════════════════════════════════════════════════════════ */
+
+#tab-auditlog .card {
+  border: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+#audit-stats-row > div {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#audit-stats-row > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+#audit-log-tbody tr {
+  transition: background 0.15s;
+}
+#audit-log-tbody tr:hover {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   🔐 نافذة تغيير كلمة المرور — Password Change Modal Styles
+   ══════════════════════════════════════════════════════════════════ */
+
+#modal-change-password .modal-dialog {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+#modal-change-password .modal-header {
+  background: linear-gradient(135deg, rgba(30, 58, 95, 0.8), rgba(15, 23, 42, 0.95));
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+#modal-change-password .modal-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #93c5fd;
+}
+
+#cp-current, #cp-new, #cp-confirm {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#cp-current:focus, #cp-new:focus, #cp-confirm:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+#pw-strength-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.35s ease;
+}
+
+#pw-strength-label {
+  display: block;
+  margin-top: 3px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  transition: color 0.3s;
+}
+
+#cp-error-msg {
+  animation: fadeInError 0.25s ease;
+}
+
+@keyframes fadeInError {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
