@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>وثيقة التحديثات الرئيسية — 25 أغسطس 2026</title>
+<style>
+  @page { size: A4; margin: 12mm 14mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Arial', sans-serif; background: #ffffff; color: #0f172a; direction: rtl; font-size: 13px; line-height: 1.6; }
+
+  /* Header */
+  .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 16px; position: relative; }
+  .univ-title { font-size: 16px; font-weight: 900; color: #1e3a8a; }
+  .system-title { font-size: 12px; color: #475569; font-weight: 700; margin-top: 2px; }
+  .doc-badge-wrap { margin-top: 10px; }
+  .doc-badge { background: linear-gradient(135deg, #1e3a8a, #0d9488); color: #ffffff; padding: 8px 28px; border-radius: 8px; font-size: 15px; font-weight: 900; display: inline-block; box-shadow: 0 4px 10px rgba(30,58,138,0.25); }
+  .date-badge { display: inline-block; margin-top: 8px; background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; padding: 4px 18px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+  .company-tag { font-size: 10.5px; color: #64748b; margin-top: 4px; font-weight: 700; }
+
+  /* Summary Card */
+  .summary-banner { background: #f8fafc; border: 1.5px solid #cbd5e1; border-right: 5px solid #2563eb; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 12px; color: #334155; font-weight: 600; }
+
+  /* Grid of Headlines */
+  .headlines-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  
+  .headline-card { background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; page-break-inside: avoid; }
+  .headline-header { padding: 8px 12px; color: #ffffff; font-weight: 800; font-size: 12.5px; display: flex; align-items: center; justify-content: space-between; }
+  
+  .header-blue   { background: linear-gradient(135deg, #1e3a8a, #2563eb); }
+  .header-teal   { background: linear-gradient(135deg, #0f766e, #0d9488); }
+  .header-purple { background: linear-gradient(135deg, #581c87, #7c3aed); }
+  .header-amber  { background: linear-gradient(135deg, #b45309, #d97706); }
+  .header-emerald{ background: linear-gradient(135deg, #065f46, #059669); }
+  .header-slate  { background: linear-gradient(135deg, #334155, #475569); }
+
+  .headline-body { padding: 10px 14px; }
+  .headline-list { list-style: none; margin: 0; padding: 0; }
+  .headline-list li { font-size: 12px; font-weight: 700; color: #1e293b; padding: 5px 18px 5px 0; position: relative; border-bottom: 1px dashed #f1f5f9; }
+  .headline-list li:last-child { border-bottom: none; }
+  .headline-list li::before { content: '✔'; position: absolute; right: 0; color: #10b981; font-weight: 900; font-size: 11px; top: 5px; }
+
+  /* Footer */
+  .footer { margin-top: 20px; border-top: 2px solid #e2e8f0; padding-top: 14px; text-align: center; page-break-inside: avoid; }
+  .sig-row { display: flex; justify-content: space-around; margin: 15px 0 10px 0; }
+  .sig-box { text-align: center; width: 180px; }
+  .sig-line { border-bottom: 1.5px solid #94a3b8; margin-bottom: 6px; height: 26px; }
+  .sig-name { font-size: 11px; font-weight: 800; color: #1e293b; }
+  .sig-role { font-size: 10px; color: #64748b; font-weight: 600; }
+  .footer-meta { font-size: 10px; color: #94a3b8; margin-top: 10px; }
+
+  /* Print button for manual browser preview */
+  .print-btn { position: fixed; top: 15px; left: 15px; background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 800; cursor: pointer; z-index: 100; }
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+
+<div class="header">
+  <div class="univ-title">جامعـة صنعـاء — مجلـس الجامعـة</div>
+  <div class="system-title">نظام المفاضلة والتنافس الإلكتروني للكادر الإداري (ماجستير ودكتوراه)</div>
+  <div class="doc-badge-wrap">
+    <div class="doc-badge">📋 وثيقة التحديثات والتطويرات الرئيسية للمنظومة</div>
+  </div>
+  <div class="company-tag">تطوير وتنفيذ: ماقتك للحلول البرمجية (MAQATECH) © 2026</div>
+  <div><span class="date-badge">📅 تاريخ التحديث: الثلاثاء — 25 أغسطس 2026 م</span></div>
+</div>
+
+<div class="summary-banner">
+  📌 <strong>إيجاز عام:</strong> وثيقة حصرية تتضمن العناوين الرئيسية للتحديثات البرمجية والهيكلية المنفذة على المنظومة بتاريخ اليوم (25-08-2026) لتوثيق التحسينات وإقرار الجاهزية التشغيلية.
+</div>
+
+<div class="headlines-grid">
+
+  <!-- المحور 1 -->
+  <div class="headline-card">
+    <div class="headline-header header-blue">
+      <span>💡 1. نظام المساعد الذكي ودليل الاستخدام الشامل</span>
+      <span>جديد ✨</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>إضافة زر المساعد التفاعلي في شريط التنقل العلوي (Navbar).</li>
+        <li>إضافة زر المساعد العائم السريع (Floating FAB) لسهولة الوصول.</li>
+        <li>دعم اختصارات لوحة المفاتيح الفورية (F1 للفتح و Escape للإغلاق).</li>
+        <li>تضمين محرك البحث الفوري الحي (Live Search) للمحتوى.</li>
+        <li>تفعيل المساعد السياقي الذكي المرتبط بالشاشة الحالية.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- المحور 2 -->
+  <div class="headline-card">
+    <div class="headline-header header-teal">
+      <span>✨ 2. محرك الجولة التفاعلية الحية (Spotlight Tour)</span>
+      <span>مطور 🚀</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>تعتيم الشاشة وتركيز الضوء التفاعلي (Spotlight) على العناصر الفعلية.</li>
+        <li>بطاقات إرشادية توضيحية متحركة مع أزرار التنقل (التالي / السابق).</li>
+        <li>إطلاق الجولة الشاملة لكافة أقسام النظام بضغطة زر واحدة.</li>
+        <li>إتاحة جولات توجيهية مستقلة ومخصصة لكل شاشة على حدة.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- المحور 3 -->
+  <div class="headline-card">
+    <div class="headline-header header-purple">
+      <span>🔘 3. قاموس وشرح كافة أزرار وعمليات النظام</span>
+      <span>شامل 📖</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>حصر وتوثيق كافة أزرار الشاشات الـ 13 بدون استثناء.</li>
+        <li>توضيح وظيفة كل زر والنتيجة والأثر المترتب على الضغط عليه.</li>
+        <li>تحديد شارات الصلاحيات المسموحة لكل زر وإجراء.</li>
+        <li>جدول بصري منظم يدعم التصفية والبحث المباشر.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- المحور 4 -->
+  <div class="headline-card">
+    <div class="headline-header header-amber">
+      <span>🔍 4. وضع استكشاف الأزرار المباشر (Inspect Mode)</span>
+      <span>تفاعلي ⚡</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>تفعيل وضع فحص الأزرار بمؤشر الفأرة داخل أي شاشة.</li>
+        <li>ظهور بطاقات شرح عائمة فورية بمجرد الإشارة إلى أي زر.</li>
+        <li>شريط تحكم علوي مرن لتشغيل وإيقاف وضع الاستكشاف بسهولة.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- المحور 5 -->
+  <div class="headline-card">
+    <div class="headline-header header-emerald">
+      <span>🎯 5. أدلة سيناريوهات العمل التنفيذية (Workflows)</span>
+      <span>إرشادي 📋</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>دليل دورة المفاضلة الكاملة خطوة بخطوة حتى الاعتماد النهائي.</li>
+        <li>دليل استيراد ملفات Excel وتدقيق النواقص وسلامة البيانات.</li>
+        <li>دليل تطبيق تراتبية وقواعد كسر التعادل الآلي.</li>
+        <li>دليل الاعتماد وتأمين الجلسة وتشفير المحضر وسجل الرقابة.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- المحور 6 -->
+  <div class="headline-card">
+    <div class="headline-header header-slate">
+      <span>🛡️ 6. الرقابة والأمان والمزامنة السحابية و GitHub</span>
+      <span>معتمد 🔒</span>
+    </div>
+    <div class="headline-body">
+      <ul class="headline-list">
+        <li>توثيق معايير المفاضلة الأربعة وتراتبية كسر التعادل الإلزامية.</li>
+        <li>دعم تصدير وطباعة دليل الاستخدام الرسمي كملف PDF موثق.</li>
+        <li>المزامنة السحابية اللحظية لسجل الرقابة مع خوادم Supabase.</li>
+        <li>الرفع والأرشفة والاعتماد الكامل للكود على مستودع GitHub.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div class="sig-row">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-name">فريق التطوير والبرمجة</div>
+      <div class="sig-role">ماقتك للحلول البرمجية MAQATECH</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-name">لجنة المفاضلة الإدارية</div>
+      <div class="sig-role">جامعة صنعاء</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-name">رئيس مجلس الجامعة / الاعتماد</div>
+      <div class="sig-role">جامعة صنعاء</div>
+    </div>
+  </div>
+  <div class="footer-meta">
+    وثيقة رسمية صادرة آلياً عن نظام المفاضلة والتنافس الإلكتروني — جامعة صنعاء | جميع الحقوق محفوظة © 2026
+  </div>
+</div>
+
+</body>
+</html>
