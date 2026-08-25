@@ -167,6 +167,34 @@ async function syncCandidatesFromSupabase() {
             if (globalSetting && globalSetting.value) {
                 state.settings = { ...state.settings, ...globalSetting.value };
             }
+
+            // مزامنة سجل الرقابة السحابي
+            const auditSetting = sData.find(s => s.key === 'global_audit_log');
+            if (auditSetting && Array.isArray(auditSetting.value)) {
+                const map = new Map();
+                (state.auditLog || []).forEach(e => map.set(e.id, e));
+                auditSetting.value.forEach(e => map.set(e.id, e));
+                state.auditLog = Array.from(map.values())
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .slice(0, 1000);
+            }
+
+            // مزامنة الجلسات السحابية
+            const sessionsSetting = sData.find(s => s.key === 'global_active_sessions');
+            if (sessionsSetting && Array.isArray(sessionsSetting.value)) {
+                const sessMap = new Map();
+                (state.activeSessions || []).forEach(s => sessMap.set(s.sessionId, s));
+                sessionsSetting.value.forEach(s => sessMap.set(s.sessionId, s));
+                state.activeSessions = Array.from(sessMap.values())
+                    .sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime))
+                    .slice(0, 200);
+            }
+
+            // مزامنة حالة تفعيل السجل
+            const enabledSetting = sData.find(s => s.key === 'global_audit_enabled');
+            if (enabledSetting && enabledSetting.value !== undefined) {
+                state.auditLogEnabled = enabledSetting.value;
+            }
         }
 
         // 3. استجلاب ومزامنة أعضاء لجنة المفاضلة والتوقيعات أونلاين
@@ -356,6 +384,174 @@ async function syncSettingsToSupabase(settings) {
         return true;
     } catch (e) {
         console.warn('تنبيه: تعذر مزامنة الإعدادات أونلاين على Supabase:', e);
+        return false;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🛡️ مزامنة سجل الرقابة والجلسات أونلاين على Supabase
+// ═══════════════════════════════════════════════════════════════════
+
+// مزامنة حدث رقابة واحد أو كامل السجل إلى Supabase
+async function syncAuditLogToSupabase(newEntry) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        // 1. استجلاب السجل السحابي الحالي لدمجه دون فقدان أحداث المستخدمين الآخرين
+        const { data, error } = await supabaseClient
+            .from('system_settings')
+            .select('*')
+            .eq('key', 'global_audit_log')
+            .maybeSingle();
+
+        let remoteLog = [];
+        if (!error && data && Array.isArray(data.value)) {
+            remoteLog = data.value;
+        }
+
+        // دمج الأحداث ومنع التكرار حسب المعرّف
+        const map = new Map();
+        if (newEntry) map.set(newEntry.id, newEntry);
+        (state.auditLog || []).forEach(e => map.set(e.id, e));
+        remoteLog.forEach(e => {
+            if (!map.has(e.id)) map.set(e.id, e);
+        });
+
+        // ترتيب الأحداث حسب الأحدث زمنياً مع تحديد سقف 1000 حدث
+        const mergedLog = Array.from(map.values())
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 1000);
+
+        state.auditLog = mergedLog;
+        saveStore();
+
+        // حفظ في Supabase
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_audit_log', value: mergedLog, updated_at: new Date().toISOString() }
+        ], { onConflict: 'key' });
+
+        return true;
+    } catch (err) {
+        console.warn('تنبيه: تعذر مزامنة سجل الرقابة إلى Supabase:', err);
+        return false;
+    }
+}
+
+// مزامنة الجلسات النشطة أونلاين على Supabase
+async function syncActiveSessionsToSupabase() {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        const { data, error } = await supabaseClient
+            .from('system_settings')
+            .select('*')
+            .eq('key', 'global_active_sessions')
+            .maybeSingle();
+
+        let remoteSessions = [];
+        if (!error && data && Array.isArray(data.value)) {
+            remoteSessions = data.value;
+        }
+
+        const map = new Map();
+        (state.activeSessions || []).forEach(s => map.set(s.sessionId, s));
+        remoteSessions.forEach(s => {
+            if (!map.has(s.sessionId)) map.set(s.sessionId, s);
+        });
+
+        const mergedSessions = Array.from(map.values())
+            .sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime))
+            .slice(0, 200);
+
+        state.activeSessions = mergedSessions;
+        saveStore();
+
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_active_sessions', value: mergedSessions, updated_at: new Date().toISOString() }
+        ], { onConflict: 'key' });
+
+        return true;
+    } catch (err) {
+        console.warn('تنبيه: تعذر مزامنة الجلسات إلى Supabase:', err);
+        return false;
+    }
+}
+
+// استجلاب وتحديث سجل الرقابة مباشرة من Supabase
+async function syncAuditLogFromSupabase() {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        const { data: sData, error } = await supabaseClient
+            .from('system_settings')
+            .select('*')
+            .in('key', ['global_audit_log', 'global_active_sessions', 'global_audit_enabled']);
+
+        if (!error && sData && sData.length > 0) {
+            const logRow = sData.find(s => s.key === 'global_audit_log');
+            if (logRow && Array.isArray(logRow.value)) {
+                const map = new Map();
+                (state.auditLog || []).forEach(e => map.set(e.id, e));
+                logRow.value.forEach(e => map.set(e.id, e));
+
+                state.auditLog = Array.from(map.values())
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .slice(0, 1000);
+            }
+
+            const sessRow = sData.find(s => s.key === 'global_active_sessions');
+            if (sessRow && Array.isArray(sessRow.value)) {
+                const sessMap = new Map();
+                (state.activeSessions || []).forEach(s => sessMap.set(s.sessionId, s));
+                sessRow.value.forEach(s => sessMap.set(s.sessionId, s));
+                state.activeSessions = Array.from(sessMap.values())
+                    .sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime))
+                    .slice(0, 200);
+            }
+
+            const enabledRow = sData.find(s => s.key === 'global_audit_enabled');
+            if (enabledRow && enabledRow.value !== undefined) {
+                state.auditLogEnabled = enabledRow.value;
+            }
+
+            saveStore();
+            if (typeof renderAuditLog === 'function') {
+                const auditTab = document.getElementById('tab-auditlog');
+                if (auditTab && auditTab.classList.contains('active')) {
+                    renderAuditLog();
+                }
+            }
+            return true;
+        }
+    } catch (e) {
+        console.warn('تنبيه: تعذر استجلاب سجل الرقابة من Supabase:', e);
+    }
+    return false;
+}
+
+// مسح سجل الرقابة على Supabase
+async function clearAuditLogOnSupabase() {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_audit_log', value: [], updated_at: new Date().toISOString() },
+            { key: 'global_active_sessions', value: [], updated_at: new Date().toISOString() }
+        ], { onConflict: 'key' });
+        console.log('✅ تم مسح سجل الرقابة السحابي بنجاح.');
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: خطأ في مسح السجل السحابي:', e);
+        return false;
+    }
+}
+
+// مزامنة حالة تفعيل/إيقاف السجل على Supabase
+async function syncAuditEnabledToSupabase(enabled) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_audit_enabled', value: enabled, updated_at: new Date().toISOString() }
+        ], { onConflict: 'key' });
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: خطأ في مزامنة حالة تفعيل السجل:', e);
         return false;
     }
 }

@@ -406,9 +406,14 @@ function switchTab(tabId, label) {
   if (breadcrumb && label) breadcrumb.textContent = label;
   // أغلق كل القوائم المنسدلة
   document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
-  // إذا تم فتح تبويب الرقابة، يتم تحديث السجل فوراً
-  if (tabId === 'tab-auditlog' && typeof renderAuditLog === 'function') {
-    renderAuditLog();
+  // إذا تم فتح تبويب الرقابة، يتم تحديث السجل فوراً واستجلاب أحدث الأحداث سحابياً
+  if (tabId === 'tab-auditlog') {
+    if (typeof renderAuditLog === 'function') renderAuditLog();
+    if (typeof syncAuditLogFromSupabase === 'function') {
+      syncAuditLogFromSupabase().then(() => {
+        if (typeof renderAuditLog === 'function') renderAuditLog();
+      });
+    }
   }
 }
 
@@ -9419,6 +9424,11 @@ function logAuditEvent(action, details = {}) {
   }
 
   saveStore();
+
+  // مزامنة فورية سحابية إلى Supabase
+  if (typeof syncAuditLogToSupabase === 'function') {
+    syncAuditLogToSupabase(entry);
+  }
 }
 
 // ── إدارة الجلسات ─────────────────────────────────────────────────────
@@ -9440,6 +9450,9 @@ function startSession(user) {
   if (state.activeSessions.length > 200) {
     state.activeSessions = state.activeSessions.slice(0, 200);
   }
+  if (typeof syncActiveSessionsToSupabase === 'function') {
+    syncActiveSessionsToSupabase();
+  }
 }
 
 function endSession() {
@@ -9459,6 +9472,9 @@ function endSession() {
     // احسب عدد الأحداث في هذه الجلسة
     const evtCount = (state.auditLog || []).filter(e => e.sessionId === state._currentSessionId && e.action !== 'logout').length;
     state.activeSessions[idx].actionsCount = evtCount;
+    if (typeof syncActiveSessionsToSupabase === 'function') {
+      syncActiveSessionsToSupabase();
+    }
   }
   state._currentSessionId = null;
 }
@@ -9693,6 +9709,9 @@ function toggleAuditLog() {
   }
   state.auditLogEnabled = (state.auditLogEnabled !== false) ? false : true;
   saveStore();
+  if (typeof syncAuditEnabledToSupabase === 'function') {
+    syncAuditEnabledToSupabase(state.auditLogEnabled);
+  }
   renderAuditLog();
   const msg = state.auditLogEnabled
     ? '🟢 تم تفعيل سجل الرقابة — يُسجَّل الآن جميع الأحداث'
@@ -9710,6 +9729,9 @@ function clearAuditLog() {
   state.auditLog = [];
   state.activeSessions = [];
   saveStore();
+  if (typeof clearAuditLogOnSupabase === 'function') {
+    clearAuditLogOnSupabase();
+  }
   renderAuditLog();
   if (typeof showToast === 'function') showToast('🗑️ تم مسح سجل الرقابة بنجاح', 'success');
 }
@@ -9942,7 +9964,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const auditBtn = document.getElementById('tab-btn-auditlog');
   if (auditBtn) {
     auditBtn.addEventListener('click', () => {
-      setTimeout(() => { renderAuditLog(); }, 50);
+      setTimeout(() => {
+        if (typeof syncAuditLogFromSupabase === 'function') syncAuditLogFromSupabase();
+        renderAuditLog();
+      }, 50);
     });
   }
+
+  // تحديث دوري تلقائي لسجل الرقابة كل 15 ثانية إذا كان تبويب الرقابة مفتوحاً
+  setInterval(() => {
+    const auditTab = document.getElementById('tab-auditlog');
+    if (auditTab && auditTab.classList.contains('active')) {
+      if (typeof syncAuditLogFromSupabase === 'function') {
+        syncAuditLogFromSupabase();
+      }
+    }
+  }, 15000);
 });
