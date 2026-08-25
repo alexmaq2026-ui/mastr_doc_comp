@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
   <link rel="stylesheet" href="css/style.css?v=82">
+  <link rel="stylesheet" href="css/assistant_guide.css?v=95">
 </head>
 <body>
 
@@ -65,7 +66,11 @@
       </div>
     </div>
 
-    <div class="nav-controls">
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 12px;">
+      <button class="nav-assistant-btn" id="btn-open-assistant" onclick="openAssistantGuide()" title="فتح المساعد التفاعلي ودليل النظام">
+        <span class="btn-icon-pulse">💡</span>
+        <span>دليل ومساعد النظام</span>
+      </button>
       <div id="user-badge-container"></div>
     </div>
   </header>
@@ -1347,6 +1352,13 @@
   <script src="js/xlsx.full.min.js?v=95"></script>
   <script src="js/initial_data.js?v=95"></script>
   <script src="js/supabase_client.js?v=95"></script>
-  <script src="js/app.js?v=95"></script>
+  <script src="js/assistant_guide.js?v=96"></script>
+  <script src="js/app.js?v=96"></script>
+
+  <!-- زر المساعد العائم السريع -->
+  <button class="floating-assistant-fab" id="btn-floating-assistant" onclick="openAssistantGuide()" title="المساعد الذكي ودليل النظام">
+    <span class="btn-icon-pulse">💡</span>
+    <span>المساعد الذكي</span>
+  </button>
 </body>
 </html>

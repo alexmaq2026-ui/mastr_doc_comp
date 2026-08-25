@@ -1,0 +1,704 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   نظام المساعد التفاعلي ودليل النظام الذكي - MAQATECH & جامعة صنعاء
+   Interactive Assistant & System Guide Stylesheet
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. أزرار فتح المساعد في الشريط العلوي والزر العائم ─────────────────── */
+.nav-assistant-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.25), rgba(37, 99, 235, 0.25));
+    border: 1.5px solid #2dd4bf;
+    color: #f8fafc;
+    padding: 7px 15px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-assistant-btn:hover {
+    background: linear-gradient(135deg, #0d9488, #2563eb);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.45);
+    color: #ffffff;
+}
+
+.nav-assistant-btn .btn-icon-pulse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    animation: assistantIconPulse 2s infinite ease-in-out;
+}
+
+@keyframes assistantIconPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #2dd4bf); }
+    50% { transform: scale(1.18); filter: drop-shadow(0 0 8px #fbbf24); }
+}
+
+/* زر المساعد العائم السريع (Floating Action Button) */
+.floating-assistant-fab {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #0d9488 100%);
+    border: 2px solid #2dd4bf;
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(45, 212, 191, 0.35);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(10px);
+}
+
+.floating-assistant-fab:hover {
+    transform: scale(1.06) translateY(-3px);
+    background: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #0d9488 100%);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(124, 58, 237, 0.6);
+}
+
+/* ─── 2. نافذة المساعد الشامل (Help Hub Modal Dialog) ─────────────────────── */
+.assistant-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(8, 12, 22, 0.82);
+    backdrop-filter: blur(14px);
+    z-index: 10050;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.assistant-modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+.assistant-modal-dialog {
+    width: 100%;
+    max-width: 1200px;
+    height: 90vh;
+    max-height: 860px;
+    background: linear-gradient(175deg, #131b2e 0%, #0c121e 100%);
+    border: 1.5px solid rgba(45, 212, 191, 0.35);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 40px rgba(45, 212, 191, 0.15);
+    overflow: hidden;
+    animation: assistantModalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes assistantModalPop {
+    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ترويسة المساعد */
+.assistant-header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 16px 24px;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.assistant-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.assistant-title-badge {
+    background: linear-gradient(135deg, #0d9488, #2563eb);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4);
+}
+
+.assistant-title-text h2 {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #f8fafc;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.assistant-title-text p {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 2px 0 0 0;
+}
+
+.assistant-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* شريط التبويبات الرئيسي للمساعد */
+.assistant-nav-bar {
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    padding: 8px 24px;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.assistant-tab-item {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.assistant-tab-item:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.assistant-tab-item.active {
+    color: #2dd4bf;
+    background: rgba(13, 148, 136, 0.15);
+    border-color: rgba(45, 212, 191, 0.4);
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(13, 148, 136, 0.2);
+}
+
+/* شريط البحث السريع والفلترة داخل المساعد */
+.assistant-search-bar {
+    background: rgba(15, 23, 42, 0.6);
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.assistant-search-input-wrap {
+    flex: 1;
+    position: relative;
+}
+
+.assistant-search-input-wrap input {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 9px 40px 9px 16px;
+    border-radius: 10px;
+    color: #f8fafc;
+    font-size: 0.88rem;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.assistant-search-input-wrap input:focus {
+    border-color: #2dd4bf;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.assistant-search-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+/* جسم المساعد المقسم */
+.assistant-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* القائمة الجانبية للشاشات والأقسام */
+.assistant-sidebar {
+    width: 280px;
+    background: rgba(11, 17, 32, 0.65);
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.assistant-sidebar-title {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px 8px;
+    margin-bottom: 2px;
+}
+
+.assistant-nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    width: 100%;
+}
+
+.assistant-nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.assistant-nav-link.active {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(13, 148, 136, 0.2));
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    color: #2dd4bf;
+    font-weight: 800;
+}
+
+.assistant-nav-link .link-badge {
+    font-size: 0.72rem;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 7px;
+    border-radius: 6px;
+    color: #94a3b8;
+}
+
+/* منطقة المحتوى التفاعلي الرئيسي */
+.assistant-content-pane {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    color: #e2e8f0;
+}
+
+/* بطاقات الشرح والتوضيح */
+.guide-card {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.guide-card:hover {
+    border-color: rgba(45, 212, 191, 0.3);
+}
+
+.guide-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.guide-card-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.guide-card-subtitle {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 4px 0 0 0;
+}
+
+/* جدول الأزرار والعمليات */
+.guide-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 0.85rem;
+}
+
+.guide-table th {
+    background: rgba(15, 23, 42, 0.8);
+    color: #93c5fd;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 800;
+    border-bottom: 2px solid rgba(37, 99, 235, 0.3);
+}
+
+.guide-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    vertical-align: middle;
+}
+
+.guide-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.guide-btn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.guide-role-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.role-admin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+.role-committee { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+.role-all { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+/* خطوات السيناريو العملي (Workflow Steps) */
+.workflow-step-list {
+    position: relative;
+    padding-right: 28px;
+    margin-top: 16px;
+}
+
+.workflow-step-list::before {
+    content: '';
+    position: absolute;
+    right: 11px;
+    top: 10px;
+    bottom: 20px;
+    width: 2px;
+    background: linear-gradient(180deg, #2dd4bf, #2563eb, #7c3aed);
+}
+
+.workflow-step-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.workflow-step-circle {
+    position: absolute;
+    right: -28px;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #0f172a;
+    border: 2px solid #2dd4bf;
+    color: #2dd4bf;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+}
+
+.workflow-step-box {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 18px;
+}
+
+.workflow-step-box h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.workflow-step-box p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+/* تذييل المساعد */
+.assistant-footer {
+    background: #0f172a;
+    padding: 12px 24px;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+/* ─── 3. الجولة التفاعلية الحية (Spotlight Guided Tour) ───────────────────── */
+.tour-overlay-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10100;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    display: none;
+}
+
+.tour-overlay-backdrop.active {
+    display: block;
+}
+
+/* التركيز على العنصر النشط */
+.tour-highlight-box {
+    position: fixed;
+    z-index: 10101;
+    pointer-events: none;
+    border: 3px solid #2dd4bf;
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(8, 12, 22, 0.82), 0 0 25px rgba(45, 212, 191, 0.6);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: tourPulseBorder 1.8s infinite ease-in-out;
+}
+
+@keyframes tourPulseBorder {
+    0%, 100% { box-shadow: 0 0 0 9999px rgba(8, 12, 22, 0.82), 0 0 20px rgba(45, 212, 191, 0.5); }
+    50% { box-shadow: 0 0 0 9999px rgba(8, 12, 22, 0.82), 0 0 35px rgba(251, 191, 36, 0.7); }
+}
+
+/* بطاقة الشرح العائمة للجولة */
+.tour-popover-card {
+    position: fixed;
+    z-index: 10102;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    background: linear-gradient(175deg, #1e293b 0%, #0f172a 100%);
+    border: 1.5px solid #2dd4bf;
+    border-radius: 16px;
+    padding: 18px 20px;
+    color: #f8fafc;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(45, 212, 191, 0.3);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.tour-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.tour-step-badge {
+    background: rgba(45, 212, 191, 0.15);
+    color: #2dd4bf;
+    border: 1px solid rgba(45, 212, 191, 0.4);
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.tour-card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tour-card-desc {
+    font-size: 0.86rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+}
+
+.tour-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tour-nav-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.tour-btn-prev {
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+}
+
+.tour-btn-prev:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.tour-btn-next {
+    background: linear-gradient(135deg, #0d9488, #2563eb);
+    color: #ffffff;
+    font-weight: 800;
+}
+
+.tour-btn-next:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.tour-btn-skip {
+    background: transparent;
+    color: #64748b;
+    font-size: 0.78rem;
+    text-decoration: underline;
+    cursor: pointer;
+    border: none;
+}
+
+.tour-btn-skip:hover {
+    color: #ef4444;
+}
+
+/* ─── 4. وضع استكشاف الأزرار التفاعلي (Interactive Inspect Mode) ─────────── */
+body.guide-inspect-active * {
+    cursor: help !important;
+}
+
+.inspect-floating-banner {
+    position: fixed;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    color: #ffffff;
+    padding: 10px 24px;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 58, 237, 0.6);
+    z-index: 10090;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    animation: inspectBannerFloat 2s infinite ease-in-out;
+}
+
+@keyframes inspectBannerFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+}
+
+.inspect-tooltip-popover {
+    position: fixed;
+    z-index: 10095;
+    background: #0f172a;
+    border: 1.5px solid #38bdf8;
+    color: #f8fafc;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    max-width: 320px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.4);
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.inspect-tooltip-title {
+    font-weight: 800;
+    color: #38bdf8;
+    margin-bottom: 4px;
+}
+
+/* ─── 5. تنسيقات الطباعة لدليل المستخدم الرسمي ─────────────────────────────── */
+@media print {
+    .assistant-modal-dialog {
+        height: auto !important;
+        max-height: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .assistant-header-actions,
+    .assistant-search-bar,
+    .assistant-sidebar,
+    .floating-assistant-fab,
+    .nav-assistant-btn {
+        display: none !important;
+    }
+    .assistant-content-pane {
+        padding: 0 !important;
+        color: #000000 !important;
+    }
+    .guide-card {
+        background: #ffffff !important;
+        border: 1px solid #ccc !important;
+        color: #000000 !important;
+        page-break-inside: avoid;
+    }
+}
