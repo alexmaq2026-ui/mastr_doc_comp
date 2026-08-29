@@ -2617,8 +2617,8 @@ function generateCandidateCardHTML(candidate) {
           <h4 style="margin: 2px 0 0 0; color: #1e3a8a; font-size: 0.78rem; font-weight: 700;">الكادر الإداري</h4>
         </div>
         <div style="text-align: left;">
-          <span style="font-size: 0.72rem; color: #475569; display: block;">المركز والترتيب المستحق:</span>
-          <strong style="font-size: 1.15rem; color: #1e3a8a; background: #eff6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">المركز #${candidate.rank || '-'}</strong>
+          <span style="font-size: 0.72rem; color: #475569; display: block;">رقم الملف:</span>
+          <strong style="font-size: 1.15rem; color: #1e3a8a; background: #eff6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">${candidate.id}</strong>
         </div>
       </div>
 
