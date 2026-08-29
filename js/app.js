@@ -2937,6 +2937,74 @@ function renderDetailedReport() {
   const showMaster = (degreeFilter === 'الكل' || degreeFilter === 'ماجستير');
   const showPhd = (degreeFilter === 'الكل' || degreeFilter === 'دكتوراه');
 
+  // حساب إجمالي النقاط المعيارية الكلية ديناميكياً
+  const seniorityMax = (state.criteria.seniority && state.criteria.seniority.maxPoints) || 10;
+  const ageMax = (state.criteria.age && state.criteria.age.maxPoints) || 5;
+  const specMax = (state.criteria.specialization && state.criteria.specialization.maxPoints) || 5;
+  const gradeMax = (state.criteria.grade && state.criteria.grade.maxPoints) || 5;
+  let customMaxSum = 0;
+  activeCustom.forEach(c => { customMaxSum += (c.maxPoints || 5); });
+  const totalMaxCriteriaPoints = seniorityMax + ageMax + specMax + gradeMax + customMaxSum;
+
+  // كروت الإحصائيات المتفاعلة مع الفلتر
+  let statsCardsHTML = '';
+  if (degreeFilter === 'ماجستير') {
+    statsCardsHTML = `
+      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
+          <span style="color: #64748b; font-weight: 600; display: block;">إجمالي متنافسي الماجستير:</span>
+          <strong style="color: #0f172a; font-size: 0.95rem;">${totalMasterCount} متنافس</strong>
+        </div>
+        <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px; border-radius: 6px;">
+          <span style="color: #047857; font-weight: 600; display: block;">الفائزون المعتمدون (ماجستير):</span>
+          <strong style="color: #065f46; font-size: 0.95rem;">${masterLimit} منح</strong>
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 6px; border-radius: 6px;">
+          <span style="color: #b45309; font-weight: 600; display: block;">حالات الحسم الاستثنائي:</span>
+          <strong style="color: #92400e; font-size: 0.95rem;">${masterTiedCount} حالة حسم</strong>
+        </div>
+      </div>
+    `;
+  } else if (degreeFilter === 'دكتوراه') {
+    statsCardsHTML = `
+      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
+          <span style="color: #64748b; font-weight: 600; display: block;">إجمالي متنافسي الدكتوراه:</span>
+          <strong style="color: #0f172a; font-size: 0.95rem;">${totalPhdCount} متنافس</strong>
+        </div>
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px; border-radius: 6px;">
+          <span style="color: #1d4ed8; font-weight: 600; display: block;">الفائزون المعتمدون (دكتوراه):</span>
+          <strong style="color: #1e40af; font-size: 0.95rem;">${phdLimit} منح</strong>
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 6px; border-radius: 6px;">
+          <span style="color: #b45309; font-weight: 600; display: block;">حالات الحسم الاستثنائي:</span>
+          <strong style="color: #92400e; font-size: 0.95rem;">${phdTiedCount} حالة حسم</strong>
+        </div>
+      </div>
+    `;
+  } else {
+    statsCardsHTML = `
+      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
+          <span style="color: #64748b; font-weight: 600; display: block;">إجمالي التنافس العام:</span>
+          <strong style="color: #0f172a; font-size: 0.95rem;">${totalCandidates} متنافس</strong>
+        </div>
+        <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px; border-radius: 6px;">
+          <span style="color: #047857; font-weight: 600; display: block;">المقبولون (ماجستير):</span>
+          <strong style="color: #065f46; font-size: 0.95rem;">${masterLimit} منح</strong>
+        </div>
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px; border-radius: 6px;">
+          <span style="color: #1d4ed8; font-weight: 600; display: block;">المقبولون (دكتوراه):</span>
+          <strong style="color: #1e40af; font-size: 0.95rem;">${phdLimit} منح</strong>
+        </div>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 6px; border-radius: 6px;">
+          <span style="color: #b45309; font-weight: 600; display: block;">حالات الحسم الاستثنائي:</span>
+          <strong style="color: #92400e; font-size: 0.95rem;">${masterTiedCount + phdTiedCount} حالة حسم</strong>
+        </div>
+      </div>
+    `;
+  }
+
   // بناء جدول البيانات لدرجة واحدة
   function buildDegreeMatrixTable(degreeTitle, candidatesList, grantLimit) {
     if (candidatesList.length === 0) {
@@ -2958,20 +3026,20 @@ function renderDetailedReport() {
           </span>
         </div>
 
-        <table class="report-table" style="margin-top: 0;">
+        <table class="report-table" style="margin-top: 0; width: 100%; border-collapse: collapse; font-size: 0.8rem;">
           <thead>
             <tr>
               <th style="width: 4%;">م</th>
-              <th style="width: 18%;">اسم المتنافس / الموظف</th>
-              <th style="width: 7%;">الدرجة</th>
+              <th style="width: 18%; text-align: right;">اسم المتنافس / الموظف</th>
+              <th style="width: 6%;">الدرجة</th>
               <th style="width: 11%;">التخصص</th>
-              <th>الأقدمية</th>
-              <th>العمر</th>
-              <th>التخصص</th>
-              <th>التقدير</th>
-              ${activeCustom.map(c => `<th>${c.name}</th>`).join('')}
-              <th style="width: 8%;">المجموع</th>
-              <th style="width: 8%;">النتيجة</th>
+              <th style="width: 6%;">الأقدمية<br><span style="font-size:0.68rem; font-weight:normal;">(${seniorityMax}ن)</span></th>
+              <th style="width: 5%;">العمر<br><span style="font-size:0.68rem; font-weight:normal;">(${ageMax}ن)</span></th>
+              <th style="width: 8%;">احتياج التخصص<br><span style="font-size:0.68rem; font-weight:normal;">(${specMax}ن)</span></th>
+              <th style="width: 6%;">التقدير<br><span style="font-size:0.68rem; font-weight:normal;">(${gradeMax}ن)</span></th>
+              ${activeCustom.map(c => `<th style="width: 8%;">${c.name}<br><span style="font-size:0.68rem; font-weight:normal;">(${c.maxPoints || 5}ن)</span></th>`).join('')}
+              <th style="width: 7%;">المجموع<br><span style="font-size:0.68rem; font-weight:normal;">(من ${totalMaxCriteriaPoints})</span></th>
+              <th style="width: 7%;">النتيجة</th>
               <th style="width: 16%;">ملاحظات الشفافية والتعادل</th>
             </tr>
           </thead>
@@ -2979,6 +3047,7 @@ function renderDetailedReport() {
             ${candidatesList.map(c => {
               let rowStyle = '';
               let notesCell = '';
+              const isWinner = (c.status === 'مقبول');
 
               const customNote = c.notes || c.remarks || c.deduction_notes || c.special_notes;
 
@@ -2986,17 +3055,21 @@ function renderDetailedReport() {
                 rowStyle = 'font-weight: bold; background-color: #fff1f2; border-right: 4px solid #ef4444;';
                 notesCell = `<td style="font-size:0.74rem; color:#dc2626; font-weight:800; text-align:right;">⚖️ مفاضلة استثنائية (حالة تعادل)<br><span style="font-size:0.7rem; font-weight:600;">معيار الحسم: ${c.tieBreaker}</span></td>`;
               } else if (c.tieBreaker) {
-                rowStyle = (c.status === 'مقبول' ? 'font-weight: bold; ' : '') + 'background-color: #fffbeb; border-right: 4px solid #f59e0b;';
+                rowStyle = (isWinner ? 'font-weight: bold; ' : '') + 'background-color: #fffbeb; border-right: 4px solid #f59e0b;';
                 notesCell = `<td style="font-size:0.74rem; color:#b45309; font-weight:800; text-align:right;">⚖️ مفاضلة استثنائية (تعادل عند خط القبول)<br><span style="font-size:0.7rem; font-weight:600;">المعيار الفاصل: ${c.tieBreaker}</span></td>`;
               } else if (customNote) {
-                rowStyle = (c.status === 'مقبول' ? 'font-weight: bold; background-color: #f0fdf4;' : '');
+                rowStyle = (isWinner ? 'font-weight: bold; background-color: #f0fdf4;' : '');
                 notesCell = `<td style="font-size:0.75rem; color:#d97706; font-weight:800; text-align:right;">📌 ${customNote}</td>`;
               } else {
-                if (c.status === 'مقبول') {
+                if (isWinner) {
                   rowStyle = 'font-weight: bold; background-color: #f0fdf4;';
                 }
                 notesCell = `<td style="color:#94a3b8; font-size:0.75rem; text-align:center;">—</td>`;
               }
+
+              const resultCell = isWinner
+                ? '<span class="badge-status badge-accepted" style="font-size: 0.82rem; font-weight: 800; padding: 3px 8px;">فائز</span>'
+                : '<span style="font-size: 1.1rem; color: #ef4444; font-weight: bold;" title="غير فائز">🚫</span>';
 
               return `
               <tr style="${rowStyle}">
@@ -3010,8 +3083,8 @@ function renderDetailedReport() {
                 <td class="score-cell">${c.scores.gradeScore}</td>
                 ${activeCustom.map(custom => `<td class="score-cell">${(c.scores.customScores && c.scores.customScores[custom.id]) || 0}</td>`).join('')}
                 <td><span class="total-score-badge">${c.scores.totalScore}</span></td>
-                <td>
-                  ${c.status === 'مقبول' ? '<span class="badge-status badge-accepted">مقبول</span>' : ''}
+                <td style="text-align: center;">
+                  ${resultCell}
                 </td>
                 ${notesCell}
               </tr>`;
@@ -3021,6 +3094,12 @@ function renderDetailedReport() {
       </div>
     `;
   }
+
+  // توقيعات اللجنة الرسمية
+  const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
+  const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
+  const regularMembers = members.filter(m => m !== chairman).reverse();
+  const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
 
   reportContainer.innerHTML = `
     <div class="report-paper" style="position: relative;">
@@ -3062,25 +3141,8 @@ function renderDetailedReport() {
           </div>
         </div>
 
-        <!-- كروت الإحصائيات السريعة للشفافية -->
-        <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; font-size: 0.78rem;">
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">
-            <span style="color: #64748b; font-weight: 600; display: block;">إجمالي التنافس العام:</span>
-            <strong style="color: #0f172a; font-size: 0.95rem;">${totalCandidates} متنافس</strong>
-          </div>
-          <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px; border-radius: 6px;">
-            <span style="color: #047857; font-weight: 600; display: block;">المقبولون (ماجستير):</span>
-            <strong style="color: #065f46; font-size: 0.95rem;">${masterLimit} منح</strong>
-          </div>
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px; border-radius: 6px;">
-            <span style="color: #1d4ed8; font-weight: 600; display: block;">المقبولون (دكتوراه):</span>
-            <strong style="color: #1e40af; font-size: 0.95rem;">${phdLimit} منح</strong>
-          </div>
-          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 6px; border-radius: 6px;">
-            <span style="color: #b45309; font-weight: 600; display: block;">حالات الحسم الاستثنائي:</span>
-            <strong style="color: #92400e; font-size: 0.95rem;">${masterTiedCount + phdTiedCount} حالة حسم</strong>
-          </div>
-        </div>
+        <!-- كروت الإحصائيات السريعة للشفافية المتفاعلة مع الفلتر -->
+        ${statsCardsHTML}
       </div>
 
       <!-- 2. دليل الشفافية والمنهجية وقواعد المفاضلة -->
@@ -3090,19 +3152,20 @@ function renderDetailedReport() {
         </h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 8px;">
           <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <strong style="color: #0f172a; display: block; margin-bottom: 4px;">1. أوزان المعايير المعيارية التنافسية:</strong>
+            <strong style="color: #0f172a; display: block; margin-bottom: 4px;">1. أوزان المعايير المعيارية التنافسية (المجموع الكلي: ${totalMaxCriteriaPoints} نقطة):</strong>
             <ul style="margin: 0; padding-right: 18px; color: #334155; font-size: 0.78rem;">
-              <li>الأقدمية وتاريخ التعيين بالخدمة (الوزن الأعلى: ${state.criteria.seniority.maxPoints || 30} نقطة)</li>
-              <li>الفئة العمرية والسن (الوزن الأعلى: ${state.criteria.age.maxPoints || 25} نقطة)</li>
-              <li>الاحتياج الأكاديمي والتخصص (الوزن الأعلى: ${state.criteria.specialization.maxPoints || 20} نقطة)</li>
-              <li>تقدير المؤهل العلمي الأكاديمي (الوزن الأعلى: ${state.criteria.grade.maxPoints || 20} نقطة)</li>
+              <li>الأقدمية وتاريخ التعيين بالخدمة (الوزن الأعلى: ${seniorityMax} نقاط)</li>
+              <li>الفئة العمرية والسن (الوزن الأعلى: ${ageMax} نقاط)</li>
+              <li>الاحتياج الأكاديمي والتخصص (الوزن الأعلى: ${specMax} نقاط)</li>
+              <li>تقدير المؤهل العلمي الأكاديمي (الوزن الأعلى: ${gradeMax} نقاط)</li>
+              ${activeCustom.map(c => `<li>${c.name} (الوزن الأعلى: ${c.maxPoints || 5} نقاط)</li>`).join('')}
             </ul>
           </div>
 
           <div style="background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
             <strong style="color: #0f172a; display: block; margin-bottom: 4px;">2. خوارزمية كسر التعادل ومفصل الاستحقاق الشفاف:</strong>
             <p style="margin: 0; color: #334155; font-size: 0.76rem;">
-              تُحسب المفاضلة الاستثنائية <strong>فقط عند التعادل على الحد الفاصل للمقعد الأخير</strong> (المنحة 3 للماجستير أو المنحة 3 للدكتوراه) بناءً على التراتبية الشفافة التالية:
+              تُحسب المفاضلة الاستثنائية <strong>فقط عند التعادل على الحد الفاصل للمقعد الأخير</strong> (المنحة رقم ${masterLimit} للماجستير أو المنحة رقم ${phdLimit} للدكتوراه) بناءً على التراتبية الشفافة المعتمدة:
               <br>
               <strong>1. مدى احتياج الجامعة للتخصص (3 درجات لتخصصات الوزن 5، و0 لأخرى)</strong> ← <strong>2. أقدمية التعيين (الأقدم تعييناً بالخدمة/الجامعة)</strong> ← <strong>3. الاستمرارية (الممارسة الفعلية: مستمر 5 ومتاح 3)</strong> ← <strong>4. التقدير العلمي الأعلى</strong> ← <strong>5. صغر السن (الأصغر سناً)</strong>.
             </p>
@@ -3115,54 +3178,45 @@ function renderDetailedReport() {
       ${showPhd ? buildDegreeMatrixTable('الدكتوراه', allPhdCandidates, phdLimit) : ''}
 
       <!-- 4. قسم الاعتماد والتوقيعات الرسمية الهيكلية -->
-      ${(() => {
-        const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
-        const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
-        const regularMembers = members.filter(m => m !== chairman).reverse();
-        const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
-
-        return `
-          <div class="signatures-section" style="margin-top: 20px; border-top: 2px solid #1e3a8a; padding-top: 12px; page-break-inside: avoid;">
-            <h4 style="text-align: center; color: #1e3a8a; font-size: 0.92rem; margin: 0 0 10px 0; font-weight: 800;">
-              توقيعات أعضاء لجنة المفاضلة والتنافس واعتماـد رئاسـة الجامعـة
-            </h4>
-            
-            <!-- الصف الأول: أعضاء لجنة المفاضلة (الأربعة أعضاء) -->
-            <div class="signature-grid-row1" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-bottom: 12px;">
-              ${regularMembers.map(m => `
-                <div class="signature-card" style="border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px; background-color: #f8fafc;">
-                  <p style="font-weight: 800; color: #1e3a8a; font-size: 0.76rem; margin: 0 0 2px 0;">${m.committeeRole || 'عضواً'}</p>
-                  <p style="font-weight: 800; color: #0f172a; font-size: 0.78rem; margin: 0 0 1px 0;">${m.name || 'اسم العضو'}</p>
-                  <p style="color: #475569; font-size: 0.68rem; margin: 0 0 4px 0;">${m.adminTitle || 'الصفة الإدارية'}</p>
-                  <div style="height: 16px; border-bottom: 1px dashed #94a3b8; margin-bottom: 4px;"></div>
-                  <p style="font-size: 0.62rem; color: #64748b; margin: 0; font-weight: 600;">التوقيع والختم الرسمـي</p>
-                </div>
-              `).join('')}
+      <div class="signatures-section" style="margin-top: 20px; border-top: 2px solid #1e3a8a; padding-top: 12px; page-break-inside: avoid;">
+        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.92rem; margin: 0 0 10px 0; font-weight: 800;">
+          توقيعات أعضاء لجنة المفاضلة والتنافس واعتماـد رئاسـة الجامعـة
+        </h4>
+        
+        <!-- الصف الأول: أعضاء لجنة المفاضلة -->
+        <div class="signature-grid-row1" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; text-align: center; margin-bottom: 12px;">
+          ${regularMembers.map(m => `
+            <div class="signature-card" style="flex: 1 1 150px; max-width: 190px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px; background-color: #f8fafc;">
+              <p style="font-weight: 800; color: #1e3a8a; font-size: 0.76rem; margin: 0 0 2px 0;">${m.committeeRole || 'عضواً'}</p>
+              <p style="font-weight: 800; color: #0f172a; font-size: 0.78rem; margin: 0 0 1px 0;">${m.name || 'اسم العضو'}</p>
+              <p style="color: #475569; font-size: 0.68rem; margin: 0 0 4px 0;">${m.adminTitle || 'الصفة الإدارية'}</p>
+              <div style="height: 16px; border-bottom: 1px dashed #94a3b8; margin-bottom: 4px;"></div>
+              <p style="font-size: 0.62rem; color: #64748b; margin: 0; font-weight: 600;">التوقيع والختم الرسمـي</p>
             </div>
+          `).join('')}
+        </div>
 
-            <!-- الصف الثاني: رئيس اللجنة + يعتمد رئيس الجامعة -->
-            <div class="signature-grid-row2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 85%; margin: 0 auto; text-align: center;">
-              <!-- رئيس اللجنة -->
-              <div class="signature-card" style="border: 1.5px solid #1e3a8a; padding: 8px 10px; border-radius: 8px; background-color: #eff6ff;">
-                <p style="font-weight: 900; color: #1e3a8a; font-size: 0.84rem; margin: 0 0 2px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
-                <p style="font-weight: 900; color: #0f172a; font-size: 0.86rem; margin: 0 0 1px 0;">${chairman.name || 'أ.د. ابراهيم المطاع'}</p>
-                <p style="color: #334155; font-size: 0.72rem; margin: 0 0 6px 0;">${chairman.adminTitle || 'نائب رئيس الجامعة للشؤون الأكاديمية'}</p>
-                <div style="height: 20px; border-bottom: 1px dashed #1e3a8a; margin-bottom: 4px;"></div>
-                <p style="font-size: 0.65rem; color: #1e3a8a; margin: 0; font-weight: 700;">التوقيع والختم الرسمي لرئيس اللجنة</p>
-              </div>
-
-              <!-- يعتمد رئيس الجامعة -->
-              <div class="signature-card" style="border: 2px solid #059669; padding: 8px 10px; border-radius: 8px; background-color: #ecfdf5;">
-                <p style="font-weight: 900; color: #059669; font-size: 0.86rem; margin: 0 0 2px 0;">يُعتمـــد / رئيس الجامعة</p>
-                <p style="font-weight: 900; color: #064e3b; font-size: 0.88rem; margin: 0 0 1px 0;">${rectorName}</p>
-                <p style="color: #047857; font-size: 0.72rem; margin: 0 0 6px 0;">رئيس جامعة صنعاء</p>
-                <div style="height: 20px; border-bottom: 1.5px dashed #059669; margin-bottom: 4px;"></div>
-                <p style="font-size: 0.65rem; color: #047857; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
-              </div>
-            </div>
+        <!-- الصف الثاني: رئيس اللجنة + يعتمد رئيس الجامعة -->
+        <div class="signature-grid-row2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 85%; margin: 0 auto; text-align: center;">
+          <!-- رئيس اللجنة -->
+          <div class="signature-card" style="border: 1.5px solid #1e3a8a; padding: 8px 10px; border-radius: 8px; background-color: #eff6ff;">
+            <p style="font-weight: 900; color: #1e3a8a; font-size: 0.84rem; margin: 0 0 2px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #0f172a; font-size: 0.86rem; margin: 0 0 1px 0;">${chairman.name || 'أ.د. ابراهيم المطاع'}</p>
+            <p style="color: #334155; font-size: 0.72rem; margin: 0 0 6px 0;">${chairman.adminTitle || 'نائب رئيس الجامعة للشؤون الأكاديمية'}</p>
+            <div style="height: 20px; border-bottom: 1px dashed #1e3a8a; margin-bottom: 4px;"></div>
+            <p style="font-size: 0.65rem; color: #1e3a8a; margin: 0; font-weight: 700;">التوقيع والختم الرسمي لرئيس اللجنة</p>
           </div>
-        `;
-      })()}
+
+          <!-- يعتمد رئيس الجامعة -->
+          <div class="signature-card" style="border: 2px solid #059669; padding: 8px 10px; border-radius: 8px; background-color: #ecfdf5;">
+            <p style="font-weight: 900; color: #059669; font-size: 0.86rem; margin: 0 0 2px 0;">يُعتمـــد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #064e3b; font-size: 0.88rem; margin: 0 0 1px 0;">${rectorName}</p>
+            <p style="color: #047857; font-size: 0.72rem; margin: 0 0 6px 0;">رئيس جامعة صنعاء</p>
+            <div style="height: 20px; border-bottom: 1.5px dashed #059669; margin-bottom: 4px;"></div>
+            <p style="font-size: 0.65rem; color: #047857; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          </div>
+        </div>
+      </div>
 
       <!-- 5. شريط تذييل وحفظ الحقوق الفكرية للشركة المالكة بالشعار والاسم MAQATECH -->
       <div style="margin-top: 20px; border-top: 1.5px solid #cbd5e1; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #475569; page-break-inside: avoid;">
