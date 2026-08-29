@@ -1862,17 +1862,35 @@ function printTieBreakerCertificate() {
   const univName = state.settings.universityName || 'جامعة صنعاء';
   const councilName = state.settings.councilName || 'مجلس الجامعة - لجنة المفاضلة والتنافس';
 
+  // ── بناء توقيعات المحضر الرسمي كاملة (ديناميكي) ──
+  const certMembers = (state.committeeMembers && state.committeeMembers.length > 0)
+    ? state.committeeMembers
+    : DEFAULT_COMMITTEE_MEMBERS;
+  const certChairman = certMembers.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || certMembers[0];
+  const certRegularMembers = certMembers.filter(m => m !== certChairman).reverse();
+  const certRectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
+
+  const certRegularCards = certRegularMembers.map(m => `
+    <div style="border: 1px solid #cbd5e1; padding: 2px 4px; border-radius: 4px; background: #f8fafc; text-align: center; min-width: 80px; flex: 1;">
+      <p style="font-weight: 800; color: #1e3a8a; font-size: 0.60rem; margin: 0 0 1px 0;">${m.committeeRole || 'عضواً'}</p>
+      <p style="font-weight: 900; color: #0f172a; font-size: 0.68rem; margin: 0 0 1px 0;">${m.name}</p>
+      <p style="color: #475569; font-size: 0.54rem; margin: 0 0 1px 0;">${m.adminTitle || ''}</p>
+      <div style="height: 8px; border-bottom: 1px dashed #94a3b8; margin-bottom: 1px;"></div>
+      <p style="font-size: 0.48rem; color: #64748b; margin: 0; font-weight: 600;">التوقيع والختم</p>
+    </div>
+  `).join('');
+
   printArea.innerHTML = `
-    <div style="font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; direction: rtl; text-align: right; line-height: 1.6; color: #000000; padding: 10px;">
+    <div style="font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; direction: rtl; text-align: right; line-height: 1.4; color: #000000; padding: 2px 4px;">
       
       <!-- ترويسة الوثيقة الرسمية -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000000; padding-bottom: 12px; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #000000; padding-bottom: 6px; margin-bottom: 8px;">
         <div style="text-align: right;">
-          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 900;">جامعة صنعاء</h3>
-          <h4 style="margin: 3px 0 0 0; font-size: 0.9rem; font-weight: 800; color: #1e3a8a;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h4>
-          <h5 style="margin: 2px 0 0 0; font-size: 0.82rem; font-weight: 700; color: #1e3a8a;">الكادر الإداري</h5>
+          <h3 style="margin: 0; font-size: 0.98rem; font-weight: 900;">جامعة صنعاء</h3>
+          <h4 style="margin: 1px 0 0 0; font-size: 0.82rem; font-weight: 800; color: #1e3a8a;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h4>
+          <h5 style="margin: 1px 0 0 0; font-size: 0.74rem; font-weight: 700; color: #1e3a8a;">الكادر الإداري</h5>
         </div>
-        <div style="text-align: left; font-size: 0.85rem;">
+        <div style="text-align: left; font-size: 0.76rem; line-height: 1.4;">
           <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}م</div>
           <div><strong>العام الجامعي:</strong> ${refYear}م</div>
           <div><strong>الدرجة:</strong> ${d.winner.degree}</div>
@@ -1880,84 +1898,102 @@ function printTieBreakerCertificate() {
       </div>
 
       <!-- عنوان الإفادة -->
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 900; text-decoration: underline; letter-spacing: 0.5px;">
+      <div style="text-align: center; margin-bottom: 8px;">
+        <h2 style="margin: 0; font-size: 1.10rem; font-weight: 900; text-decoration: underline; letter-spacing: 0.3px;">
           إفادة رسمية بحسم المفاضلة الاستثنائية وكسر التعادل
         </h2>
-        <p style="margin: 4px 0 0 0; font-size: 0.9rem; font-weight: 700; color: #444;">
+        <p style="margin: 2px 0 0 0; font-size: 0.78rem; font-weight: 700; color: #444;">
           بشأن التنافس على المقعد رقم (${d.seatNumber}) لدرجة (${d.winner.degree})
         </p>
       </div>
 
       <!-- تمهيد -->
-      <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 15px;">
+      <p style="font-size: 0.76rem; line-height: 1.45; margin-bottom: 8px;">
         تفيد لجنة المفاضلة والتنافس الإلكتروني لمنتسبي الكادر الإداري بجامعة صنعاء بأنه عند تطبيق معايير المفاضلة لدرجة (<strong>${d.winner.degree}</strong>)، حدث تعادل في المجموع الكلي برصيد (<strong>${d.winner.totalScore} نقطة</strong>) على الحد الفاصل للمقعد المتاح الأخير (<strong>المقعد رقم ${d.seatNumber}</strong>)، وجرى تطبيق التراتبية القانونية الشفافة المعتمدة لكسر التعادل، وكانت نتيجة الفحص والتدقيق كالتالي:
       </p>
 
       <!-- جدول المقارنة الرسمي -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.85rem;" border="1">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 0.75rem;" border="1">
         <thead>
           <tr style="background: #f1f5f9;">
-            <th style="padding: 8px; text-align: right; width: 30%;">بيان المقارنة / المعيار</th>
-            <th style="padding: 8px; text-align: center; width: 35%; background: #e6fcf5;">الفائز بالمقعد: ${d.winner.name}</th>
-            <th style="padding: 8px; text-align: center; width: 35%;">المنافس المباشر: ${d.competitor.name}</th>
+            <th style="padding: 4px 6px; text-align: right; width: 30%;">بيان المقارنة / المعيار</th>
+            <th style="padding: 4px 6px; text-align: center; width: 35%; background: #e6fcf5;">الفائز بالمقعد: ${d.winner.name}</th>
+            <th style="padding: 4px 6px; text-align: center; width: 35%;">المنافس المباشر: ${d.competitor.name}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">المجموع الكلي المكتسب</td>
-            <td style="padding: 6px 8px; text-align: center; font-weight: 800;">${d.winner.totalScore} نقطة</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.competitor.totalScore} نقطة</td>
+            <td style="padding: 3px 6px; font-weight: 700;">المجموع الكلي المكتسب</td>
+            <td style="padding: 3px 6px; text-align: center; font-weight: 800;">${d.winner.totalScore} نقطة</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.competitor.totalScore} نقطة</td>
           </tr>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">1. التخصص ومدى الاحتياج</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.winner.specialization} (${d.winner.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.competitor.specialization} (${d.competitor.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+            <td style="padding: 3px 6px; font-weight: 700;">1. التخصص ومدى الاحتياج</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.winner.specialization} (${d.winner.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.competitor.specialization} (${d.competitor.specTieScore === 3 ? '3 درجات حسم' : '0 درجات'})</td>
           </tr>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">2. تاريخ وأقدمية التعيين</td>
-            <td style="padding: 6px 8px; text-align: center; font-weight: 800;">سنة ${d.winner.hiringYear}م</td>
-            <td style="padding: 6px 8px; text-align: center;">سنة ${d.competitor.hiringYear}م</td>
+            <td style="padding: 3px 6px; font-weight: 700;">2. تاريخ وأقدمية التعيين</td>
+            <td style="padding: 3px 6px; text-align: center; font-weight: 800;">سنة ${d.winner.hiringYear}م</td>
+            <td style="padding: 3px 6px; text-align: center;">سنة ${d.competitor.hiringYear}م</td>
           </tr>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">3. الاستمرارية / الممارسة</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.winner.continuity} (${d.winner.continuityScore} نقاط)</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.competitor.continuity} (${d.competitor.continuityScore} نقاط)</td>
+            <td style="padding: 3px 6px; font-weight: 700;">3. الاستمرارية / الممارسة</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.winner.continuity} (${d.winner.continuityScore} نقاط)</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.competitor.continuity} (${d.competitor.continuityScore} نقاط)</td>
           </tr>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">4. التقدير العلمي المؤهل</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.winner.grade}</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.competitor.grade}</td>
+            <td style="padding: 3px 6px; font-weight: 700;">4. التقدير العلمي المؤهل</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.winner.grade}</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.competitor.grade}</td>
           </tr>
           <tr>
-            <td style="padding: 6px 8px; font-weight: 700;">5. تاريخ الميلاد (السن)</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.winner.birthYear}م</td>
-            <td style="padding: 6px 8px; text-align: center;">${d.competitor.birthYear}م</td>
+            <td style="padding: 3px 6px; font-weight: 700;">5. تاريخ الميلاد (السن)</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.winner.birthYear}م</td>
+            <td style="padding: 3px 6px; text-align: center;">${d.competitor.birthYear}م</td>
           </tr>
         </tbody>
       </table>
 
       <!-- قرار الحسم -->
-      <div style="background: #f8fafc; border: 1.5px solid #000000; padding: 12px 16px; border-radius: 6px; margin-bottom: 30px; font-size: 0.9rem; line-height: 1.7;">
+      <div style="background: #f8fafc; border: 1.5px solid #000000; padding: 6px 10px; border-radius: 5px; margin-bottom: 8px; font-size: 0.76rem; line-height: 1.45;">
         <strong>القرار والنتيجة النهائية المعتمدة:</strong><br>
         تأكيد فوز وترشيح الأخ/الأخت (<strong>${d.winner.name}</strong>) لشغل المقعد رقم (<strong>${d.seatNumber}</strong>) لدرجة (<strong>${d.winner.degree}</strong>) استناداً إلى تفوقه وحسم النتيجة بمعيار (<strong>${d.decisiveCriterion}</strong>)، واعتبار المنافس المباشر الأخ/الأخت (<strong>${d.competitor.name}</strong>) في الترتيب التالي.
       </div>
 
-      <!-- التوقيعات والاعتماد الرسمي -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 35px; padding: 0 10px;">
-        <div style="text-align: center;">
-          <strong style="display: block; margin-bottom: 35px;">مُعد التقرير الإلكتروني</strong>
-          <span>......................................</span>
+      <!-- ====== توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة (مطابق للمحضر الرسمي) ====== -->
+      <div style="border-top: 1.5px solid #1e3a8a; padding-top: 4px; margin-top: 6px; page-break-inside: avoid; break-inside: avoid;">
+        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.74rem; font-weight: 900; margin: 0 0 4px 0;">
+          توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة
+        </h4>
+
+        <!-- الصف الأول: الأعضاء العاديون -->
+        <div style="display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-bottom: 4px;">
+          ${certRegularCards}
         </div>
-        <div style="text-align: center;">
-          <strong style="display: block; margin-bottom: 35px;">أمين عام الجامعة</strong>
-          <span>أ. اسكندر المقالح</span>
-        </div>
-        <div style="text-align: center;">
-          <strong style="display: block; margin-bottom: 35px;">رئيس لجنة المفاضلة</strong>
-          <span>أ.د. ابراهيم المطاع</span>
+
+        <!-- الصف الثاني: رئيس اللجنة + اعتماد رئيس الجامعة -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 75%; margin: 0 auto; text-align: center;">
+          <!-- رئيس اللجنة -->
+          <div style="border: 1px solid #1e3a8a; padding: 3px 6px; border-radius: 4px; background: #eff6ff;">
+            <p style="font-weight: 900; color: #1e3a8a; font-size: 0.65rem; margin: 0 0 1px 0;">${certChairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #0f172a; font-size: 0.70rem; margin: 0 0 1px 0;">${certChairman.name}</p>
+            <p style="color: #334155; font-size: 0.54rem; margin: 0 0 1px 0;">${certChairman.adminTitle || ''}</p>
+            <div style="height: 8px; border-bottom: 1px dashed #1e3a8a; margin-bottom: 1px;"></div>
+            <p style="font-size: 0.48rem; color: #1e3a8a; margin: 0; font-weight: 700;">التوقيع والختم الرسمي</p>
+          </div>
+
+          <!-- يعتمد رئيس الجامعة -->
+          <div style="border: 1.5px solid #16a34a; padding: 3px 6px; border-radius: 4px; background: #f0fdf4;">
+            <p style="font-weight: 900; color: #15803d; font-size: 0.65rem; margin: 0 0 1px 0;">يُعتمُد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #14532d; font-size: 0.70rem; margin: 0 0 1px 0;">${certRectorName}</p>
+            <p style="color: #166534; font-size: 0.54rem; margin: 0 0 1px 0;">رئيس ${univName}</p>
+            <div style="height: 8px; border-bottom: 1.5px dashed #16a34a; margin-bottom: 1px;"></div>
+            <p style="font-size: 0.48rem; color: #15803d; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          </div>
         </div>
       </div>
+
 
       <!-- تذييل التوثيق والترقيم الرسمي -->
       ${getOfficialPrintFooterHTML()}
