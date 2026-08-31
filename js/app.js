@@ -166,6 +166,12 @@ function initStore() {
           if (b.maxYear === 2050) b.maxYear = 2030;
         });
       }
+      if (!state.committeeDecisions || Object.keys(state.committeeDecisions).length === 0) {
+        state.committeeDecisions = (typeof DEFAULT_COMMITTEE_DECISIONS !== 'undefined')
+          ? JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_DECISIONS))
+          : {};
+      }
+
       if (!state.users || !Array.isArray(state.users) || state.users.length === 0) {
         state.users = JSON.parse(JSON.stringify(DEFAULT_USERS));
       }
@@ -206,6 +212,9 @@ function loadDefaults() {
     ? JSON.parse(JSON.stringify(PRESEEDED_CANDIDATES))
     : [];
   state.committeeMembers = JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_MEMBERS));
+  state.committeeDecisions = (typeof DEFAULT_COMMITTEE_DECISIONS !== 'undefined')
+    ? JSON.parse(JSON.stringify(DEFAULT_COMMITTEE_DECISIONS))
+    : {};
   state.currentUser = null; // البدء بشاشة تسجيل الدخول
   if (!state.auditLog) state.auditLog = [];
   if (!state.activeSessions) state.activeSessions = [];
@@ -1005,23 +1014,33 @@ function getRankedCandidates(degreeFilter = null) {
   );
 
   // تعيين الترتيب والحالة مع مراعاة قرار اللجنة المحفوظ
-  // ✅ يقرأ من state.committeeDecisions (كائن مستقل يبقى بعد إعادة Supabase)
-  const decisions = state.committeeDecisions || {};
+  // ✅ يقرأ من state.committeeDecisions أو DEFAULT_COMMITTEE_DECISIONS
+  const decisions = (state.committeeDecisions && Object.keys(state.committeeDecisions).length > 0)
+    ? state.committeeDecisions
+    : ((typeof DEFAULT_COMMITTEE_DECISIONS !== 'undefined') ? DEFAULT_COMMITTEE_DECISIONS : {});
 
   let mRank = 1;
   mastersProcessed.forEach(c => {
     c.rank = mRank;
-    // ── البحث عن أي قرار لجنة يتعلق بهذا المتنافس (كفائز أو كخاسر) ──
+    // ── البحث عن أي قرار لجنة يتعلق بهذا المتنافس (كفائز أو كخاسر) بالمعرف أو الاسم ──
     const myDecision = Object.values(decisions).find(d =>
-      d.winnerId === c.id || d.loserId === c.id
+      d.winnerId === c.id || d.loserId === c.id ||
+      (d.winnerName && normalizeArabicString(d.winnerName) === normalizeArabicString(c.name)) ||
+      (d.loserName && normalizeArabicString(d.loserName) === normalizeArabicString(c.name))
     );
     if (myDecision) {
-      if (myDecision.winnerId === c.id) {
+      const isWinner = myDecision.winnerId === c.id ||
+        (myDecision.winnerName && normalizeArabicString(myDecision.winnerName) === normalizeArabicString(c.name));
+
+      if (isWinner) {
         c.status     = 'مقبول';
         c.tieBreaker = 'بقرار لجنة المفاضلة';
         // إيجاد المنافس المستبعد لربط كرت المقارنة وتفاصيل الإفادة
-        const competitor = mastersProcessed.find(comp => comp.id === myDecision.loserId)
-                        || mastersProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+        const competitor = mastersProcessed.find(comp =>
+          (myDecision.loserId && comp.id === myDecision.loserId) ||
+          (myDecision.loserName && normalizeArabicString(comp.name) === normalizeArabicString(myDecision.loserName))
+        ) || mastersProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+
         c.tieBreakerDetails = {
           winner: {
             id: c.id,
@@ -1073,14 +1092,22 @@ function getRankedCandidates(degreeFilter = null) {
   phdsProcessed.forEach(c => {
     c.rank = pRank;
     const myDecision = Object.values(decisions).find(d =>
-      d.winnerId === c.id || d.loserId === c.id
+      d.winnerId === c.id || d.loserId === c.id ||
+      (d.winnerName && normalizeArabicString(d.winnerName) === normalizeArabicString(c.name)) ||
+      (d.loserName && normalizeArabicString(d.loserName) === normalizeArabicString(c.name))
     );
     if (myDecision) {
-      if (myDecision.winnerId === c.id) {
+      const isWinner = myDecision.winnerId === c.id ||
+        (myDecision.winnerName && normalizeArabicString(myDecision.winnerName) === normalizeArabicString(c.name));
+
+      if (isWinner) {
         c.status     = 'مقبول';
         c.tieBreaker = 'بقرار لجنة المفاضلة';
-        const competitor = phdsProcessed.find(comp => comp.id === myDecision.loserId)
-                        || phdsProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+        const competitor = phdsProcessed.find(comp =>
+          (myDecision.loserId && comp.id === myDecision.loserId) ||
+          (myDecision.loserName && normalizeArabicString(comp.name) === normalizeArabicString(myDecision.loserName))
+        ) || phdsProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+
         c.tieBreakerDetails = {
           winner: {
             id: c.id,

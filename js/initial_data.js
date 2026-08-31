@@ -198,6 +198,22 @@ const DEFAULT_COMMITTEE_MEMBERS = [
   }
 ];
 
+const DEFAULT_COMMITTEE_DECISIONS = {
+  "1787417863415": {
+    "winnerId": 1787417863415,
+    "loserId": 1787417959614,
+    "winnerName": "عبدالملك محمد حسين الهمداني",
+    "loserName": "عبده سعيد علي الشرعبي",
+    "degree": "ماجستير",
+    "seatNumber": 3,
+    "note": "حسمت اللجنة كسر التعادل اعتماداً على درجات التقدير العام من المائة لصالح المتقدم عبدالملك الهمداني حيث كانت درجات معدله 62.42% بينما درجات التقدير العام للمتقدم عبده سعيد 56.79%.",
+    "date": "2026/08/31",
+    "by": "أ.د. ابراهيم المطاع (رئيس اللجنة)",
+    "timestamp": 1788174126681
+  }
+};
+
+
 const DEFAULT_CRITERIA = {
   _approvedVersion: '2026_APPROVED_V2',
   seniority: {
