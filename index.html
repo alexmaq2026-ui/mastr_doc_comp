@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تطبيق التنافس على درجتي الماجستير والدكتوراه - جامعة صنعاء</title>
-  <link rel="stylesheet" href="css/style.css?v=83">
+  <link rel="stylesheet" href="css/style.css?v=88">
   <link rel="stylesheet" href="css/assistant_guide.css?v=95">
   <link rel="stylesheet" href="css/permissions.css?v=1">
 </head>
@@ -441,9 +441,31 @@
     <!-- 3. شاشة المفاضلة والترتيب -->
     <section id="tab-scoring" class="tab-content">
       <div class="card">
-        <div class="card-header" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+        <!-- الهيدر الرسمي المعتمد للطباعة لمصفوفة المفاضلة -->
+        <div class="scoring-official-print-header" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 10px;">
+            <div style="text-align: right;">
+              <h2 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #0f172a;">جامعة صنعاء</h2>
+              <h3 style="margin: 2px 0 0 0; font-size: 0.90rem; font-weight: 800; color: #1e3a8a;">لجنة المفاضلة للمتقدمين لمنح الدراسات العليا</h3>
+              <h4 style="margin: 2px 0 0 0; font-size: 0.80rem; font-weight: 700; color: #1e3a8a;">الكادر الإداري</h4>
+            </div>
+            <div style="text-align: center;">
+              <h2 id="scoring-print-doc-title" style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #0f172a;">مصفوفة التنافس والترتيب التلقائي</h2>
+              <span id="scoring-print-doc-subtitle" style="display: block; font-size: 0.82rem; font-weight: 800; color: #1e3a8a; margin-top: 3px;">منح الماجستير للعام الجامعي 2026م</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; background: #0f172a; color: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #334155;">
+              <div style="background: linear-gradient(135deg, #2563eb, #0d9488); color: #ffffff; font-weight: 900; width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.70rem; font-family: sans-serif;">MT</div>
+              <div style="text-align: left; line-height: 1.1;">
+                <span style="font-weight: 900; font-size: 0.68rem; letter-spacing: 0.5px; display: block;">MAQATECH</span>
+                <span style="font-size: 0.52rem; color: #94a3b8; display: block;">SOFTWARE SOLUTIONS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-header no-print" style="flex-wrap: wrap; gap: 12px; align-items: center;">
           <h2 class="card-title">مصفوفة التنافس والترتيب التلقائي</h2>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <div class="no-print" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; gap: 6px; align-items: center;">
               <label style="font-weight: 700;">عرض درجة:</label>
               <select id="filter-rankings-degree" class="form-control" style="width: 145px;">
@@ -473,24 +495,38 @@
           <table class="data-table" id="scoring-table">
             <thead>
               <tr>
-                <th rowspan="2" style="width:42px; vertical-align:middle;">م</th>
-                <th rowspan="2" style="min-width:140px; vertical-align:middle;">المتنافس</th>
-                <th rowspan="2" style="vertical-align:middle;">التخصص</th>
-                <th colspan="4" style="text-align:center; background:rgba(37,99,235,0.22); color:#93c5fd; font-size:0.8rem; border-bottom:1px solid rgba(37,99,235,0.3);">نقاط المفاضلة</th>
-                <th rowspan="2" style="vertical-align:middle;">الإجمالي</th>
-                <th rowspan="2" style="vertical-align:middle;">النتيجة</th>
-                <th rowspan="2" style="vertical-align:middle;">الملاحظة</th>
-                <th rowspan="2" style="vertical-align:middle;">التفاصيل</th>
+                <th rowspan="2" class="th-main-header" style="width:38px; vertical-align:middle;">م</th>
+                <th rowspan="2" class="th-main-header" style="min-width:170px; text-align:right; vertical-align:middle;">المتنافس</th>
+                <th rowspan="2" class="th-main-header" style="min-width:110px; text-align:right; vertical-align:middle;">التخصص</th>
+                <th colspan="4" class="th-main-header th-scores-group" style="text-align:center; vertical-align:middle;">نقاط المفاضلة</th>
+                <th rowspan="2" class="th-main-header" style="vertical-align:middle;">الإجمالي</th>
+                <th rowspan="2" class="th-main-header" style="vertical-align:middle;">النتيجة</th>
+                <th rowspan="2" class="th-main-header" style="vertical-align:middle;">الملاحظة</th>
+                <th rowspan="2" class="th-main-header col-action" style="vertical-align:middle;">التفاصيل</th>
               </tr>
               <tr>
-                <th style="background:rgba(37,99,235,0.12); font-size:0.78rem;">الأقدمية</th>
-                <th style="background:rgba(37,99,235,0.12); font-size:0.78rem;">العمر</th>
-                <th style="background:rgba(37,99,235,0.12); font-size:0.78rem;">التخصص</th>
-                <th style="background:rgba(37,99,235,0.12); font-size:0.78rem;">التقدير</th>
+                <th class="th-sub-score">الأقدمية</th>
+                <th class="th-sub-score">العمر</th>
+                <th class="th-sub-score">التخصص</th>
+                <th class="th-sub-score">التقدير</th>
               </tr>
             </thead>
             <tbody id="scoring-tbody"></tbody>
           </table>
+        </div>
+
+        <!-- قسم التوقيعات الرسمية الهيكلية المطابق للمحضر الرسمي -->
+        <div id="scoring-official-signatures" class="signatures-section" style="display: none; margin-top: 16px; border-top: 2px solid #1e3a8a; padding-top: 8px; page-break-inside: avoid;"></div>
+
+        <!-- الفوتر الرسمي لحفظ الحقوق الفكرية لشركة ماقتك عند الطباعة -->
+        <div class="scoring-official-print-footer" style="display: none; margin-top: 14px; border-top: 1.5px solid #cbd5e1; padding-top: 6px; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #475569;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0f172a; color: #60a5fa; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 0.62rem; font-family: sans-serif; border: 1px solid #334155;">MT</span>
+            <strong style="color: #0f172a; letter-spacing: 0.5px;">MAQATECH SOFTWARE SOLUTIONS</strong>
+          </div>
+          <div>
+            جميع حقوق الملكية الفكرية والتطوير البرمجي محفوظة لشركة ماقتك للحلول البرمجية (MAQATECH) © 2026
+          </div>
         </div>
       </div>
     </section>
@@ -1405,7 +1441,7 @@
   <script src="js/supabase_client.js?v=95"></script>
   <script src="js/permissions_engine.js?v=97"></script>
   <script src="js/assistant_guide.js?v=97"></script>
-  <script src="js/app.js?v=99"></script>
+  <script src="js/app.js?v=104"></script>
 
   <!-- زر المساعد العائم السريع -->
   <button class="floating-assistant-fab" id="btn-floating-assistant" onclick="openAssistantGuide()" title="المساعد الذكي ودليل النظام">

@@ -1013,6 +1013,25 @@ body {
     font-size: 0.82rem;
     text-align: center;
 }
+.data-table .col-rank { font-weight: 800; color: #f8fafc; text-align: center; }
+.data-table .col-rank strong { color: #f8fafc; }
+.data-table .col-name { font-weight: 800; font-size: 0.92rem; color: #f8fafc; text-align: right; white-space: normal; word-break: break-word; }
+.data-table .col-spec { font-weight: 700; font-size: 0.88rem; color: #cbd5e1; text-align: right; white-space: normal; word-break: break-word; }
+.data-table .col-score { font-weight: 800; font-size: 0.90rem; color: #e2e8f0; text-align: center; }
+.data-table .col-custom-score { background: rgba(245, 158, 11, 0.04); }
+.data-table .col-total { text-align: center; }
+.data-table .col-total strong { color: var(--primary); font-size: 1.05rem; }
+.data-table .score-zero { font-weight: 800; font-size: 0.90rem; color: #ef4444; }
+.data-table .score-positive { font-weight: 800; font-size: 0.90rem; color: #10b981; }
+
+.data-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-light);
+    vertical-align: middle;
+    white-space: nowrap;
+    text-align: center;
+}
 
 /* رأس الجدول ثنائي الصفوف */
 .data-table thead tr:first-child th {
@@ -1021,6 +1040,31 @@ body {
 
 .data-table thead tr:last-child th {
     border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.data-table .th-main-header {
+    background: #1e293b;
+    color: #f8fafc;
+    font-weight: 800;
+}
+.data-table .th-scores-group {
+    background: rgba(37,99,235,0.22);
+    color: #93c5fd;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(37,99,235,0.3);
+}
+.data-table .th-sub-score {
+    background: rgba(37,99,235,0.12);
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.data-table .th-custom-criteria {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    font-size: 0.78rem;
+    font-weight: 700;
 }
 
 .data-table td {
@@ -1574,27 +1618,32 @@ body {
     }
 
     .signatures-section {
-        margin-top: 15px !important;
+        margin-top: 10px !important;
         padding-top: 8px !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+        page-break-before: avoid !important;
+        break-before: avoid !important;
     }
 
-    .signature-grid-row1 {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
+    /* شريط التوقيعات الافقي المدمج */
+    .signatures-section > div {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: space-around !important;
+        align-items: flex-start !important;
         gap: 6px !important;
     }
 
-    .signature-grid-row2 {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
-    }
-
-    .signature-card {
-        padding: 4px 6px !important;
-        border-radius: 4px !important;
+    .signatures-section > div > div {
+        flex: 1 !important;
+        min-width: 0 !important;
+        background: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
+        padding: 2px 4px 4px !important;
+        border-radius: 0 !important;
     }
 }
 
@@ -2102,15 +2151,23 @@ body {
     }
 }
 
+
+
 /* ====================================================
    CSS طباعة مصفوفة التنافس والترتيب (A4 landscape)
    ==================================================== */
 @media print {
+    @page {
+        size: A4 landscape !important;
+        margin: 5mm 8mm 7mm 8mm !important;
+    }
     body.is-scoring-print {
         background: #ffffff !important;
         color: #000000 !important;
         padding: 0 !important;
         margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     body.is-scoring-print header,
     body.is-scoring-print nav,
@@ -2121,7 +2178,8 @@ body {
     body.is-scoring-print nav.tabs-nav,
     body.is-scoring-print .no-print,
     body.is-scoring-print .btn,
-    body.is-scoring-print .col-action,
+    body.is-scoring-print .scroll-mirror-bar,
+    body.is-scoring-print #scoring-warning-banner,
     body.is-scoring-print .modal-overlay {
         display: none !important;
     }
@@ -2136,6 +2194,8 @@ body {
     body.is-scoring-print #tab-scoring {
         display: block !important;
         width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     body.is-scoring-print #tab-scoring .card {
         border: none !important;
@@ -2143,9 +2203,232 @@ body {
         background: transparent !important;
         padding: 0 !important;
     }
-    @page {
-        size: A4 landscape;
-        margin: 6mm 8mm;
+    body.is-scoring-print #tab-scoring .card-header {
+        display: none !important;
+    }
+    body.is-scoring-print .scoring-official-print-header {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+    body.is-scoring-print #scoring-official-signatures {
+        display: block !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+    }
+    body.is-scoring-print .scoring-official-print-footer {
+        display: flex !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+    }
+    body.is-scoring-print .table-responsive {
+        overflow: visible !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    body.is-scoring-print #scoring-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        margin: 0 !important;
+        font-size: 9.5pt !important;
+    }
+    body.is-scoring-print #scoring-table th,
+    body.is-scoring-print #scoring-table td {
+        border: 1px solid #475569 !important;
+        padding: 4px 3px !important;
+        vertical-align: middle !important;
+        line-height: 1.35 !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    body.is-scoring-print #scoring-table thead th,
+    body.is-scoring-print #scoring-table thead tr th,
+    body.is-scoring-print #scoring-table thead tr:last-child th,
+    body.is-scoring-print #scoring-table th.th-custom-criteria {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        font-size: 8.5pt !important;
+        border: 1px solid #475569 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.is-scoring-print #scoring-table thead tr:first-child th {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        font-size: 9pt !important;
+        border: 1px solid #475569 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.is-scoring-print #scoring-table td {
+        color: #0f172a !important;
+        text-align: center !important;
+        font-size: 9.2pt !important;
+        background: #ffffff !important;
+    }
+    body.is-scoring-print #scoring-table .col-rank,
+    body.is-scoring-print #scoring-table .col-rank strong,
+    body.is-scoring-print #scoring-table tbody td:nth-child(1),
+    body.is-scoring-print #scoring-table tbody td:nth-child(1) strong {
+        color: #0f172a !important;
+        font-weight: 900 !important;
+        font-size: 9.5pt !important;
+        text-align: center !important;
+    }
+    body.is-scoring-print #scoring-table .col-name,
+    body.is-scoring-print #scoring-table tbody td:nth-child(2) {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        font-size: 9.8pt !important;
+        text-align: right !important;
+    }
+    body.is-scoring-print #scoring-table .col-spec,
+    body.is-scoring-print #scoring-table tbody td:nth-child(3) {
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        font-size: 9.2pt !important;
+        text-align: right !important;
+    }
+    body.is-scoring-print #scoring-table .col-score {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        font-size: 9.5pt !important;
+        text-align: center !important;
+    }
+    body.is-scoring-print #scoring-table .col-total strong,
+    body.is-scoring-print #scoring-table tbody td:nth-child(9) strong {
+        color: #1e3a8a !important;
+        font-weight: 900 !important;
+        font-size: 11pt !important;
+    }
+    body.is-scoring-print #scoring-table .score-zero {
+        color: #b91c1c !important;
+        font-weight: 800 !important;
+    }
+    body.is-scoring-print #scoring-table .score-positive {
+        color: #047857 !important;
+        font-weight: 800 !important;
+    }
+    /* تقسيم عرض الأعمدة هندسياً ليملأ الورقة الأفقية A4 بنسبة 100% */
+    body.is-scoring-print #scoring-table thead tr:first-child th:nth-child(1),
+    body.is-scoring-print #scoring-table tbody td:nth-child(1) {
+        width: 3.5% !important;
+        text-align: center !important;
+        font-weight: 800 !important;
+        font-size: 9.2pt !important;
+    }
+    body.is-scoring-print #scoring-table thead tr:first-child th:nth-child(2),
+    body.is-scoring-print #scoring-table tbody td:nth-child(2) {
+        width: 25% !important;
+        text-align: right !important;
+        padding-right: 6px !important;
+        font-weight: 800 !important;
+        font-size: 9.8pt !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    body.is-scoring-print #scoring-table thead tr:first-child th:nth-child(3),
+    body.is-scoring-print #scoring-table tbody td:nth-child(3) {
+        width: 17% !important;
+        text-align: right !important;
+        padding-right: 6px !important;
+        font-weight: 700 !important;
+        font-size: 9.2pt !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    /* درجات المفاضلة (أقدمية، عمر، تخصص، تقدير، استمرارية) */
+    body.is-scoring-print #scoring-table tbody td:nth-child(4),
+    body.is-scoring-print #scoring-table tbody td:nth-child(5),
+    body.is-scoring-print #scoring-table tbody td:nth-child(6),
+    body.is-scoring-print #scoring-table tbody td:nth-child(7),
+    body.is-scoring-print #scoring-table tbody td:nth-child(8) {
+        width: 5.5% !important;
+        text-align: center !important;
+        font-weight: 800 !important;
+        font-size: 9.5pt !important;
+    }
+    /* الإجمالي */
+    body.is-scoring-print #scoring-table tbody td:nth-child(9) {
+        width: 6.5% !important;
+        text-align: center !important;
+        font-weight: 900 !important;
+        font-size: 11pt !important;
+        color: #1e3a8a !important;
+    }
+    /* النتيجة */
+    body.is-scoring-print #scoring-table tbody td:nth-child(10) {
+        width: 8% !important;
+        text-align: center !important;
+    }
+    /* الملاحظة */
+    body.is-scoring-print #scoring-table tbody td:nth-child(11) {
+        width: 12.5% !important;
+        text-align: center !important;
+    }
+    /* إخفاء عمود التفاصيل حصرياً في الطباعة دون التأثير على رؤوس الأعمدة */
+    body.is-scoring-print #scoring-table .col-action,
+    body.is-scoring-print #scoring-table th.col-action,
+    body.is-scoring-print #scoring-table td.col-action {
+        display: none !important;
+    }
+    /* تنسيق الشارات عند الطباعة */
+    body.is-scoring-print .badge-accepted {
+        background: #ecfdf5 !important;
+        color: #047857 !important;
+        border: 1.5px solid #059669 !important;
+        font-weight: 900 !important;
+        font-size: 8.5pt !important;
+        padding: 3px 8px !important;
+        border-radius: 4px !important;
+        display: inline-block !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.is-scoring-print .tie-badge-hint {
+        display: none !important;
+    }
+    body.is-scoring-print .tie-badge-clickable {
+        background: #fefce8 !important;
+        border: 1.5px solid #b45309 !important;
+        border-radius: 4px !important;
+        padding: 2px 4px !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.is-scoring-print .tie-badge-tag {
+        background: #fde68a !important;
+        color: #78350f !important;
+        font-weight: 800 !important;
+        border-bottom: 1px solid #d97706 !important;
+        display: block !important;
+        font-size: 7.5pt !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding: 1px 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.is-scoring-print .tie-badge-reason {
+        color: #78350f !important;
+        font-weight: 900 !important;
+        font-size: 8pt !important;
+        display: block !important;
+        margin-top: 1px !important;
+        text-align: center !important;
     }
 }
 

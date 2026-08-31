@@ -1004,11 +1004,65 @@ function getRankedCandidates(degreeFilter = null) {
     allCandidates.filter(c => c.degree === 'دكتوراه'), phdLimit
   );
 
-  // تعيين الترتيب والحالة (إغلاق وإلغاء كلمة احتياط)
+  // تعيين الترتيب والحالة مع مراعاة قرار اللجنة المحفوظ
+  // ✅ يقرأ من state.committeeDecisions (كائن مستقل يبقى بعد إعادة Supabase)
+  const decisions = state.committeeDecisions || {};
+
   let mRank = 1;
   mastersProcessed.forEach(c => {
-    c.rank   = mRank;
-    if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+    c.rank = mRank;
+    // ── البحث عن أي قرار لجنة يتعلق بهذا المتنافس (كفائز أو كخاسر) ──
+    const myDecision = Object.values(decisions).find(d =>
+      d.winnerId === c.id || d.loserId === c.id
+    );
+    if (myDecision) {
+      if (myDecision.winnerId === c.id) {
+        c.status     = 'مقبول';
+        c.tieBreaker = 'بقرار لجنة المفاضلة';
+        // إيجاد المنافس المستبعد لربط كرت المقارنة وتفاصيل الإفادة
+        const competitor = mastersProcessed.find(comp => comp.id === myDecision.loserId)
+                        || mastersProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+        c.tieBreakerDetails = {
+          winner: {
+            id: c.id,
+            name: c.name,
+            degree: c.degree,
+            rank: c.rank,
+            totalScore: c.scores.totalScore,
+            specialization: c.specialization,
+            specTieScore: getSpecTieBreakScore(c),
+            hiringYear: getHiringYear(c),
+            continuity: c.continuity || 'مستمر',
+            continuityScore: getContinuityScore(c),
+            grade: c.grade || 'بدون',
+            birthYear: getBirthYear(c)
+          },
+          competitor: competitor ? {
+            id: competitor.id,
+            name: competitor.name,
+            degree: competitor.degree,
+            rank: competitor.rank || (c.rank + 1),
+            totalScore: competitor.scores.totalScore,
+            specialization: competitor.specialization,
+            specTieScore: getSpecTieBreakScore(competitor),
+            hiringYear: getHiringYear(competitor),
+            continuity: competitor.continuity || 'مستمر',
+            continuityScore: getContinuityScore(competitor),
+            grade: competitor.grade || 'بدون',
+            birthYear: getBirthYear(competitor)
+          } : null,
+          seatNumber: masterLimit,
+          decisiveCriterion: 'بقرار لجنة المفاضلة',
+          note: myDecision.note,
+          date: myDecision.date,
+          by: myDecision.by,
+          isCommitteeDecision: true
+        };
+      } else {
+        c.status     = '';
+        c.tieBreaker = null;
+      }
+    } else if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
       c.status = 'معلّق للجنة';
     } else {
       c.status = mRank <= masterLimit ? 'مقبول' : '';
@@ -1017,8 +1071,57 @@ function getRankedCandidates(degreeFilter = null) {
   });
   let pRank = 1;
   phdsProcessed.forEach(c => {
-    c.rank   = pRank;
-    if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+    c.rank = pRank;
+    const myDecision = Object.values(decisions).find(d =>
+      d.winnerId === c.id || d.loserId === c.id
+    );
+    if (myDecision) {
+      if (myDecision.winnerId === c.id) {
+        c.status     = 'مقبول';
+        c.tieBreaker = 'بقرار لجنة المفاضلة';
+        const competitor = phdsProcessed.find(comp => comp.id === myDecision.loserId)
+                        || phdsProcessed.find(comp => comp.id !== c.id && comp.scores.totalScore === c.scores.totalScore);
+        c.tieBreakerDetails = {
+          winner: {
+            id: c.id,
+            name: c.name,
+            degree: c.degree,
+            rank: c.rank,
+            totalScore: c.scores.totalScore,
+            specialization: c.specialization,
+            specTieScore: getSpecTieBreakScore(c),
+            hiringYear: getHiringYear(c),
+            continuity: c.continuity || 'مستمر',
+            continuityScore: getContinuityScore(c),
+            grade: c.grade || 'بدون',
+            birthYear: getBirthYear(c)
+          },
+          competitor: competitor ? {
+            id: competitor.id,
+            name: competitor.name,
+            degree: competitor.degree,
+            rank: competitor.rank || (c.rank + 1),
+            totalScore: competitor.scores.totalScore,
+            specialization: competitor.specialization,
+            specTieScore: getSpecTieBreakScore(competitor),
+            hiringYear: getHiringYear(competitor),
+            continuity: competitor.continuity || 'مستمر',
+            continuityScore: getContinuityScore(competitor),
+            grade: competitor.grade || 'بدون',
+            birthYear: getBirthYear(competitor)
+          } : null,
+          seatNumber: phdLimit,
+          decisiveCriterion: 'بقرار لجنة المفاضلة',
+          note: myDecision.note,
+          date: myDecision.date,
+          by: myDecision.by,
+          isCommitteeDecision: true
+        };
+      } else {
+        c.status     = '';
+        c.tieBreaker = null;
+      }
+    } else if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
       c.status = 'معلّق للجنة';
     } else {
       c.status = pRank <= phdLimit ? 'مقبول' : '';
@@ -1622,6 +1725,317 @@ function findTieBreakerCandidate(candidateId) {
   return allRanked.find(c => c.id === candidateId && c.tieBreaker && c.tieBreakerDetails);
 }
 
+// ── البحث عن المتنافس المُحال للجنة (بدون tieBreakerDetails) ──
+function findCommitteeReferredCandidate(candidateId) {
+  const rankedMaster = getRankedCandidates('ماجستير');
+  const rankedPhd = getRankedCandidates('دكتوراه');
+  const allRanked = [...rankedMaster, ...rankedPhd];
+  return allRanked.find(c => c.id === candidateId && c.tieBreaker && c.tieBreaker.includes('يُحال'));
+}
+
+// ══════════════════════════════════════════════════════════════
+// 🏛️ شاشة قرار اللجنة للتعادل التام (Committee Decision Modal)
+// ══════════════════════════════════════════════════════════════
+let currentCommitteeDecisionCandidateId = null;
+
+function openCommitteeDecisionModal(candidateId) {
+  hideTieBreakerTooltip();
+
+  // جلب المتنافس المُحال ومعرفة درجته والمتعادلين معه
+  const rankedMaster = getRankedCandidates('ماجستير');
+  const rankedPhd    = getRankedCandidates('دكتوراه');
+  const allRanked    = [...rankedMaster, ...rankedPhd];
+
+  const referredC = allRanked.find(c => c.id === candidateId);
+  if (!referredC) return;
+
+  const degree = referredC.degree;
+  const totalScore = referredC.scores.totalScore;
+  const isChairman = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'chairman');
+
+  // جمع كل المتنافسين المتعادلين بنفس الدرجة العلمية ونفس المجموع عند خط الحد الفاصل
+  const limit = degree === 'ماجستير'
+    ? (parseInt(state.settings && state.settings.masterGrantsCount) || 3)
+    : (parseInt(state.settings && state.settings.phdGrantsCount) || 3);
+
+  const degreeRanked = allRanked.filter(c => c.degree === degree);
+
+  // ✅ فقط المتنافسان عند خط التماس:
+  //    - صاحب المقعد الأخير  (rank = limit)     ← آخر مقبول
+  //    - أول المستبعدين      (rank = limit + 1)  ← أول خارج
+  // لا يدخل من سبقهم حتى لو نقاطه متساوية (هو مضمون مقبول بالفعل)
+  const lastWinnerC    = degreeRanked.find(c => c.rank === limit);
+  const firstExcludedC = degreeRanked.find(c => c.rank === limit + 1);
+  const tiedCandidates = [lastWinnerC, firstExcludedC].filter(Boolean);
+
+  currentCommitteeDecisionCandidateId = candidateId;
+
+  const modal  = document.getElementById('modal-tie-breaker-details');
+  const body   = document.getElementById('tie-breaker-modal-body');
+  const footer = modal ? modal.querySelector('.modal-footer') : null;
+  if (!modal || !body) return;
+
+  // القرار المحفوظ مسبقاً إن وجد
+  const savedDecision = state.committeeDecisions && state.committeeDecisions[candidateId];
+  const savedWinnerId = savedDecision ? savedDecision.winnerId : null;
+  const savedNote     = savedDecision ? savedDecision.note : '';
+
+  // بناء بطاقات المتنافسين
+  const candidateCards = tiedCandidates.map(c => {
+    const isSelected = savedWinnerId === c.id;
+    const borderColor = isSelected ? '#10b981' : 'rgba(255,255,255,0.12)';
+    const bgColor     = isSelected ? 'rgba(16,185,129,0.15)' : 'rgba(15,23,42,0.6)';
+    return `
+      <div id="committee-card-${c.id}"
+           onclick="selectCommitteeWinner(${c.id}, ${candidateId})"
+           style="cursor:pointer; border:2px solid ${borderColor}; background:${bgColor};
+                  border-radius:12px; padding:14px 16px; transition:all 0.2s;
+                  ${isSelected ? 'box-shadow:0 0 18px rgba(16,185,129,0.35);' : ''}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span data-committee-radio style="font-size:1.2rem; line-height:1; color:${isSelected ? '#10b981' : '#94a3b8'};">
+              ${isSelected ? '🔘' : '⚪'}
+            </span>
+            <span style="font-size:1.05rem; font-weight:900; color:#f1f5f9;">${c.name}</span>
+          </div>
+          <span data-committee-badge style="background:${isSelected ? '#10b981' : 'rgba(100,116,139,0.3)'}; color:${isSelected ? '#fff' : '#94a3b8'}; font-size:0.75rem; font-weight:${isSelected ? '800' : '700'}; padding:4px 12px; border-radius:10px; transition:all 0.2s;">
+            ${isSelected ? '✅ الفائز المختار' : 'انقر للاختيار'}
+          </span>
+        </div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.82rem; color:#94a3b8; margin-right:30px;">
+          <span>🎓 ${c.degree}</span>
+          <span>📚 ${c.specialization || '—'}</span>
+          <span>🏅 ${c.scores.totalScore} نقطة</span>
+          <span>📅 رتبة: ${c.rank}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <!-- رأس الشاشة -->
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(30,58,138,0.3));
+                border:1.5px solid rgba(239,68,68,0.4); border-radius:12px; padding:14px 18px; margin-bottom:18px;">
+      <div style="color:#f87171; font-size:1rem; font-weight:900; margin-bottom:6px;">
+        🏛️ شاشة الإجراءات الاستثنائية — قرار اللجنة الرسمي
+      </div>
+      <p style="margin:0; color:#cbd5e1; font-size:0.82rem; line-height:1.6;">
+        استُنفدت جميع معايير كسر التعادل الآلية ولم تُفضِ إلى حسم على المقعد رقم
+        <strong style="color:#fbbf24;">(${limit})</strong> لدرجة
+        <strong style="color:#fbbf24;">${degree}</strong>.
+        يُطلب من رئيس اللجنة اختيار الفائز يدوياً وتوثيق القرار الإداري.
+      </p>
+    </div>
+
+    <!-- المتنافسون المتعادلون -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <span style="font-weight:800; color:#fbbf24; font-size:0.88rem;">
+        ⚖️ المتنافسون المتعادلون — انقر على أي متنافس لتحديده فائزاً:
+      </span>
+      <span style="font-size:0.75rem; color:#94a3b8;">
+        (انقر مجدداً على المتنافس المختار لإلغاء التحديد)
+      </span>
+    </div>
+    <div id="committee-candidates-grid" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      ${candidateCards}
+    </div>
+
+    <!-- ملخص القرار الإداري -->
+    <div style="background:rgba(30,58,138,0.2); border:1px solid rgba(59,130,246,0.35);
+                border-radius:10px; padding:14px 16px;">
+      <label style="font-weight:800; color:#60a5fa; font-size:0.88rem; display:block; margin-bottom:8px;">
+        📝 ملخص القرار الإداري لرئيس اللجنة (قابل للتعديل):
+      </label>
+      <textarea id="committee-decision-note"
+                rows="4"
+                style="width:100%; background:rgba(15,23,42,0.8); color:#e2e8f0; border:1px solid rgba(100,116,139,0.4);
+                       border-radius:8px; padding:10px 12px; font-family:inherit; font-size:0.83rem;
+                       resize:vertical; direction:rtl; line-height:1.6;"
+                placeholder="اكتب هنا نص القرار الإداري الرسمي للجنة... مثال: حسم اللجنة التعادل لصالح المتقدم..."
+                ${!isChairman ? 'readonly' : ''}>${savedNote}</textarea>
+      ${!isChairman ? '<div style="color:#f59e0b;font-size:0.75rem;margin-top:4px;">⚠️ صلاحية التعديل لرئيس اللجنة فقط.</div>' : ''}
+    </div>
+  `;
+
+  // تعديل footer: إضافة زر الحفظ وزر الإلغاء إذا رئيس اللجنة
+  if (footer) {
+    footer.innerHTML = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; width:100%; justify-content:space-between;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          ${isChairman ? `
+            <button class="btn btn-primary" onclick="committeeFinalDecision(${candidateId})"
+                    style="background:linear-gradient(135deg,#10b981,#059669); font-weight:800; display:flex; align-items:center; gap:6px; min-width:180px;">
+              🏛️ تسجيل قرار اللجنة وحفظه
+            </button>
+            ${savedDecision ? `
+              <button class="btn btn-danger" onclick="resetCommitteeDecision(${candidateId})"
+                      style="background:linear-gradient(135deg,#ef4444,#dc2626); font-weight:800; padding:8px 14px; font-size:0.8rem;">
+                🔄 إلغاء القرار وإعادة التعليق
+              </button>
+            ` : ''}
+          ` : ''}
+          <button class="btn btn-secondary" onclick="closeTieBreakerDetailsModal()" style="font-weight:700; padding:8px 20px;">
+            إغلاق
+          </button>
+        </div>
+        ${savedDecision ? `<span style="color:#34d399; font-size:0.78rem; font-weight:700;">✅ تم تسجيل قرار اللجنة بتاريخ: ${savedDecision.date}</span>` : ''}
+      </div>
+    `;
+  }
+
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+}
+
+// ── اختيار الفائز من شاشة اللجنة (مع إمكانية التبديل وإلغاء التحديد بالنقر) ──
+function selectCommitteeWinner(winnerId, referredId) {
+  if (!state.committeeDecisions) state.committeeDecisions = {};
+  if (!state.committeeDecisions[referredId]) state.committeeDecisions[referredId] = {};
+
+  const currentWinner = state.committeeDecisions[referredId].winnerId;
+  const isDeselecting = (currentWinner === winnerId);
+
+  if (isDeselecting) {
+    state.committeeDecisions[referredId].winnerId = null;
+  } else {
+    state.committeeDecisions[referredId].winnerId = winnerId;
+  }
+
+  // جلب المتنافسَين عند خط التماس فقط
+  const rankedMaster = getRankedCandidates('ماجستير');
+  const rankedPhd    = getRankedCandidates('دكتوراه');
+  const allRanked    = [...rankedMaster, ...rankedPhd];
+  const referredC    = allRanked.find(c => c.id === referredId);
+  if (!referredC) return;
+
+  const degree = referredC.degree;
+  const limit  = degree === 'ماجستير'
+    ? (parseInt(state.settings && state.settings.masterGrantsCount) || 3)
+    : (parseInt(state.settings && state.settings.phdGrantsCount)    || 3);
+
+  const degreeRanked   = allRanked.filter(c => c.degree === degree);
+  const lastWinnerC    = degreeRanked.find(c => c.rank === limit);
+  const firstExcludedC = degreeRanked.find(c => c.rank === limit + 1);
+  const tiedCandidates = [lastWinnerC, firstExcludedC].filter(Boolean);
+
+  tiedCandidates.forEach(c => {
+    const card = document.getElementById(`committee-card-${c.id}`);
+    if (!card) return;
+
+    const isWinner = (!isDeselecting && c.id === winnerId);
+    const badge = card.querySelector('[data-committee-badge]');
+    const radio = card.querySelector('[data-committee-radio]');
+
+    if (isWinner) {
+      // ── الفائز: أخضر + نص "الفائز المختار" ──
+      card.style.border     = '2px solid #10b981';
+      card.style.background = 'rgba(16,185,129,0.15)';
+      card.style.boxShadow  = '0 0 18px rgba(16,185,129,0.35)';
+      if (badge) {
+        badge.style.background = '#10b981';
+        badge.style.color      = '#fff';
+        badge.textContent      = '✅ الفائز المختار';
+      }
+      if (radio) {
+        radio.textContent = '🔘';
+        radio.style.color = '#10b981';
+      }
+    } else {
+      // ── الخاسر / غير المختار: رمادي + إعادة نص "انقر للاختيار" ──
+      card.style.border     = '2px solid rgba(255,255,255,0.12)';
+      card.style.background = 'rgba(15,23,42,0.6)';
+      card.style.boxShadow  = '';
+      if (badge) {
+        badge.style.background = 'rgba(100,116,139,0.3)';
+        badge.style.color      = '#94a3b8';
+        badge.textContent      = 'انقر للاختيار';
+      }
+      if (radio) {
+        radio.textContent = '⚪';
+        radio.style.color = '#94a3b8';
+      }
+    }
+  });
+}
+
+
+// ── حفظ قرار اللجنة النهائي وتحديث النظام ──
+function committeeFinalDecision(referredId) {
+  if (!state.committeeDecisions) state.committeeDecisions = {};
+  const decision = state.committeeDecisions[referredId];
+  const winnerId = decision && decision.winnerId;
+
+  if (!winnerId) {
+    showToast('⚠️ يرجى اختيار الفائز أولاً قبل الحفظ', 'warning');
+    return;
+  }
+
+  const noteEl = document.getElementById('committee-decision-note');
+  const note   = noteEl ? noteEl.value.trim() : '';
+  if (!note || note.length < 10) {
+    showToast('⚠️ يرجى كتابة ملخص القرار الإداري (10 أحرف على الأقل)', 'warning');
+    return;
+  }
+
+  // ── جلب المتنافسَين عند خط التماس لتوثيق اللوزر أيضاً ──
+  const ranked = [...getRankedCandidates('ماجستير'), ...getRankedCandidates('دكتوراه')];
+  const referredC = ranked.find(r => r.id === referredId);
+  const degree    = referredC ? referredC.degree : null;
+  const limit     = degree === 'ماجستير'
+    ? (parseInt(state.settings && state.settings.masterGrantsCount) || 3)
+    : (parseInt(state.settings && state.settings.phdGrantsCount) || 3);
+  const degreeRanked = ranked.filter(r => r.degree === degree);
+  const lastWinnerC    = degreeRanked.find(r => r.rank === limit);
+  const firstExcludedC = degreeRanked.find(r => r.rank === limit + 1);
+  const loserId = tiedCandidates => {
+    const other = [lastWinnerC, firstExcludedC].filter(Boolean).find(c => c.id !== winnerId);
+    return other ? other.id : null;
+  };
+  const lId = [lastWinnerC, firstExcludedC].filter(Boolean).map(c => c.id).find(id => id !== winnerId) || null;
+
+  // ── حفظ القرار في committeeDecisions فقط (مستقل عن state.candidates) ──
+  // هذا يضمن بقاء القرار حتى لو أعادت Supabase بناء state.candidates
+  state.committeeDecisions[referredId] = {
+    winnerId,
+    loserId: lId,
+    degree,
+    note,
+    date: new Date().toLocaleDateString('ar-SA'),
+    timestamp: new Date().toISOString(),
+    by: state.currentUser ? state.currentUser.username : 'unknown'
+  };
+
+  // ── حفظ فوري في localStorage ──
+  saveStore();
+
+  logAuditEvent('committee_decision', {
+    referredId,
+    winnerId,
+    loserId: lId,
+    note,
+    by: state.currentUser ? state.currentUser.username : 'unknown'
+  });
+
+  closeTieBreakerDetailsModal();
+  refreshAllViews();
+  showToast('✅ تم تسجيل قرار اللجنة بنجاح وتحديث النتائج', 'success');
+}
+
+// ── إلغاء قرار اللجنة وإعادة الحالة إلى معلق ──
+function resetCommitteeDecision(referredId) {
+  if (state.committeeDecisions && state.committeeDecisions[referredId]) {
+    delete state.committeeDecisions[referredId];
+    saveStore();
+    logAuditEvent('committee_decision_reset', {
+      referredId,
+      by: state.currentUser ? state.currentUser.username : 'unknown'
+    });
+  }
+  closeTieBreakerDetailsModal();
+  refreshAllViews();
+  showToast('🔄 تم إلغاء قرار اللجنة وإعادة المتنافس للحالة المعلقة بنجاح', 'info');
+}
+
+
 // ── 1. عرض التلميح العائم الفوري (Floating Popover on Hover) ──
 function showTieBreakerTooltip(event, candidateId) {
   const c = findTieBreakerCandidate(candidateId);
@@ -1828,11 +2242,48 @@ function openTieBreakerDetailsModal(candidateId) {
     </div>
 
     <!-- نص الحسم الرسمي المعتمد -->
-    <div style="background: rgba(30, 58, 138, 0.25); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 12px 16px; color: #e2e8f0; font-size: 0.85rem; line-height: 1.6;">
-      <strong style="color: #60a5fa; display: block; margin-bottom: 4px; font-size: 0.9rem;">⚖️ ملخص القرار الإداري والتحكيم الإلكتروني:</strong>
-      بناءً على التراتبية الشفافة المعتمدة بمجلس جامعة صنعاء لكسر التعادل، تقرر رسمياً حسم المقعد رقم (${d.seatNumber}) لدرجة (${d.winner.degree}) لصالح المرشح <strong>[${d.winner.name}]</strong> لموجب تفوقه في معيار <strong>(${d.decisiveCriterion})</strong> أمام المرشح المباشر [${d.competitor.name}].
-    </div>
+    ${d.isCommitteeDecision ? `
+      <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 8px; padding: 14px 18px; color: #e2e8f0; font-size: 0.88rem; line-height: 1.7;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; flex-wrap:wrap; gap:6px;">
+          <strong style="color: #34d399; font-size: 0.95rem;">🏛️ ملخص القرار الإداري المعتمد للجنة المفاضلة:</strong>
+          <span style="background: rgba(16, 185, 129, 0.25); color: #6ee7b7; font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 8px;">
+            بتاريخ: ${d.date || 'معتمد'}
+          </span>
+        </div>
+        <div style="color: #f1f5f9; white-space: pre-wrap; font-weight: 500;">
+          ${d.note || `بناءً على مداولات لجنة المفاضلة والتنافس، تقرر رسمياً حسم المقعد رقم (${d.seatNumber}) لصالح المرشح [${d.winner.name}]`}
+        </div>
+      </div>
+    ` : `
+      <div style="background: rgba(30, 58, 138, 0.25); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 12px 16px; color: #e2e8f0; font-size: 0.85rem; line-height: 1.6;">
+        <strong style="color: #60a5fa; display: block; margin-bottom: 4px; font-size: 0.9rem;">⚖️ ملخص القرار الإداري والتحكيم الإلكتروني:</strong>
+        بناءً على التراتبية الشفافة المعتمدة بمجلس جامعة صنعاء لكسر التعادل، تقرر رسمياً حسم المقعد رقم (${d.seatNumber}) لدرجة (${d.winner.degree}) لصالح المرشح <strong>[${d.winner.name}]</strong> لموجب تفوقه في معيار <strong>(${d.decisiveCriterion})</strong> أمام المرشح المباشر [${d.competitor.name}].
+      </div>
+    `}
   `;
+
+  // ضبط أزرار أسفل النافذة
+  const footer = modal.querySelector('.modal-footer');
+  const isChairman = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'chairman');
+  if (footer) {
+    footer.innerHTML = `
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-primary" onclick="printTieBreakerCertificate()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; display: flex; align-items: center; gap: 6px;">
+            <span>🖨️ طباعة إفادة الحسم الاستثنائي (PDF)</span>
+          </button>
+          ${(d.isCommitteeDecision && isChairman) ? `
+            <button class="btn btn-secondary" onclick="openCommitteeDecisionModal(${d.winner.id})" style="background: linear-gradient(135deg, #475569, #334155); font-weight: 800; display: flex; align-items: center; gap: 6px;">
+              <span>✏️ تعديل قرار اللجنة</span>
+            </button>
+          ` : ''}
+        </div>
+        <button class="btn btn-secondary" onclick="closeTieBreakerDetailsModal()" style="font-weight: 700; padding: 8px 20px;">
+          إغلاق
+        </button>
+      </div>
+    `;
+  }
 
   modal.classList.add('open');
   modal.style.display = 'flex';
@@ -1958,7 +2409,11 @@ function printTieBreakerCertificate() {
       <!-- قرار الحسم -->
       <div style="background: #f8fafc; border: 1.5px solid #000000; padding: 6px 10px; border-radius: 5px; margin-bottom: 8px; font-size: 0.76rem; line-height: 1.45;">
         <strong>القرار والنتيجة النهائية المعتمدة:</strong><br>
-        تأكيد فوز وترشيح الأخ/الأخت (<strong>${d.winner.name}</strong>) لشغل المقعد رقم (<strong>${d.seatNumber}</strong>) لدرجة (<strong>${d.winner.degree}</strong>) استناداً إلى تفوقه وحسم النتيجة بمعيار (<strong>${d.decisiveCriterion}</strong>)، واعتبار المنافس المباشر الأخ/الأخت (<strong>${d.competitor.name}</strong>) في الترتيب التالي.
+        ${d.isCommitteeDecision ? `
+          تأكيد فوز وترشيح الأخ/الأخت (<strong>${d.winner.name}</strong>) لشغل المقعد رقم (<strong>${d.seatNumber}</strong>) لدرجة (<strong>${d.winner.degree}</strong>) استناداً إلى قرار لجنة المفاضلة والتنافس: [<strong>${d.note || 'مفاضلة يدوية معتمدة'}</strong>]، واعتبار المنافس المباشر الأخ/الأخت (<strong>${d.competitor.name}</strong>) في الترتيب التالي.
+        ` : `
+          تأكيد فوز وترشيح الأخ/الأخت (<strong>${d.winner.name}</strong>) لشغل المقعد رقم (<strong>${d.seatNumber}</strong>) لدرجة (<strong>${d.winner.degree}</strong>) استناداً إلى تفوقه وحسم النتيجة بمعيار (<strong>${d.decisiveCriterion}</strong>)، واعتبار المنافس المباشر الأخ/الأخت (<strong>${d.competitor.name}</strong>) في الترتيب التالي.
+        `}
       </div>
 
       <!-- ====== توقيعات أعضاء لجنة المفاضلة واعتماد رئاسة الجامعة (مطابق للمحضر الرسمي) ====== -->
@@ -2422,21 +2877,21 @@ function renderScoringTable() {
     const scoreColCount = 4 + activeCustom.length; // أقدمية + عمر + تخصص + تقدير + مخصصة
     thead.innerHTML = `
       <tr>
-        <th rowspan="2" style="width: 42px; vertical-align: middle;">م</th>
-        <th rowspan="2" style="min-width: 140px; vertical-align: middle;">المتنافس</th>
-        <th rowspan="2" style="vertical-align: middle;">التخصص</th>
-        <th colspan="${scoreColCount}" style="text-align: center; background: rgba(37,99,235,0.22); color: #93c5fd; font-size: 0.8rem; letter-spacing: 0.5px; border-bottom: 1px solid rgba(37,99,235,0.3);">نقاط المفاضلة</th>
-        <th rowspan="2" style="vertical-align: middle;">الإجمالي</th>
-        <th rowspan="2" style="vertical-align: middle;">النتيجة</th>
-        <th rowspan="2" style="vertical-align: middle;">الملاحظة</th>
-        <th rowspan="2" style="vertical-align: middle;">التفاصيل</th>
+        <th rowspan="2" class="th-main-header" style="width: 38px; vertical-align: middle;">م</th>
+        <th rowspan="2" class="th-main-header" style="min-width: 170px; text-align: right; vertical-align: middle;">المتنافس</th>
+        <th rowspan="2" class="th-main-header" style="min-width: 110px; text-align: right; vertical-align: middle;">التخصص</th>
+        <th colspan="${scoreColCount}" class="th-main-header th-scores-group" style="text-align: center; vertical-align: middle;">نقاط المفاضلة</th>
+        <th rowspan="2" class="th-main-header" style="vertical-align: middle;">الإجمالي</th>
+        <th rowspan="2" class="th-main-header" style="vertical-align: middle;">النتيجة</th>
+        <th rowspan="2" class="th-main-header" style="vertical-align: middle;">الملاحظة</th>
+        <th rowspan="2" class="th-main-header col-action" style="vertical-align: middle;">التفاصيل</th>
       </tr>
       <tr>
-        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">الأقدمية</th>
-        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">العمر</th>
-        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التخصص</th>
-        <th style="background: rgba(37,99,235,0.12); font-size: 0.78rem;">التقدير</th>
-        ${activeCustom.map(c => `<th style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.78rem;">${getDisplayName(c.name)}</th>`).join('')}
+        <th class="th-sub-score">الأقدمية</th>
+        <th class="th-sub-score">العمر</th>
+        <th class="th-sub-score">التخصص</th>
+        <th class="th-sub-score">التقدير</th>
+        ${activeCustom.map(c => `<th class="th-sub-score th-custom-criteria">${getDisplayName(c.name)}</th>`).join('')}
       </tr>
     `;
   }
@@ -2465,7 +2920,11 @@ function renderScoringTable() {
     const tieBreakerCell = c.tieBreaker
       ? (() => {
           let badgeText = '';
-          if (c.tieBreaker.includes('التخصص') || c.tieBreaker.includes('احتياج')) {
+          if (c.tieBreaker.includes('يُحال')) {
+            badgeText = 'يُحال للجنة';
+          } else if (c.tieBreaker.includes('لجنة') || c.tieBreaker.includes('قرار')) {
+            badgeText = 'بقرار اللجنة';
+          } else if (c.tieBreaker.includes('التخصص') || c.tieBreaker.includes('احتياج')) {
             badgeText = 'بالتخصص';
           } else if (c.tieBreaker.includes('الاستمرارية') || c.tieBreaker.includes('الممارسة')) {
             badgeText = 'بالاستمرارية';
@@ -2475,14 +2934,26 @@ function renderScoringTable() {
             badgeText = 'بصغر السن';
           } else if (c.tieBreaker.includes('التقدير')) {
             badgeText = 'بالتقدير';
-          } else if (c.tieBreaker.includes('يُحال')) {
-            badgeText = 'يُحال للجنة';
           } else {
             const firstWord = c.tieBreaker.trim().split(/\s+/)[0];
             badgeText = firstWord.startsWith('ال') ? `ب${firstWord}` : `بالـ${firstWord}`;
           }
 
-          if (c.tieBreakerDetails) {
+          // ── أولوية 1: يُحال للجنة → شاشة قرار اللجنة (حتى لو tieBreakerDetails موجود) ──
+          if (c.tieBreaker && c.tieBreaker.includes('يُحال')) {
+            return `
+              <td class="tie-breaker-interactive-cell"
+                  onclick="openCommitteeDecisionModal(${c.id})"
+                  title="انقر لتسجيل قرار اللجنة وتحديد الفائز">
+                <div class="tie-badge-clickable" style="border-color:rgba(239,68,68,0.5);">
+                  <span class="tie-badge-tag" style="background:rgba(239,68,68,0.2);color:#f87171;border-color:rgba(239,68,68,0.4);">استثنائية</span>
+                  <span class="tie-badge-reason" style="color:#fca5a5;">${badgeText}</span>
+                  <span class="tie-badge-hint" style="color:#f87171;">🏛️ انقر لقرار اللجنة</span>
+                </div>
+              </td>
+            `;
+          // ── أولوية 2: تعادل محسوم آلياً → عرض تفاصيل المفاضلة ──
+          } else if (c.tieBreakerDetails) {
             return `
               <td class="tie-breaker-interactive-cell" 
                   onmouseenter="showTieBreakerTooltip(event, ${c.id})" 
@@ -2497,7 +2968,7 @@ function renderScoringTable() {
               </td>
             `;
           } else {
-            const color = c.tieBreaker.includes('يُحال') ? '#ef4444' : '#d97706';
+            const color = '#d97706';
             return `<td style="font-size:0.82rem; color:${color}; font-weight:800; text-align:center; line-height:1.4;">
               استثنائية<br><span style="font-size:0.76rem; font-weight:600;">${badgeText}</span>
             </td>`;
@@ -2507,28 +2978,27 @@ function renderScoringTable() {
 
     return `
     <tr style="${rowStyle}">
-      <td><strong>${c.rank}</strong></td>
-      <td><strong>${c.name}</strong></td>
-      <td>${c.specialization}</td>
-      <td>${c.scores.seniorityScore}</td>
-      <td>${c.scores.ageScore}</td>
-      <td>${c.scores.specScore}</td>
-      <td>${c.scores.gradeScore}</td>
+      <td class="col-rank"><strong>${c.rank}</strong></td>
+      <td class="col-name">${c.name}</td>
+      <td class="col-spec">${c.specialization}</td>
+      <td class="col-score">${c.scores.seniorityScore}</td>
+      <td class="col-score">${c.scores.ageScore}</td>
+      <td class="col-score">${c.scores.specScore}</td>
+      <td class="col-score">${c.scores.gradeScore}</td>
       ${activeCustom.map(custom => {
         const computedPts = (c.scores.customScores && c.scores.customScores[custom.id] !== undefined)
           ? c.scores.customScores[custom.id] : 0;
 
-        // ── عرض الرقم فقط: صفر بالأحمر، قيمة موجبة بالأخضر ──
         let cellContent = '';
         if (computedPts === 0) {
-          cellContent = `<span style="font-weight:900; font-size:1rem; color:#ef4444;">0</span>`;
+          cellContent = `<span class="score-zero">0</span>`;
         } else {
-          cellContent = `<span style="font-weight:900; font-size:1rem; color:#10b981;">${computedPts}</span>`;
+          cellContent = `<span class="score-positive">${computedPts}</span>`;
         }
 
-        return `<td style="text-align:center; background:rgba(245,158,11,0.04);">${cellContent}</td>`;
+        return `<td class="col-score col-custom-score">${cellContent}</td>`;
       }).join('')}
-      <td><strong style="color: var(--primary); font-size: 1.05rem;">${c.scores.totalScore}</strong></td>
+      <td class="col-total"><strong>${c.scores.totalScore}</strong></td>
       <td>
         ${c.status === 'مقبول' ? `
           <span class="badge-status badge-accepted">مقبول</span>
@@ -2537,7 +3007,7 @@ function renderScoringTable() {
         ` : '')}
       </td>
       ${tieBreakerCell}
-      <td>
+      <td class="col-action">
         <button class="btn btn-outline btn-sm" onclick="viewCandidateDetails(${c.id})">التفاصيل</button>
       </td>
     </tr>`;
@@ -3177,43 +3647,38 @@ function renderDetailedReport() {
       ${showMaster ? buildDegreeMatrixTable('الماجستير', allMasterCandidates, masterLimit) : ''}
       ${showPhd ? buildDegreeMatrixTable('الدكتوراه', allPhdCandidates, phdLimit) : ''}
 
-      <!-- 4. قسم الاعتماد والتوقيعات الرسمية الهيكلية -->
-      <div class="signatures-section" style="margin-top: 20px; border-top: 2px solid #1e3a8a; padding-top: 12px; page-break-inside: avoid;">
-        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.92rem; margin: 0 0 10px 0; font-weight: 800;">
-          توقيعات أعضاء لجنة المفاضلة والتنافس واعتماـد رئاسـة الجامعـة
+      <!-- 4. قسم التوقيعات الرسمية - شريط أفقي مدمج لا يفتح صفحة مستقلة -->
+      <div class="signatures-section" style="margin-top: 14px; border-top: 2px solid #1e3a8a; padding-top: 10px; page-break-inside: avoid; break-inside: avoid;">
+        <h4 style="text-align: center; color: #1e3a8a; font-size: 0.88rem; margin: 0 0 8px 0; font-weight: 800;">
+          توقيعات أعضاء لجنة المفاضلة والتنافس واعتماد رئاسة الجامعة
         </h4>
-        
-        <!-- الصف الأول: أعضاء لجنة المفاضلة -->
-        <div class="signature-grid-row1" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; text-align: center; margin-bottom: 12px;">
+
+        <!-- شريط واحد أفقي يجمع جميع الأعضاء + رئيس اللجنة + رئيس الجامعة -->
+        <div style="display: flex; flex-wrap: nowrap; justify-content: space-around; align-items: flex-start; gap: 6px; text-align: center; overflow: hidden;">
+          <!-- أعضاء لجنة المفاضلة -->
           ${regularMembers.map(m => `
-            <div class="signature-card" style="flex: 1 1 150px; max-width: 190px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px; background-color: #f8fafc;">
-              <p style="font-weight: 800; color: #1e3a8a; font-size: 0.76rem; margin: 0 0 2px 0;">${m.committeeRole || 'عضواً'}</p>
-              <p style="font-weight: 800; color: #0f172a; font-size: 0.78rem; margin: 0 0 1px 0;">${m.name || 'اسم العضو'}</p>
-              <p style="color: #475569; font-size: 0.68rem; margin: 0 0 4px 0;">${m.adminTitle || 'الصفة الإدارية'}</p>
-              <div style="height: 16px; border-bottom: 1px dashed #94a3b8; margin-bottom: 4px;"></div>
-              <p style="font-size: 0.62rem; color: #64748b; margin: 0; font-weight: 600;">التوقيع والختم الرسمـي</p>
+            <div style="flex: 1; min-width: 0; border-bottom: 1.5px solid #94a3b8; padding-bottom: 4px; padding-top: 2px;">
+              <p style="font-weight: 800; color: #1e3a8a; font-size: 0.70rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.committeeRole || 'عضواً'}</p>
+              <p style="font-weight: 700; color: #0f172a; font-size: 0.72rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.name || 'اسم العضو'}</p>
+              <p style="color: #475569; font-size: 0.65rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.adminTitle || ''}</p>
+              <div style="height: 18px;"></div>
             </div>
           `).join('')}
-        </div>
 
-        <!-- الصف الثاني: رئيس اللجنة + يعتمد رئيس الجامعة -->
-        <div class="signature-grid-row2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 85%; margin: 0 auto; text-align: center;">
           <!-- رئيس اللجنة -->
-          <div class="signature-card" style="border: 1.5px solid #1e3a8a; padding: 8px 10px; border-radius: 8px; background-color: #eff6ff;">
-            <p style="font-weight: 900; color: #1e3a8a; font-size: 0.84rem; margin: 0 0 2px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
-            <p style="font-weight: 900; color: #0f172a; font-size: 0.86rem; margin: 0 0 1px 0;">${chairman.name || 'أ.د. ابراهيم المطاع'}</p>
-            <p style="color: #334155; font-size: 0.72rem; margin: 0 0 6px 0;">${chairman.adminTitle || 'نائب رئيس الجامعة للشؤون الأكاديمية'}</p>
-            <div style="height: 20px; border-bottom: 1px dashed #1e3a8a; margin-bottom: 4px;"></div>
-            <p style="font-size: 0.65rem; color: #1e3a8a; margin: 0; font-weight: 700;">التوقيع والختم الرسمي لرئيس اللجنة</p>
+          <div style="flex: 1.2; min-width: 0; border-bottom: 2px solid #1e3a8a; padding-bottom: 4px; padding-top: 2px;">
+            <p style="font-weight: 900; color: #1e3a8a; font-size: 0.72rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+            <p style="font-weight: 900; color: #0f172a; font-size: 0.74rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chairman.name || ''}</p>
+            <p style="color: #334155; font-size: 0.65rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chairman.adminTitle || ''}</p>
+            <div style="height: 18px;"></div>
           </div>
 
-          <!-- يعتمد رئيس الجامعة -->
-          <div class="signature-card" style="border: 2px solid #059669; padding: 8px 10px; border-radius: 8px; background-color: #ecfdf5;">
-            <p style="font-weight: 900; color: #059669; font-size: 0.86rem; margin: 0 0 2px 0;">يُعتمـــد / رئيس الجامعة</p>
-            <p style="font-weight: 900; color: #064e3b; font-size: 0.88rem; margin: 0 0 1px 0;">${rectorName}</p>
-            <p style="color: #047857; font-size: 0.72rem; margin: 0 0 6px 0;">رئيس جامعة صنعاء</p>
-            <div style="height: 20px; border-bottom: 1.5px dashed #059669; margin-bottom: 4px;"></div>
-            <p style="font-size: 0.65rem; color: #047857; margin: 0; font-weight: 800;">الختم والتوقيع الرسمي لرئاسة الجامعة</p>
+          <!-- يعتمد / رئيس الجامعة -->
+          <div style="flex: 1.2; min-width: 0; border-bottom: 2px solid #059669; padding-bottom: 4px; padding-top: 2px;">
+            <p style="font-weight: 900; color: #059669; font-size: 0.72rem; margin: 0 0 1px 0;">يُعتمد / رئيس الجامعة</p>
+            <p style="font-weight: 900; color: #064e3b; font-size: 0.74rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${rectorName}</p>
+            <p style="color: #047857; font-size: 0.65rem; margin: 0;">رئيس جامعة صنعاء</p>
+            <div style="height: 18px;"></div>
           </div>
         </div>
       </div>
@@ -6121,8 +6586,63 @@ function printDetailedReport() {
   printDetailedReportFinal();
 }
 
+function updateScoringPrintHeaderInfo() {
+  const degreeSelect = document.getElementById('filter-rankings-degree');
+  const degree = degreeSelect ? degreeSelect.value : 'ماجستير';
+  const subtitleEl = document.getElementById('scoring-print-doc-subtitle');
+  const refYear = (state.settings && state.settings.referenceYear) ? state.settings.referenceYear : 2026;
+  if (subtitleEl) {
+    subtitleEl.textContent = `منح ${degree === 'دكتوراه' ? 'الدكتوراه' : 'الماجستير'} للعام الجامعي ${refYear}م`;
+  }
+}
+
+function renderScoringSignatures() {
+  const container = document.getElementById('scoring-official-signatures');
+  if (!container) return;
+
+  const members = (state.committeeMembers && state.committeeMembers.length > 0) ? state.committeeMembers : DEFAULT_COMMITTEE_MEMBERS;
+  const chairman = members.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || members[0];
+  const regularMembers = members.filter(m => m !== chairman).reverse();
+  const rectorName = (state.settings && state.settings.rectorName) ? state.settings.rectorName : 'أ.د. محمد أحمد البخيتي';
+
+  container.innerHTML = `
+    <h4 style="text-align: center; color: #1e3a8a; font-size: 0.88rem; margin: 0 0 8px 0; font-weight: 800;">
+      توقيعات أعضاء لجنة المفاضلة والتنافس واعتماد رئاسة الجامعة
+    </h4>
+    <!-- شريط أفقي مدمج: كل الأعضاء + رئيس اللجنة + رئيس الجامعة في صف واحد -->
+    <div style="display: flex; flex-wrap: nowrap; justify-content: space-around; align-items: flex-start; gap: 6px; text-align: center;">
+      ${regularMembers.map(m => `
+        <div style="flex: 1; min-width: 0; border-bottom: 1.5px solid #94a3b8; padding-bottom: 4px; padding-top: 2px;">
+          <p style="font-weight: 800; color: #1e3a8a; font-size: 0.70rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.committeeRole || 'عضواً'}</p>
+          <p style="font-weight: 700; color: #0f172a; font-size: 0.72rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.name || 'اسم العضو'}</p>
+          <p style="color: #475569; font-size: 0.65rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.adminTitle || ''}</p>
+          <div style="height: 18px;"></div>
+        </div>
+      `).join('')}
+
+      <!-- رئيس اللجنة -->
+      <div style="flex: 1.2; min-width: 0; border-bottom: 2px solid #1e3a8a; padding-bottom: 4px; padding-top: 2px;">
+        <p style="font-weight: 900; color: #1e3a8a; font-size: 0.72rem; margin: 0 0 1px 0;">${chairman.committeeRole || 'رئيس اللجنة'}</p>
+        <p style="font-weight: 900; color: #0f172a; font-size: 0.74rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chairman.name || ''}</p>
+        <p style="color: #334155; font-size: 0.65rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chairman.adminTitle || ''}</p>
+        <div style="height: 18px;"></div>
+      </div>
+
+      <!-- يعتمد / رئيس الجامعة -->
+      <div style="flex: 1.2; min-width: 0; border-bottom: 2px solid #059669; padding-bottom: 4px; padding-top: 2px;">
+        <p style="font-weight: 900; color: #059669; font-size: 0.72rem; margin: 0 0 1px 0;">يُعتمد / رئيس الجامعة</p>
+        <p style="font-weight: 900; color: #064e3b; font-size: 0.74rem; margin: 0 0 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${rectorName}</p>
+        <p style="color: #047857; font-size: 0.65rem; margin: 0;">رئيس جامعة صنعاء</p>
+        <div style="height: 18px;"></div>
+      </div>
+    </div>
+  `;
+}
+
 function printScoringMatrixDraft() {
   setPrintPageDate();
+  updateScoringPrintHeaderInfo();
+  renderScoringSignatures();
   document.body.classList.add('is-scoring-print');
   document.body.classList.add('is-draft-print');
   const watermarkEl = document.getElementById('scoring-print-watermark');
@@ -6139,6 +6659,8 @@ function printScoringMatrixDraft() {
 
 function printScoringMatrixFinal() {
   setPrintPageDate();
+  updateScoringPrintHeaderInfo();
+  renderScoringSignatures();
   document.body.classList.add('is-scoring-print');
   document.body.classList.remove('is-draft-print');
   const watermarkEl = document.getElementById('scoring-print-watermark');
