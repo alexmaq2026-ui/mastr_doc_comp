@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAuthVisibility();
   renderUserBadge();
   renderTabsByRole();
+  if (typeof applyUIPermissions === 'function') applyUIPermissions(state.currentUser);
   initDropdownNav();
   setupEventListeners();
   refreshAllViews();
@@ -269,6 +270,7 @@ function handleLoginSubmit(event) {
         updateAuthVisibility();
         renderUserBadge();
         renderTabsByRole();
+        if (typeof applyUIPermissions === 'function') applyUIPermissions(state.currentUser);
         refreshAllViews();
     } else {
         if (errorMsg) {
@@ -288,6 +290,7 @@ function quickLogin(username, password) {
         updateAuthVisibility();
         renderUserBadge();
         renderTabsByRole();
+        if (typeof applyUIPermissions === 'function') applyUIPermissions(state.currentUser);
         refreshAllViews();
     }
 }

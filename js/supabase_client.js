@@ -153,9 +153,14 @@ async function syncCandidatesFromSupabase() {
             const usersSetting = sData.find(s => s.key === 'global_users');
             if (usersSetting && usersSetting.value && Array.isArray(usersSetting.value) && usersSetting.value.length > 0) {
                 const remoteUsers = usersSetting.value;
-                // ✅ Supabase هو المصدر الرسمي الوحيد لكلمات المرور — لا تُغلبه أي بيانات محلية أو كاش قديم
-                // هذا يضمن أن أي جهاز بعيد مهما كان LocalStorage القديم فيه، سيعتمد كلمة Supabase دائماً
+                // ✅ Supabase هو المصدر الرسمي الوحيد لكلمات المرور والصلاحيات — لا تُغلبه أي بيانات محلية أو كاش قديم
                 state.users = remoteUsers;
+                if (state.currentUser) {
+                    const freshUser = remoteUsers.find(u => (u.username && state.currentUser.username && u.username.toLowerCase() === state.currentUser.username.toLowerCase()) || u.id === state.currentUser.id);
+                    if (freshUser) {
+                        state.currentUser = { ...freshUser };
+                    }
+                }
             }
             const rolesSetting = sData.find(s => s.key === 'global_roles');
             if (rolesSetting && rolesSetting.value && Array.isArray(rolesSetting.value) && rolesSetting.value.length > 0) {
@@ -211,6 +216,9 @@ async function syncCandidatesFromSupabase() {
         }
 
         saveStore();
+        if (typeof renderUserBadge === 'function') renderUserBadge();
+        if (typeof renderTabsByRole === 'function') renderTabsByRole();
+        if (typeof applyUIPermissions === 'function') applyUIPermissions(state.currentUser);
         if (typeof refreshAllViews === 'function') refreshAllViews();
         return true;
     } catch (err) {
