@@ -276,6 +276,29 @@ const INITIAL_SYSTEM_ROLES = [
             "action:ana-subtab-charts": true,
             "screen:tab-criteria-doc": true
         }
+    },
+    {
+        id: "visitor",
+        name: "زائر (معاينة واطلاع فقط)",
+        description: "عرض النتائج والكشوفات والمصفوفة والتقارير بغرض المعاينة فقط دون إمكانية التعديل أو الحذف أو الإضافة أو الطباعة أو دخول شاشة الإدارة.",
+        isSystem: true,
+        permissions: {
+            "screen:tab-home": true,
+            "screen:tab-dashboard": true,
+            "action:dash-filter": true,
+            "screen:tab-candidates": true,
+            "action:cand-details-modal": true,
+            "screen:tab-scoring": true,
+            "screen:tab-minutes": true,
+            "screen:tab-report": true,
+            "screen:tab-criterion-report": true,
+            "screen:tab-analytics": true,
+            "action:ana-subtab-strengths": true,
+            "action:ana-subtab-deficiencies": true,
+            "action:ana-subtab-specs": true,
+            "action:ana-subtab-charts": true,
+            "screen:tab-criteria-doc": true
+        }
     }
 ];
 
@@ -364,21 +387,77 @@ function applyUIPermissions(user = null) {
  */
 function applyActionPermissionToDOM(actionId, isAllowed) {
     const map = {
-        // إدارة المتنافسين
-        "action:cand-add": ["#btn-add-candidate"],
-        "action:cand-import-excel": ["#btn-import-excel"],
-        "action:cand-export-excel": ["[onclick*='exportCandidatesToExcel']"],
-        "action:cand-print-pdf": ["#btn-print-candidates"],
-        "action:cand-print-cards-draft": ["[onclick*='printAllCandidateCardsDraft']"],
-        "action:cand-print-cards-final": ["[onclick*='printAllCandidateCardsFinal']"],
         // الرئيسية
         "action:btn-run-nav": ["#btn-run-nav"],
         "action:btn-home-tiebreaker": ["[onclick*='openTieBreakingModal']"],
         "action:btn-home-lock": ["[onclick*='openLockModal']"],
         "action:btn-home-reset": ["[onclick*='resetTestRecords']"],
-        // المحضر
+
+        // كشف الفائزين
+        "action:dash-filter": ["#winners-degree-filter"],
+        "action:dash-print-draft": ["#btn-dash-print-draft", "[onclick*='printWinnersListDraft']"],
+        "action:dash-print-final": ["#btn-dash-print-final", "[onclick*='printWinnersListFinal']"],
+
+        // إدارة المتنافسين
+        "action:cand-add": ["#btn-add-candidate"],
+        "action:cand-edit": [".btn-cand-edit", "[onclick*='editCandidate']"],
+        "action:cand-delete": [".btn-cand-delete", "[onclick*='deleteCandidate']"],
+        "action:cand-details-modal": [".btn-cand-details", "[onclick*='openCandidateDetailsModal']"],
+        "action:cand-import-excel": ["#btn-import-excel"],
+        "action:cand-export-excel": ["[onclick*='exportCandidatesToExcel']"],
+        "action:cand-print-pdf": ["#btn-print-candidates"],
+        "action:cand-print-cards-draft": ["[onclick*='printAllCandidateCardsDraft']"],
+        "action:cand-print-cards-final": ["[onclick*='printAllCandidateCardsFinal']"],
+
+        // مصفوفة المفاضلة
+        "action:score-print-draft": ["#btn-score-print-draft", "[onclick*='printScoringMatrixDraft']"],
+        "action:score-print-final": ["#btn-score-print-final", "[onclick*='printScoringMatrixFinal']"],
+        "action:score-export-excel": ["#btn-score-export-excel", "[onclick*='exportScoringMatrixToExcel']"],
+        "action:score-add-annotation": [".btn-cand-annotate", "[onclick*='openAnnotationModal']"],
+
+        // المحضر الرسمي
+        "action:min-print-draft": ["#btn-min-print-draft", "[onclick*='printMinutesDraft']"],
+        "action:min-print-final": ["#btn-min-print-final", "[onclick*='printMinutesFinal']"],
         "action:min-lock-session": ["[onclick*='openLockSessionModal']"],
-        "action:min-reset-history": ["[onclick*='resetSystemSessionsHistory']"]
+        "action:min-reset-history": ["[onclick*='resetSystemSessionsHistory']"],
+
+        // التقرير التفصيلي
+        "action:rep-export-excel": ["#btn-rep-export-excel", "[onclick*='exportReportToExcel']"],
+        "action:rep-print-draft": ["#btn-rep-print-draft", "[onclick*='printDetailedReportDraft']"],
+        "action:rep-print-final": ["#btn-rep-print-final", "[onclick*='printDetailedReportFinal']"],
+
+        // التقرير بحسب المعيار
+        "action:crit-rep-export-excel": ["#btn-crit-rep-export-excel", "[onclick*='exportCriterionReportToExcel']"],
+        "action:crit-rep-print-pdf": ["#btn-crit-rep-print-pdf", "[onclick*='printCriterionReport']"],
+
+        // التقارير التحليلية
+        "action:ana-subtab-strengths": ["[data-subtab='subtab-strengths']"],
+        "action:ana-subtab-deficiencies": ["[data-subtab='subtab-deficiencies']"],
+        "action:ana-subtab-specs": ["[data-subtab='subtab-specs']"],
+        "action:ana-subtab-charts": ["[data-subtab='subtab-charts']"],
+        "action:ana-export-excel": ["#btn-ana-export-excel", "[onclick*='exportAnalyticsToExcel']"],
+        "action:ana-print-pdf": ["#btn-ana-print-pdf", "[onclick*='printAnalyticsReport']"],
+
+        // وثيقة المعايير
+        "action:crit-doc-print-pdf": ["#btn-crit-doc-print-pdf", "[onclick*='printCriteriaDoc']"],
+
+        // تهيئة المعايير
+        "action:crit-edit-modal": ["[onclick*='openCriteriaModal']", "[onclick*='editCriteria']", ".btn-criteria-edit"],
+        "action:crit-restore-defaults": ["[onclick*='restoreDefaultCriteria']"],
+
+        // كسر التعادل
+        "action:tie-edit-rules": ["[onclick*='saveTieBreakerRules']", "#btn-save-tiebreaker", ".btn-tiebreaker-edit"],
+
+        // إدارة النظام والمستخدمين
+        "action:adm-manage-users": ["#btn-add-user-admin", "[onclick*='showAddUserModal']", ".btn-admin-user-action"],
+        "action:adm-manage-roles": ["#btn-add-role-admin", "[onclick*='openRoleModal']", ".btn-admin-role-action"],
+        "action:adm-supabase-config": ["[onclick*='saveSupabaseSettingsFromUI']", "[onclick*='syncCandidatesFromSupabase']"],
+        "action:adm-backup-restore": ["[onclick*='exportBackup']", "[onclick*='importBackup']"],
+
+        // سجل الرقابة
+        "action:aud-export-pdf": ["#btn-aud-export-pdf", "[onclick*='exportAuditLogPDF']"],
+        "action:aud-export-csv": ["#btn-aud-export-csv", "[onclick*='exportAuditLogCSV']"],
+        "action:aud-clear-log": ["#btn-aud-clear-log", "[onclick*='clearAuditLog']"]
     };
 
     const selectors = map[actionId];
@@ -406,6 +485,10 @@ function renderRolesAdminTable() {
         state.roles = JSON.parse(JSON.stringify(INITIAL_SYSTEM_ROLES));
     }
 
+    const currentU = (typeof state !== "undefined" ? state.currentUser : null);
+    const isSuperAdmin = currentU && (currentU.role === "super_admin" || currentU.role === "admin");
+    const canManageRoles = isSuperAdmin || (typeof hasPermission === "function" && hasPermission("action:adm-manage-roles"));
+
     let rowsHtml = "";
     state.roles.forEach((role, idx) => {
         // حساب عدد المستخدمين المسند لهم هذا الدور
@@ -421,6 +504,22 @@ function renderRolesAdminTable() {
             permsCount = Object.values(role.permissions).filter(v => v === true).length + " صلاحية";
         }
 
+        const actionButtons = canManageRoles ? `
+            <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline btn-sm btn-admin-role-action" onclick="openRoleModal('${role.id}')" title="تعديل مصفوفة الصلاحيات">
+                    ✏️ تعديل الصلاحيات
+                </button>
+                <button class="btn btn-secondary btn-sm btn-admin-role-action" onclick="cloneRole('${role.id}')" title="استنساخ هذا الدور وإنشاء دور جديد منه" style="background:rgba(37,99,235,0.2); border:1px solid rgba(37,99,235,0.4); color:#60a5fa;">
+                    📋 استنساخ
+                </button>
+                ${role.isSystem ? '' : `
+                    <button class="btn btn-danger btn-sm btn-admin-role-action" onclick="deleteRole('${role.id}')" title="حذف الدور">
+                        🗑️ حذف
+                    </button>
+                `}
+            </div>
+        ` : `<span style="font-size:0.75rem; color:#64748b; font-weight:600;">معاينة فقط</span>`;
+
         rowsHtml += `
             <tr>
                 <td>${idx + 1}</td>
@@ -431,21 +530,7 @@ function renderRolesAdminTable() {
                 <td><span class="role-badge-pill ${pillClass}">${roleType}</span></td>
                 <td><span style="font-weight:700; color:#38bdf8;">${usersCount} مستخدم</span></td>
                 <td><span style="font-size:0.82rem; color:#a78bfa; font-weight:700;">${permsCount}</span></td>
-                <td>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-outline btn-sm" onclick="openRoleModal('${role.id}')" title="تعديل مصفوفة الصلاحيات">
-                            ✏️ تعديل الصلاحيات
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="cloneRole('${role.id}')" title="استنساخ هذا الدور وإنشاء دور جديد منه" style="background:rgba(37,99,235,0.2); border:1px solid rgba(37,99,235,0.4); color:#60a5fa;">
-                            📋 استنساخ
-                        </button>
-                        ${role.isSystem ? '' : `
-                            <button class="btn btn-danger btn-sm" onclick="deleteRole('${role.id}')" title="حذف الدور">
-                                🗑️ حذف
-                            </button>
-                        `}
-                    </div>
-                </td>
+                <td>${actionButtons}</td>
             </tr>
         `;
     });
@@ -457,6 +542,13 @@ function renderRolesAdminTable() {
  * فتح نافذة إنشاء / تعديل الدور وشجرة الصلاحيات
  */
 function openRoleModal(roleId = null, isClone = false) {
+    const currentU = (typeof state !== "undefined" ? state.currentUser : null);
+    const isSuperAdmin = currentU && (currentU.role === "super_admin" || currentU.role === "admin");
+    if (!isSuperAdmin && typeof hasPermission === "function" && !hasPermission("action:adm-manage-roles")) {
+        alert("⚠️ ليس لديك صلاحية لإدارة أو تعديل مصفوفة الأدوار والصلاحيات.");
+        return;
+    }
+
     editingRoleId = isClone ? null : roleId;
     let modal = document.getElementById("modal-custom-role");
     if (!modal) {
@@ -503,6 +595,12 @@ function openRoleModal(roleId = null, isClone = false) {
  * استنساخ دور
  */
 function cloneRole(roleId) {
+    const currentU = (typeof state !== "undefined" ? state.currentUser : null);
+    const isSuperAdmin = currentU && (currentU.role === "super_admin" || currentU.role === "admin");
+    if (!isSuperAdmin && typeof hasPermission === "function" && !hasPermission("action:adm-manage-roles")) {
+        alert("⚠️ ليس لديك صلاحية لاستنساخ الأدوار.");
+        return;
+    }
     openRoleModal(roleId, true);
 }
 
@@ -510,6 +608,13 @@ function cloneRole(roleId) {
  * حذف دور مخصص
  */
 function deleteRole(roleId) {
+    const currentU = (typeof state !== "undefined" ? state.currentUser : null);
+    const isSuperAdmin = currentU && (currentU.role === "super_admin" || currentU.role === "admin");
+    if (!isSuperAdmin && typeof hasPermission === "function" && !hasPermission("action:adm-manage-roles")) {
+        alert("⚠️ ليس لديك صلاحية لحذف الأدوار.");
+        return;
+    }
+
     const role = (state.roles || []).find(r => r.id === roleId);
     if (!role) return;
 
@@ -528,6 +633,7 @@ function deleteRole(roleId) {
     if (confirm(`هل أنت متأكد من رغبتك في حذف الدور المخصص (${role.name}) نهائياً؟`)) {
         state.roles = state.roles.filter(r => r.id !== roleId);
         if (typeof saveStore === "function") saveStore();
+        if (typeof syncRolesToSupabase === "function") syncRolesToSupabase(state.roles);
         renderRolesAdminTable();
         alert(`✅ تم حذف الدور (${role.name}) بنجاح.`);
     }
@@ -537,6 +643,13 @@ function deleteRole(roleId) {
  * حفظ بيانات الدور ومصفوفة الصلاحيات من الشجرة
  */
 function saveRoleForm() {
+    const currentU = (typeof state !== "undefined" ? state.currentUser : null);
+    const isSuperAdmin = currentU && (currentU.role === "super_admin" || currentU.role === "admin");
+    if (!isSuperAdmin && typeof hasPermission === "function" && !hasPermission("action:adm-manage-roles")) {
+        alert("⚠️ ليس لديك صلاحية لحفظ وتعديل الأدوار ومصفوفة الصلاحيات.");
+        return;
+    }
+
     const name = document.getElementById("role-name-input").value.trim();
     const desc = document.getElementById("role-desc-input").value.trim();
 
@@ -572,6 +685,7 @@ function saveRoleForm() {
     }
 
     if (typeof saveStore === "function") saveStore();
+    if (typeof syncRolesToSupabase === "function") syncRolesToSupabase(state.roles);
     closeModal("modal-custom-role");
     renderRolesAdminTable();
     applyUIPermissions();

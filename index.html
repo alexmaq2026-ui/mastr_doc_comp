@@ -344,12 +344,12 @@
                 style="background:rgba(51,65,85,0.6);color:#cbd5e1;border:1.5px solid rgba(100,116,139,0.4);padding:8px 14px;border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;">
                 📊 التقرير التفصيلي
               </button>
-              <button onclick="printWinnersListDraft()"
+              <button id="btn-dash-print-draft" onclick="printWinnersListDraft()"
                 style="background:linear-gradient(135deg,#d97706,#b45309);color:#ffffff;border:none;padding:8px 18px;border-radius:9px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(217,119,6,0.4);transition:transform 0.15s;"
                 onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                 📝 طباعة مسودة
               </button>
-              <button onclick="printWinnersListFinal()"
+              <button id="btn-dash-print-final" onclick="printWinnersListFinal()"
                 style="background:linear-gradient(135deg,#6d28d9,#7c3aed,#4f46e5);color:#ffffff;border:none;padding:8px 18px;border-radius:9px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(109,40,217,0.5);transition:transform 0.15s;"
                 onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                 🖨️ طباعة نهائية
@@ -473,13 +473,13 @@
                 <option value="دكتوراه">منح الدكتوراه</option>
               </select>
             </div>
-            <button class="btn btn-warning" onclick="printScoringMatrixDraft()" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 800; border: none;">
+            <button id="btn-score-print-draft" class="btn btn-warning" onclick="printScoringMatrixDraft()" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 800; border: none;">
               📝 طباعة مسودة للمراجعة
             </button>
-            <button class="btn btn-primary" onclick="printScoringMatrixFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
+            <button id="btn-score-print-final" class="btn btn-primary" onclick="printScoringMatrixFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
               🖨️ طباعة مصفوفة نهائية
             </button>
-            <button class="btn btn-secondary" onclick="exportScoringMatrixToExcel()" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: #ffffff; font-weight: 700; border: none;">
+            <button id="btn-score-export-excel" class="btn btn-secondary" onclick="exportScoringMatrixToExcel()" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: #ffffff; font-weight: 700; border: none;">
               📊 تصدير Excel
             </button>
           </div>
@@ -545,11 +545,11 @@
               <option value="ماجستير">كشف الماجستير فقط</option>
               <option value="دكتوراه">كشف الدكتوراه فقط</option>
             </select>
-            <button class="btn btn-secondary" onclick="exportReportToExcel()">تصدير Excel</button>
-            <button class="btn btn-warning" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 700;" onclick="printDetailedReportDraft()">
+            <button id="btn-rep-export-excel" class="btn btn-secondary" onclick="exportReportToExcel()">تصدير Excel</button>
+            <button id="btn-rep-print-draft" class="btn btn-warning" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 700;" onclick="printDetailedReportDraft()">
               🖨️ طباعة مسودة (للتدقيق والمراجعة)
             </button>
-            <button class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #047857); font-weight: 700;" onclick="printDetailedReportFinal()">
+            <button id="btn-rep-print-final" class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #047857); font-weight: 700;" onclick="printDetailedReportFinal()">
               📜 طباعة النسخة النهائية المعتمدة
             </button>
           </div>
@@ -568,10 +568,10 @@
             <span>🎯 التقرير المخصص بحسب معايير المفاضلة (فرز وتصفية تفاعلية)</span>
           </h2>
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-secondary" onclick="exportCriterionReportToExcel()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800;">
+            <button id="btn-crit-rep-export-excel" class="btn btn-secondary" onclick="exportCriterionReportToExcel()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800;">
               <span>📊</span> تصدير Excel
             </button>
-            <button class="btn btn-primary" onclick="printCriterionReport()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1);">
+            <button id="btn-crit-rep-print-pdf" class="btn btn-primary" onclick="printCriterionReport()" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1);">
               <span>🖨️</span> طباعة التقرير المعياري PDF
             </button>
           </div>
@@ -600,10 +600,10 @@
             <span style="background: rgba(124,58,237,0.2); color: #7c3aed; border: 1px solid rgba(124,58,237,0.4); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 800;">
               🔒 متاح لرئيس اللجنة فقط
             </span>
-            <button class="btn btn-warning" onclick="printMinutesDraft()" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 800; border: none;">
+            <button id="btn-min-print-draft" class="btn btn-warning" onclick="printMinutesDraft()" style="background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-weight: 800; border: none;">
               📝 طباعة مسودة للمراجعة
             </button>
-            <button class="btn btn-primary" onclick="printMinutesFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
+            <button id="btn-min-print-final" class="btn btn-primary" onclick="printMinutesFinal()" style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; font-weight: 800; border: none;">
               🖨️ طباعة المحضر النهائي
             </button>
             <button class="btn btn-danger" onclick="openLockSessionModal()" style="background: linear-gradient(135deg, #dc2626, #991b1b); color: #ffffff; font-weight: 900; border: none; box-shadow: 0 4px 15px rgba(220,38,38,0.4);">
@@ -632,7 +632,7 @@
             <p style="margin: 0; color: #134e4a; font-size: 0.85rem;">عرض وتوثيق جميع معايير المفاضلة والشرائح النقاطية والأوزان المعيارية المعتمدة حالياً وطباعتها PDF مع الاعتماد الرسمي.</p>
           </div>
           <div>
-            <button class="btn btn-secondary" onclick="printCriteriaDoc()" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; font-weight: 800;">
+            <button id="btn-crit-doc-print-pdf" class="btn btn-secondary" onclick="printCriteriaDoc()" style="background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; font-weight: 800;">
               🖨️ طباعة وثيقة المعايير (PDF)
             </button>
           </div>
@@ -657,8 +657,8 @@
               <option value="ماجستير">كشف الماجستير فقط</option>
               <option value="دكتوراه">كشف الدكتوراه فقط</option>
             </select>
-            <button class="btn btn-secondary" onclick="exportAnalyticsToExcel()">تصدير التقارير Excel</button>
-            <button class="btn btn-primary" onclick="printAnalyticsReport()">طباعة التقرير الحالي PDF</button>
+            <button id="btn-ana-export-excel" class="btn btn-secondary" onclick="exportAnalyticsToExcel()">تصدير التقارير Excel</button>
+            <button id="btn-ana-print-pdf" class="btn btn-primary" onclick="printAnalyticsReport()">طباعة التقرير الحالي PDF</button>
           </div>
         </div>
 
@@ -740,7 +740,7 @@
               تحكم كامل في إنشاء الأدوار وتحديد الصلاحيات بدقة جراحية على مستوى الشاشات والأزرار والنوافذ التفصيلية.
             </p>
           </div>
-          <button class="btn btn-primary" onclick="openRoleModal()" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);">
+          <button id="btn-add-role-admin" class="btn btn-primary" onclick="openRoleModal()" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);">
             <span>➕</span>
             <span>إنشاء دور وظيفي جديد</span>
           </button>
@@ -766,7 +766,7 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">شاشة إدارة المستخدمين وتعيين الصلاحيات (المدير الأعلى)</h2>
-          <button class="btn btn-primary" onclick="showAddUserModal()">إضافة مستخدم جديد</button>
+          <button id="btn-add-user-admin" class="btn btn-primary" onclick="showAddUserModal()">إضافة مستخدم جديد</button>
         </div>
         <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.88rem;">
           يتيح هذا الباب للمدير الأعلى (Super Admin) إنشاء حسابات جديدة لمدخلي البيانات والمراجعين وتحديد أدوارهم وصلاحياتهم على النظام.
@@ -1374,9 +1374,9 @@
 
       <!-- أزرار التحكم -->
       <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" onclick="exportAuditLogPDF()">📄 تصدير تقرير PDF</button>
-        <button class="btn btn-outline btn-sm" onclick="exportAuditLogCSV()">📥 تصدير CSV</button>
-        <button class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ مسح السجل كاملاً</button>
+        <button id="btn-aud-export-pdf" class="btn btn-primary btn-sm" onclick="exportAuditLogPDF()">📄 تصدير تقرير PDF</button>
+        <button id="btn-aud-export-csv" class="btn btn-outline btn-sm" onclick="exportAuditLogCSV()">📥 تصدير CSV</button>
+        <button id="btn-aud-clear-log" class="btn btn-danger btn-sm" onclick="clearAuditLog()">🗑️ مسح السجل كاملاً</button>
         <span id="audit-count-badge" style="font-size:0.8rem; color:var(--text-muted); align-self:center;"></span>
       </div>
     </div>

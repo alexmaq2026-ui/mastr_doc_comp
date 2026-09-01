@@ -378,6 +378,7 @@ function getRoleTitle(role) {
   if (role === 'data_entry') return 'مُدخل بيانات';
   if (role === 'auditor') return 'مراجع مطلع';
   if (role === 'committee_member') return 'عضو لجنة المفاضلة (اطلاع فقط)';
+  if (role === 'visitor') return 'زائر (معاينة واطلاع فقط)';
   return role;
 }
 
@@ -1658,6 +1659,11 @@ function _buildWinnersPrintHTML(isDraft) {
 }
 
 function printWinnersListDraft() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:dash-print-draft')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة مسودة كشف الفائزين.');
+    return;
+  }
   setPrintPageDate();
   const printArea = document.getElementById('winners-print-area');
   if (!printArea) return;
@@ -1675,6 +1681,11 @@ function printWinnersListDraft() {
 }
 
 function printWinnersListFinal() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:dash-print-final')) {
+    alert('⚠️ ليس لديك صلاحية للطباعة النهائية لكشف الفائزين.');
+    return;
+  }
   setPrintPageDate();
   const printArea = document.getElementById('winners-print-area');
   if (!printArea) return;
@@ -2509,10 +2520,10 @@ function renderCandidatesTable() {
   if (degreeFilter) list = list.filter(c => c.degree === degreeFilter);
   if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || c.specialization.toLowerCase().includes(search));
 
-  const canEdit    = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'data_entry');
-  const isAuditor  = state.currentUser && state.currentUser.role === 'auditor';
-  const isDataEntry= state.currentUser && state.currentUser.role === 'data_entry';
-  const isAdmin    = state.currentUser && state.currentUser.role === 'super_admin';
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  const canEdit    = isSuperAdmin || (typeof hasPermission === 'function' && hasPermission('action:cand-edit'));
+  const canDelete  = isSuperAdmin || (typeof hasPermission === 'function' && hasPermission('action:cand-delete'));
+  const isAuditor  = isSuperAdmin || (typeof hasPermission === 'function' && hasPermission('action:score-add-annotation')) || (state.currentUser && state.currentUser.role === 'auditor');
 
   initAnnotations();
 
@@ -2558,19 +2569,19 @@ function renderCandidatesTable() {
       ? `<span title="${pendingAnns.length} ملاحظة مراجعة معلقة" style="display:inline-flex;align-items:center;gap:3px;background:#ef4444;color:#fff;padding:2px 7px;border-radius:20px;font-size:0.7rem;font-weight:800;cursor:pointer;" onclick="toggleAnnotationsPanel(${c.id})">🔴 ${pendingAnns.length} ملاحظة</span>`
       : '';
 
-    // 1. زر تعديل (للمدير الأعلى ومدخل البيانات)
-    const editBtn = (isAdmin || isDataEntry)
-      ? `<button class="btn btn-outline btn-sm" onclick="editCandidate(${c.id})"> تعديل</button>`
+    // 1. زر تعديل
+    const editBtn = canEdit
+      ? `<button class="btn btn-outline btn-sm btn-cand-edit" onclick="editCandidate(${c.id})"> تعديل</button>`
       : '';
 
-    // 2. زر حذف (للمدير الأعلى ومدخل البيانات)
-    const deleteBtn = (isAdmin || isDataEntry)
-      ? `<button class="btn btn-danger btn-sm" onclick="deleteCandidate(${c.id})" style="margin-right:4px;"> 🗑️ حذف</button>`
+    // 2. زر حذف
+    const deleteBtn = canDelete
+      ? `<button class="btn btn-danger btn-sm btn-cand-delete" onclick="deleteCandidate(${c.id})" style="margin-right:4px;"> 🗑️ حذف</button>`
       : '';
 
     // 3. زر تضليل (للمراجع المطلع فقط)
     const annotateBtn = isAuditor
-      ? `<button class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:0.75rem;" onclick="openAnnotationModal(${c.id})">🔴 تضليل</button>`
+      ? `<button class="btn btn-sm btn-cand-annotate" style="background:#dc2626;color:#fff;font-size:0.75rem;" onclick="openAnnotationModal(${c.id})">🔴 تضليل</button>`
       : '';
 
     // لوحة التعليقات المفصلة (مخفية افتراضياً)
@@ -4414,6 +4425,9 @@ function renderUsersAdminTable() {
   const tbody = document.getElementById('users-admin-tbody');
   if (!tbody) return;
 
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  const canManageUsers = isSuperAdmin || (typeof hasPermission === 'function' && hasPermission('action:adm-manage-users'));
+
   tbody.innerHTML = state.users.map((u, idx) => {
     const roleObj = (state.roles || []).find(r => r.id === u.role);
     const roleDisplay = roleObj ? roleObj.name : (u.title || getRoleTitle(u.role));
@@ -4421,6 +4435,11 @@ function renderUsersAdminTable() {
     const statusBadge = isSuspended 
       ? '<span class="user-status-badge status-suspended">🔴 معلق</span>' 
       : '<span class="user-status-badge status-active">🟢 نشط</span>';
+
+    const actionButtons = canManageUsers ? `
+      <button class="btn btn-outline btn-sm btn-admin-user-action" onclick="editUser(${u.id})">تعديل</button>
+      ${u.id === 1 ? '' : `<button class="btn btn-danger btn-sm btn-admin-user-action" onclick="deleteUser(${u.id})">حذف</button>`}
+    ` : `<span style="font-size:0.75rem; color:#64748b; font-weight:600;">معاينة فقط</span>`;
 
     return `
     <tr>
@@ -4430,10 +4449,7 @@ function renderUsersAdminTable() {
       <td><code style="color: var(--primary); font-weight: bold;">${u.password || '••••••'}</code></td>
       <td><span class="user-role-tag">${roleDisplay}</span></td>
       <td>${statusBadge}</td>
-      <td>
-        <button class="btn btn-outline btn-sm" onclick="editUser(${u.id})">تعديل</button>
-        ${u.id === 1 ? '' : `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">حذف</button>`}
-      </td>
+      <td>${actionButtons}</td>
     </tr>
   `;
   }).join('');
@@ -4843,6 +4859,12 @@ function showAddCandidateModal() {
 }
 
 function editCandidate(id) {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:cand-edit')) {
+    alert('⚠️ ليس لديك صلاحية لتعديل بيانات المتنافسين.');
+    return;
+  }
+
   const cand = state.candidates.find(c => String(c.id) === String(id));
   if (!cand) return;
 
@@ -4863,6 +4885,13 @@ function editCandidate(id) {
 function saveCandidateForm() {
   if (checkSystemLockGuard()) return;
   const id = document.getElementById('candidate-id-hidden').value;
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  const requiredPerm = id ? 'action:cand-edit' : 'action:cand-add';
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission(requiredPerm)) {
+    alert('⚠️ ليس لديك صلاحية لإجراء هذه العملية.');
+    return;
+  }
+
   const name = document.getElementById('cand-name').value.trim();
   const degree = document.getElementById('cand-degree').value;
   const specialization = document.getElementById('cand-specialization').value.trim();
@@ -4952,6 +4981,12 @@ function saveCandidateForm() {
 
 function deleteCandidate(id) {
   if (checkSystemLockGuard()) return;
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:cand-delete')) {
+    alert('⚠️ ليس لديك صلاحية لحذف المتنافسين.');
+    return;
+  }
+
   if (confirm('هل أنت متأكد من رغبتك في حذف هذا المتنافس؟ لا يمكن التراجع عن هذا الإجراء.')) {
     // 1. حذف من الذاكرة المحلية
     state.candidates = state.candidates.filter(c => c.id !== id);
@@ -5187,6 +5222,12 @@ function handleExcelImport(event) {
 
 // إدارة المستخدمين والصلاحيات (المدير الأعلى)
 function showAddUserModal() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:adm-manage-users')) {
+    alert('⚠️ ليس لديك صلاحية لإضافة مستخدمين جدد.');
+    return;
+  }
+
   editingUserId = null;
   const titleEl = document.getElementById('modal-user-title');
   if (titleEl) titleEl.innerText = 'إضافة مستخدم جديد وتعيين الصلاحيات';
@@ -5211,6 +5252,12 @@ function showAddUserModal() {
 }
 
 function editUser(id) {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:adm-manage-users')) {
+    alert('⚠️ ليس لديك صلاحية لتعديل بيانات وصلاحيات المستخدمين.');
+    return;
+  }
+
   const user = state.users.find(u => u.id === id);
   if (!user) return;
 
@@ -5255,6 +5302,12 @@ function handleUserRoleChangeInModal(roleId) {
 }
 
 function deleteUser(id) {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:adm-manage-users')) {
+    alert('⚠️ ليس لديك صلاحية لحذف المستخدمين.');
+    return;
+  }
+
   if (id === 1) {
     alert('لا يمكن حذف حساب المدير الرئيسي النظام');
     return;
@@ -5273,6 +5326,11 @@ function deleteUser(id) {
 }
 
 function saveUserForm() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:adm-manage-users')) {
+    alert('⚠️ ليس لديك صلاحية لحفظ وتعديل بيانات المستخدمين.');
+    return;
+  }
   const name     = document.getElementById('user-fullname').value.trim();
   const username = document.getElementById('user-username').value.trim();
   const password = document.getElementById('user-password').value.trim();
@@ -6587,6 +6645,11 @@ function runPanoramicSimulation() {
 }
 
 function printDetailedReportDraft() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:rep-print-draft')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة مسودة التقرير التفصيلي.');
+    return;
+  }
   setPrintPageDate();
   document.body.classList.add('is-draft-print');
   const watermarkEl = document.getElementById('report-print-watermark');
@@ -6601,6 +6664,11 @@ function printDetailedReportDraft() {
 }
 
 function printDetailedReportFinal() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:rep-print-final')) {
+    alert('⚠️ ليس لديك صلاحية للطباعة النهائية للتقرير التفصيلي.');
+    return;
+  }
   setPrintPageDate();
   document.body.classList.remove('is-draft-print');
   const watermarkEl = document.getElementById('report-print-watermark');
@@ -6667,6 +6735,11 @@ function renderScoringSignatures() {
 }
 
 function printScoringMatrixDraft() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:score-print-draft')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة مسودة مصفوفة المفاضلة.');
+    return;
+  }
   setPrintPageDate();
   updateScoringPrintHeaderInfo();
   renderScoringSignatures();
@@ -6685,6 +6758,11 @@ function printScoringMatrixDraft() {
 }
 
 function printScoringMatrixFinal() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:score-print-final')) {
+    alert('⚠️ ليس لديك صلاحية للطباعة النهائية لمصفوفة المفاضلة.');
+    return;
+  }
   setPrintPageDate();
   updateScoringPrintHeaderInfo();
   renderScoringSignatures();
@@ -7873,6 +7951,11 @@ function renderAgeAndSpecCharts(container, selectedDegree = 'الكل') {
 }
 
 function exportAnalyticsToExcel() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:ana-export-excel')) {
+    alert('⚠️ ليس لديك صلاحية لتصدير التقارير التحليلية.');
+    return;
+  }
   if (typeof XLSX === 'undefined') {
     alert('مكتبة تصدير الإكسل غير محملة');
     return;
@@ -7904,6 +7987,11 @@ function exportAnalyticsToExcel() {
 }
 
 function printAnalyticsReport() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:ana-print-pdf')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة التقارير التحليلية.');
+    return;
+  }
   window.print();
 }
 
@@ -8678,6 +8766,11 @@ function getCriterionReportHeaderTitle(st, refYear) {
 }
 
 function exportCriterionReportToExcel() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:crit-rep-export-excel')) {
+    alert('⚠️ ليس لديك صلاحية لتصدير التقرير المعياري.');
+    return;
+  }
   if (typeof XLSX === 'undefined') {
     alert('مكتبة تصدير الإكسل غير محملة');
     return;
@@ -8725,6 +8818,11 @@ function exportCriterionReportToExcel() {
 }
 
 function printCriterionReport() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:crit-rep-print-pdf')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة التقرير المعياري.');
+    return;
+  }
   window.print();
 }
 
@@ -9002,6 +9100,11 @@ function renderMinutes() {
 
 // طباعة المحضر الرسمي النهائي
 function printMinutesFinal() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:min-print-final')) {
+    alert('⚠️ ليس لديك صلاحية للطباعة النهائية للمحضر الرسمي.');
+    return;
+  }
   const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
   setPrintPageDate(dateStr);
   document.body.classList.add('is-minutes-print');
@@ -9017,6 +9120,11 @@ function printMinutesFinal() {
 
 // طباعة مسودة المحضر الرسمي للمراجعة والتنقيح
 function printMinutesDraft() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:min-print-draft')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة مسودة المحضر الرسمي.');
+    return;
+  }
   const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
   setPrintPageDate(dateStr);
   document.body.classList.add('is-minutes-print');
@@ -9590,6 +9698,11 @@ function renderCriteriaDoc() {
 
 // دالة طباعة وثيقة معايير وأوزان المفاضلة المعتمدة
 function printCriteriaDoc() {
+  const isSuperAdmin = state.currentUser && (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin');
+  if (!isSuperAdmin && typeof hasPermission === 'function' && !hasPermission('action:crit-doc-print-pdf')) {
+    alert('⚠️ ليس لديك صلاحية لطباعة وثيقة المعايير.');
+    return;
+  }
   const dateStr = state.settings.competitionDate || state.settings.sessionDate || 'شهر اغسطس 2026';
   setPrintPageDate(dateStr);
   document.body.classList.add('is-criteria-doc-print');

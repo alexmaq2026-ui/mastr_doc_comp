@@ -157,6 +157,10 @@ async function syncCandidatesFromSupabase() {
                 // هذا يضمن أن أي جهاز بعيد مهما كان LocalStorage القديم فيه، سيعتمد كلمة Supabase دائماً
                 state.users = remoteUsers;
             }
+            const rolesSetting = sData.find(s => s.key === 'global_roles');
+            if (rolesSetting && rolesSetting.value && Array.isArray(rolesSetting.value) && rolesSetting.value.length > 0) {
+                state.roles = rolesSetting.value;
+            }
             const globalSetting = sData.find(s => s.key === 'global_settings');
             if (globalSetting && globalSetting.value) {
                 state.settings = { ...state.settings, ...globalSetting.value };
@@ -323,7 +327,14 @@ async function uploadAllDataToSupabase() {
             ]);
         }
 
-        alert(`✅ تم الرفع والمزامنة الشاملة بنجاح إلى Supabase!\n- تم رفع ${state.candidates ? state.candidates.length : 0} متنافس أونلاين.\n- تم رفع كافة إعدادات المعايير والشرائح والأوزان.\n- تم رفع حسابات المستخدمين والصلاحيات.`);
+        // 6. رفع مصفوفة الأدوار والمجموعات الصلاحياتية (state.roles)
+        if (state.roles && state.roles.length > 0) {
+            await supabaseClient.from('system_settings').upsert([
+                { key: 'global_roles', value: state.roles }
+            ]);
+        }
+
+        alert(`✅ تم الرفع والمزامنة الشاملة بنجاح إلى Supabase!\n- تم رفع ${state.candidates ? state.candidates.length : 0} متنافس أونلاين.\n- تم رفع كافة إعدادات المعايير والشرائح والأوزان.\n- تم رفع حسابات المستخدمين والصلاحيات.\n- تم رفع مصفوفة الأدوار والمجموعات.`);
         return true;
     } catch (err) {
         console.error('خطأ أثناء رفع البيانات إلى Supabase:', err);
@@ -363,6 +374,22 @@ async function syncUsersToSupabase(users) {
         return true;
     } catch (e) {
         console.warn('تنبيه: تعذر مزامنة المستخدمين أونلاين على Supabase:', e);
+        return false;
+    }
+}
+
+// مزامنة الأدوار ومصفوفة الصلاحيات أونلاين على Supabase
+async function syncRolesToSupabase(roles) {
+    if (!supabaseClient && !initSupabase()) return false;
+    try {
+        const rolesToSync = roles || (typeof state !== 'undefined' ? state.roles : []);
+        await supabaseClient.from('system_settings').upsert([
+            { key: 'global_roles', value: rolesToSync }
+        ]);
+        console.log('✅ تم مزامنة الأدوار ومصفوفة الصلاحيات أونلاين على Supabase بنجاح.');
+        return true;
+    } catch (e) {
+        console.warn('تنبيه: تعذر مزامنة الأدوار أونلاين على Supabase:', e);
         return false;
     }
 }
