@@ -3138,18 +3138,57 @@ function generateCandidateCardHTML(candidate) {
   const calculatedAge = birthYear ? (currentYear - parseInt(birthYear)) : '-';
   const hiringUnivStr = candidate.hiring_univ || candidate.hiring_service || '-';
 
-  const customScores = (candidate.scores && candidate.scores.customScores) || {};
-  const activeCustom  = (state.criteria.customCriteria || []).filter(c => c.enabled);
+  const candDegree = (candidate.degree || 'ماجستير').trim();
+  const isPhd = (candDegree === 'دكتوراه' || candDegree === 'phd');
+
+  // إعادة احتساب فوري لأحدث الدرجات لضمان التزامن اللحظي مع أي تغيير في المعايير
+  const computedScores = (typeof calculateCandidateScore === 'function')
+    ? calculateCandidateScore(candidate)
+    : (candidate.scores || {});
+
+  const seniorityScore = computedScores.seniorityScore !== undefined ? computedScores.seniorityScore : (candidate.scores ? candidate.scores.seniorityScore : 0);
+  const ageScore = computedScores.ageScore !== undefined ? computedScores.ageScore : (candidate.scores ? candidate.scores.ageScore : 0);
+  const specScore = computedScores.specScore !== undefined ? computedScores.specScore : (candidate.scores ? candidate.scores.specScore : 0);
+  const gradeScore = computedScores.gradeScore !== undefined ? computedScores.gradeScore : (candidate.scores ? candidate.scores.gradeScore : 0);
+  const totalScore = computedScores.totalScore !== undefined ? computedScores.totalScore : (candidate.scores ? candidate.scores.totalScore : 0);
+  const customScores = computedScores.customScores || (candidate.scores ? candidate.scores.customScores : {}) || {};
+
+  const activeCustom  = (state.criteria.customCriteria || []).filter(c => c.enabled && isCriterionActiveForDegree(c, candDegree));
 
   const committeeList = state.committeeMembers || [];
   const chairmanObj   = committeeList.find(m => (m.committeeRole || '').includes('رئيس اللجنة')) || committeeList[0];
   const chairmanName  = chairmanObj ? chairmanObj.name : 'أ.د. ابراهيم المطاع';
 
-  const seniorityScore = candidate.scores ? candidate.scores.seniorityScore : 0;
-  const ageScore = candidate.scores ? candidate.scores.ageScore : 0;
-  const specScore = candidate.scores ? candidate.scores.specScore : 0;
-  const gradeScore = candidate.scores ? candidate.scores.gradeScore : 0;
-  const totalScore = candidate.scores ? candidate.scores.totalScore : 0;
+  // استخراج الأسقف العليا ديناميكياً لكل معيار مفعل للدرجة الحالية
+  const isSenActive = isCriterionActiveForDegree(state.criteria.seniority, candDegree);
+  const senBrackets = (isPhd && state.criteria.seniority?.phdBrackets && state.criteria.seniority.phdBrackets.length > 0)
+    ? state.criteria.seniority.phdBrackets
+    : (state.criteria.seniority?.brackets || []);
+  const senBracketMax = (senBrackets.length > 0) ? Math.max(...senBrackets.map(b => parseFloat(b.points) || 0)) : 0;
+  const senMaxPts = senBracketMax > 0 ? senBracketMax : (parseFloat(state.criteria.seniority?.maxPoints) || 5);
+
+  const isAgeActive = isCriterionActiveForDegree(state.criteria.age, candDegree);
+  const ageBrackets = (isPhd && state.criteria.age?.phdBrackets && state.criteria.age.phdBrackets.length > 0)
+    ? state.criteria.age.phdBrackets
+    : (state.criteria.age?.brackets || []);
+  const ageBracketMax = (ageBrackets.length > 0) ? Math.max(...ageBrackets.map(b => parseFloat(b.points) || 0)) : 0;
+  const ageMaxPts = ageBracketMax > 0 ? ageBracketMax : (parseFloat(state.criteria.age?.maxPoints) || 5);
+
+  const isSpecActive = isCriterionActiveForDegree(state.criteria.specialization, candDegree);
+  const specMaxPts = parseFloat(state.criteria.specialization?.maxPoints) || 5;
+
+  const isGradeActive = isCriterionActiveForDegree(state.criteria.grade, candDegree);
+  const gradeMaxPts = parseFloat(state.criteria.grade?.maxPoints) || 5;
+
+  // حساب سقف النقاط الكلي المستحق للمتنافس بناءً على المعايير المفعلة فقط
+  let candidateCeiling = 0;
+  if (isSenActive) candidateCeiling += senMaxPts;
+  if (isAgeActive) candidateCeiling += ageMaxPts;
+  if (isSpecActive) candidateCeiling += specMaxPts;
+  if (isGradeActive) candidateCeiling += gradeMaxPts;
+  activeCustom.forEach(c => {
+    candidateCeiling += (parseFloat(c.maxPoints) || 5);
+  });
 
   return `
     <div class="single-candidate-card-page" style="position: relative; page-break-after: always; break-after: page; background: #ffffff; padding: 10px 14px; font-family: 'Tajawal', 'Segoe UI', Arial, sans-serif; direction: rtl; color: #0f172a;">
@@ -3200,30 +3239,43 @@ function generateCandidateCardHTML(candidate) {
       <!-- 2. تفكيك احتساب النقاط التنافسية -->
       <div class="card-print-section" style="background: #ffffff; border: 1.5px solid #059669; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.8rem;">
         <h4 style="margin: 0 0 6px 0; color: #047857; font-size: 0.85rem; font-weight: 800; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px;">
-          📊 تفكيك احتساب النقاط المعيارية (من 25 نقطة)
+          📊 تفكيك احتساب النقاط المعيارية (من ${candidateCeiling} نقطة)
         </h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; color: #064e3b;">
+          ${isSenActive ? `
           <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى 10ن):</span>
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الأقدمية بالخدمة (أعلى ${senMaxPts}ن):</span>
             <strong style="font-size: 1rem; color: #047857;">${seniorityScore} نقاط</strong>
-          </div>
+          </div>` : ''}
+
+          ${isAgeActive ? `
           <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى 5ن):</span>
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">الفئة العمرية (أعلى ${ageMaxPts}ن):</span>
             <strong style="font-size: 1rem; color: #047857;">${ageScore} نقاط</strong>
-          </div>
+          </div>` : ''}
+
+          ${isSpecActive ? `
           <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى 5ن):</span>
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">احتياج التخصص (أعلى ${specMaxPts}ن):</span>
             <strong style="font-size: 1rem; color: #047857;">${specScore} نقاط</strong>
-          </div>
+          </div>` : ''}
+
+          ${isGradeActive ? `
           <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى 5ن):</span>
+            <span style="font-size: 0.78rem; color: #334155; font-weight:700;">تقدير المؤهل (أعلى ${gradeMaxPts}ن):</span>
             <strong style="font-size: 1rem; color: #047857;">${gradeScore} نقاط</strong>
-          </div>
+          </div>` : `
+          <div style="background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: #64748b; font-weight:700;">تقدير المؤهل:</span>
+            <span style="font-size: 0.72rem; color: #475569; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700;">غير مشمول في مفاضلة (${candidate.degree})</span>
+          </div>`}
+
           ${activeCustom.map(custom => {
             const computedPts = customScores[custom.id] || 0;
             const rawVal = (candidate.customValues && candidate.customValues[custom.id] !== undefined)
               ? candidate.customValues[custom.id] : null;
             const itype = custom.indicatorType || 'binary';
+            const cMax = custom.maxPoints || 5;
 
             let displayLabel = '';
             if (itype === 'binary') {
@@ -3249,7 +3301,7 @@ function generateCandidateCardHTML(candidate) {
 
             return `
             <div style="background: #f0fdf4; padding: 6px 10px; border-radius: 4px; border: 1px solid #a7f3d0; grid-column: span 2; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name}: <span style="color:#64748b; font-weight:500;">${displayLabel}</span></span>
+              <span style="font-size: 0.78rem; color: #334155; font-weight:700;">${custom.name} (أعلى ${cMax}ن): <span style="color:#64748b; font-weight:500;">${displayLabel}</span></span>
               <strong style="font-size: 1rem; color: #047857;">${computedPts} نقاط</strong>
             </div>`;
           }).join('')}
